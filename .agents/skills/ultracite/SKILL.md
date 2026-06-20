@@ -11,8 +11,7 @@ Zero-config linting and formatting for JS/TS projects. Supports three linter bac
 
 Check if `ultracite` is in `package.json` devDependencies. Detect the active linter by looking for:
 
-- `biome.jsonc` → Biome
-- `eslint.config.mjs` → ESLint
+- `biome.jsonc` → Biomet
 - `oxlint.config.ts` → Oxlint
 
 ## CLI Commands

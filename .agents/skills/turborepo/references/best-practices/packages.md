@@ -26,7 +26,6 @@ Export TypeScript directly. The consuming app's bundler compiles it.
     "./card": "./src/card.tsx"
   },
   "scripts": {
-    "lint": "eslint .",
     "check-types": "tsc --noEmit"
   }
 }

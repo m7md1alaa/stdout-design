@@ -27,7 +27,6 @@ Package tasks enable parallelization, individual caching, and filtering. Define 
 {
   "scripts": {
     "build": "next build",
-    "lint": "eslint .",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   }
@@ -37,7 +36,6 @@ Package tasks enable parallelization, individual caching, and filtering. Define 
 {
   "scripts": {
     "build": "tsc",
-    "lint": "eslint .",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   }
