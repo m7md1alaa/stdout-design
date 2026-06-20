@@ -1,0 +1,13 @@
+{
+  "extends": "@stdout-design/config/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "moduleDetection": "force",
+    "types": [],
+    "paths": {
+      "@stdout-design/core": ["../packages/core/src/index.ts"]
+    }
+  },
+  "include": ["**/*.tsx", "**/*.d.ts", "studio.config.ts"]
+}
