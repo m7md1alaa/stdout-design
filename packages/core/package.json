@@ -2,6 +2,9 @@
   "name": "@stdout-design/core",
   "version": "0.0.0",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -9,9 +12,6 @@
       "types": "./dist/index.d.mts"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
-    "tsdown": "^0.22.3",
+    "tsdown": "catalog:",
     "typescript": "catalog:"
   }
 }

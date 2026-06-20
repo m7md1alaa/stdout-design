@@ -6,5 +6,5 @@ export const defineSchema = <T extends PropSchema>(schema: T): T => schema;
 
 export const validateProps = <T extends PropSchema>(
   schema: T,
-  props: unknown,
+  props: unknown
 ): z.infer<T> => schema.parse(props);
