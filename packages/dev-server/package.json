@@ -1,0 +1,35 @@
+{
+  "name": "@stdout-design/dev-server",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "ultracite check"
+  },
+  "dependencies": {
+    "@stdout-design/core": "workspace:*",
+    "chokidar": "^4.0.3",
+    "hono": "^4.12.26",
+    "react": "catalog:",
+    "vite": "catalog:",
+    "vite-node": "^6.0.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stdout-design/config": "workspace:*",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}
