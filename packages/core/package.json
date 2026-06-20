@@ -1,0 +1,30 @@
+{
+  "name": "@stdout-design/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "ultracite check"
+  },
+  "dependencies": {
+    "takumi-js": "^1.8.6",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stdout-design/config": "workspace:*",
+    "tsdown": "^0.22.3",
+    "typescript": "catalog:"
+  }
+}

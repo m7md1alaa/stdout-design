@@ -1,3 +1,4 @@
+you must always run commands using `bun --bun <script>`
 # Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
