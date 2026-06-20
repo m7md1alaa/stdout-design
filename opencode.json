@@ -1,0 +1,16 @@
+{
+  "mcp": {
+    "better-t-stack": {
+      "type": "local",
+      "command": ["bunx", "create-better-t-stack@latest", "mcp"],
+      "enabled": true,
+      "environment": {}
+    },
+    "context7": {
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp"],
+      "enabled": true,
+      "environment": {}
+    }
+  }
+}

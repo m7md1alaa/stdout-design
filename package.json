@@ -1,0 +1,29 @@
+{
+  "name": "stdout-design",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "check": "ultracite check",
+    "fix": "ultracite fix"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@stdout-design/config": "workspace:*",
+    "oxfmt": "latest",
+    "oxlint": "latest",
+    "turbo": "^2.9.16",
+    "typescript": "^6",
+    "ultracite": "7.8.3"
+  },
+  "packageManager": "bun@1.3.13"
+}
