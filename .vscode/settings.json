@@ -1,5 +1,7 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "oxc.path.node": "/Users/mohammedalrabrabah/.bun/bin/bun",
+  "oxc.useExecPath": false,
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "emmet.showExpandedAbbreviation": "never",
