@@ -46,6 +46,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@stdout-design/core": "workspace:*",
+        "@vitejs/plugin-react": "^6.0.1",
         "chokidar": "^4.0.3",
         "hono": "^4.12.26",
         "react": "catalog:",

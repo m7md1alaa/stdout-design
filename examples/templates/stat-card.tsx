@@ -8,8 +8,16 @@ export const propsSchema = z.object({
     .default("#6366f1")
     .describe("Accent color for the stat value"),
   label: z.string().default("").describe("Supporting text below the stat"),
-  stat: z.string().min(1).describe("The big number or value to display"),
-  title: z.string().min(1).describe("The headline above the stat"),
+  stat: z
+    .string()
+    .min(1)
+    .default("10,482")
+    .describe("The big number or value to display"),
+  title: z
+    .string()
+    .min(1)
+    .default("Active Users")
+    .describe("The headline above the stat"),
 });
 
 export type Props = z.infer<typeof propsSchema>;

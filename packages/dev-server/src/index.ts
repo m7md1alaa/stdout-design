@@ -3,7 +3,6 @@ import {
   renderToPixels,
   measureTemplate,
   RenderCache,
-  validateProps,
 } from "@stdout-design/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -11,6 +10,7 @@ import { streamSSE } from "hono/streaming";
 import { createElement } from "react";
 import type React from "react";
 
+import { errorHandler } from "./error-middleware.js";
 import { FileWatcher } from "./file-watcher.js";
 import { TemplateLoader } from "./template-loader.js";
 import { renderRequestSchema, measureRequestSchema } from "./types";
@@ -76,6 +76,7 @@ export const createDevServer = async (options: DevServerOptions) => {
   // is nothing further to wire up here beyond relaying its events.
 
   const app = new Hono();
+  app.onError(errorHandler);
 
   app.use(
     "*",
@@ -173,13 +174,14 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
-    let validatedProps: Record<string, unknown>;
-    try {
-      validatedProps = validateProps(templateModule.propsSchema, props);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Invalid props";
-      return c.json({ error: message }, 400);
+    const parsed = templateModule.propsSchema.safeParse(props);
+    if (!parsed.success) {
+      return c.json(
+        { error: "Invalid props", issues: parsed.error.issues },
+        400
+      );
     }
+    const validatedProps = parsed.data;
 
     let resolvedProps: Record<string, unknown>;
     if (locale) {
@@ -295,13 +297,14 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
-    let validatedProps: Record<string, unknown>;
-    try {
-      validatedProps = validateProps(templateModule.propsSchema, props);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Invalid props";
-      return c.json({ error: message }, 400);
+    const parsed = templateModule.propsSchema.safeParse(props);
+    if (!parsed.success) {
+      return c.json(
+        { error: "Invalid props", issues: parsed.error.issues },
+        400
+      );
     }
+    const validatedProps = parsed.data;
 
     const propsJSON = JSON.stringify(validatedProps);
 

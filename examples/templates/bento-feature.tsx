@@ -5,8 +5,16 @@ export const templateId = "bento-feature" as const;
 export const propsSchema = z.object({
   background: z.string().default("#0a0a0a").describe("Background color"),
   description: z.string().default("").describe("Supporting description text"),
-  headline: z.string().min(1).describe("Main headline for the feature card"),
-  image: z.string().url().describe("URL to the feature image"),
+  headline: z
+    .string()
+    .min(1)
+    .default("Headline")
+    .describe("Main headline for the feature card"),
+  image: z
+    .string()
+    .url()
+    .default("https://placehold.co/600x400")
+    .describe("URL to the feature image"),
   tags: z.array(z.string()).default([]).describe("Feature tags or badges"),
 });
 

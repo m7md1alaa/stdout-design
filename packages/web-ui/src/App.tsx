@@ -1,14 +1,49 @@
 import { useState, useCallback, useEffect } from "react";
 
 import { Canvas } from "./components/canvas";
+import { ErrorBoundary } from "./components/error-boundary";
 import { PropPanel } from "./components/prop-panel";
 import { TemplateSelector } from "./components/template-selector";
-import { API_ROUTES } from "./constants";
+import { API_BASE } from "./constants";
 import { useSSE } from "./hooks/use-sse";
 import type { SSEReloadEvent } from "./hooks/use-sse";
 import { useTemplates } from "./hooks/use-templates";
+import type { TemplateSchema } from "./hooks/use-templates";
+import { createHttpRenderAdapter } from "./lib/http-render-adapter";
+import type { RenderAdapter } from "./lib/renderer";
 
 import "./App.css";
+
+const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
+
+const computeDefaultProps = (
+  template: TemplateSchema | undefined
+): Record<string, unknown> => {
+  const defaults: Record<string, unknown> = {};
+  const properties = (
+    template?.propsSchema as {
+      properties?: Record<string, { type?: string; default?: unknown }>;
+    }
+  )?.properties;
+  if (!properties) {
+    return defaults;
+  }
+
+  for (const [key, prop] of Object.entries(properties)) {
+    if ("default" in prop && prop.default !== undefined) {
+      defaults[key] = prop.default;
+    } else if (prop.type === "string") {
+      defaults[key] = "";
+    } else if (prop.type === "number") {
+      defaults[key] = 0;
+    } else if (prop.type === "boolean") {
+      defaults[key] = false;
+    } else if (prop.type === "array") {
+      defaults[key] = [];
+    }
+  }
+  return defaults;
+};
 
 const App = () => {
   const { templates, presets, defaultPreset, loading, error, reload } =
@@ -47,6 +82,7 @@ const App = () => {
     const first = templates?.[0];
     if (first && !selectedTemplate) {
       setSelectedTemplate(first.id);
+      setPropValues(computeDefaultProps(first));
     }
   }, [templates, selectedTemplate]);
 
@@ -57,10 +93,14 @@ const App = () => {
     }
   }, [presets, defaultPreset, selectedPreset]);
 
-  const handleTemplateChange = useCallback((id: string) => {
-    setSelectedTemplate(id);
-    setPropValues({});
-  }, []);
+  const handleTemplateChange = useCallback(
+    (id: string) => {
+      const template = templates.find((t) => t.id === id);
+      setSelectedTemplate(id);
+      setPropValues(computeDefaultProps(template));
+    },
+    [templates]
+  );
 
   const handlePropChange = useCallback((path: string, value: unknown) => {
     setPropValues((prev) => ({ ...prev, [path]: value }));
@@ -73,22 +113,15 @@ const App = () => {
       return;
     }
 
-    const response = await fetch(API_ROUTES.render, {
-      body: JSON.stringify({
-        preset: currentPreset.id,
-        props: propValues,
-        templateId: selectedTemplate,
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
+    const result = await renderAdapter.render(selectedTemplate, propValues, {
+      preset: currentPreset.id,
     });
 
-    if (!response.ok) {
+    if (!result.ok) {
       return;
     }
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(result.blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${selectedTemplate}-${currentPreset.id}.png`;
@@ -119,66 +152,69 @@ const App = () => {
   }
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1 className="sidebar-title">stdout</h1>
-          <span className="sidebar-subtitle">studio</span>
-        </div>
+    <ErrorBoundary>
+      <div className="app">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h1 className="sidebar-title">stdout</h1>
+            <span className="sidebar-subtitle">studio</span>
+          </div>
 
-        <TemplateSelector
-          templates={templates}
-          selected={selectedTemplate}
-          onChange={handleTemplateChange}
-        />
-
-        {currentTemplate ? (
-          <PropPanel
-            schema={currentTemplate.propsSchema}
-            values={propValues}
-            onChange={handlePropChange}
+          <TemplateSelector
+            templates={templates}
+            selected={selectedTemplate}
+            onChange={handleTemplateChange}
           />
-        ) : (
-          <div className="no-template">Select a template to begin</div>
-        )}
 
-        <div className="sidebar-actions">
-          <button
-            type="button"
-            className="btn-export"
-            onClick={handleExport}
-            disabled={!selectedTemplate || !currentPreset}
-          >
-            Export PNG
-          </button>
-        </div>
-      </aside>
+          {currentTemplate ? (
+            <PropPanel
+              schema={currentTemplate.propsSchema}
+              values={propValues}
+              onChange={handlePropChange}
+            />
+          ) : (
+            <div className="no-template">Select a template to begin</div>
+          )}
 
-      <main className="main">
-        <div className="preset-tabs">
-          {presets.map((preset) => (
+          <div className="sidebar-actions">
             <button
-              key={preset.id}
               type="button"
-              className={`preset-tab ${selectedPreset === preset.id ? "active" : ""}`}
-              onClick={() => setSelectedPreset(preset.id)}
+              className="btn-export"
+              onClick={handleExport}
+              disabled={!selectedTemplate || !currentPreset}
             >
-              <span className="preset-tab-name">{preset.id}</span>
-              <span className="preset-tab-dims">
-                {preset.width}&times;{preset.height}
-              </span>
+              Export PNG
             </button>
-          ))}
-        </div>
+          </div>
+        </aside>
 
-        <Canvas
-          templateId={selectedTemplate}
-          props={propValues}
-          preset={currentPreset}
-          reloadToken={reloadToken}
-        />
-      </main>
-    </div>
+        <main className="main">
+          <div className="preset-tabs">
+            {presets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={`preset-tab ${selectedPreset === preset.id ? "active" : ""}`}
+                onClick={() => setSelectedPreset(preset.id)}
+              >
+                <span className="preset-tab-name">{preset.id}</span>
+                <span className="preset-tab-dims">
+                  {preset.width}&times;{preset.height}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <Canvas
+            templateId={selectedTemplate}
+            props={propValues}
+            preset={currentPreset}
+            reloadToken={reloadToken}
+            renderAdapter={renderAdapter}
+          />
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 };
 

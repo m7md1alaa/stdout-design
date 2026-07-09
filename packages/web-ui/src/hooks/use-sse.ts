@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { API_ROUTES } from "../constants";
+import { logWarn } from "../lib/logger";
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const BASE_RECONNECT_DELAY_MS = 1000;
@@ -42,9 +43,11 @@ export const useSSE = (onReload: (event: SSEReloadEvent) => void) => {
             (event as MessageEvent).data
           ) as SSEReloadEvent;
           onReloadRef.current(data);
-        } catch {
-          // Ignore malformed events -- a bad payload from the dev-server
-          // shouldn't crash the studio UI.
+        } catch (error) {
+          logWarn("Malformed SSE event received", {
+            data: (event as MessageEvent).data,
+            error: String(error),
+          });
         }
       });
 

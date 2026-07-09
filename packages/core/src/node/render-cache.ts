@@ -12,6 +12,8 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 
+import { logWarn, logDebug } from "../shared/logger.js";
+
 /**
  * Content-addressed two-stage render cache.
  *
@@ -414,9 +416,11 @@ export class RenderCache {
         const fileStat = await stat(filePath);
         freed = fileStat.size;
         await unlink(filePath);
-      } catch {
-        // File already gone or inaccessible -- still drop the DB row below
-        // so the manifest doesn't keep pointing at a ghost entry.
+      } catch (error) {
+        logWarn("Failed to delete cache entry file during cleanup", {
+          error: String(error),
+          hash: row.hash,
+        });
         freed = row.size_bytes;
       }
     }
@@ -428,18 +432,23 @@ export class RenderCache {
   private async tryUnlink(filePath: string): Promise<void> {
     try {
       await unlink(filePath);
-    } catch {
-      // best-effort cleanup
+    } catch (error) {
+      logWarn("Failed to clean up cache file", {
+        error: String(error),
+        filePath,
+      });
     }
   }
 
   private async atomicRename(from: string, to: string): Promise<void> {
     try {
       await rename(from, to);
-    } catch {
-      // Cross-device rename (EXDEV) fallback: copy + unlink. Rare in
-      // practice since tmp files are written inside cacheDir, but cheap to
-      // handle.
+    } catch (error) {
+      logDebug("Cross-device rename detected, falling back to copy+unlink", {
+        error: String(error),
+        from,
+        to,
+      });
       await copyFile(from, to);
       await unlink(from);
     }

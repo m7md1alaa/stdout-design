@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import react from "@vitejs/plugin-react";
 import { createServer } from "vite";
 import type { ViteDevServer } from "vite";
 import { ViteNodeRunner } from "vite-node/client";
@@ -140,6 +141,7 @@ export class TemplateLoader {
     this.viteServer = await createServer({
       mode: "development",
       optimizeDeps: { noDiscovery: true },
+      plugins: [react()],
       root: this.rootDir,
       server: { hmr: false, middlewareMode: true },
       ssr: { optimizeDeps: { include: ["zod"] } },
@@ -311,9 +313,14 @@ export class TemplateLoader {
       const templateModule = validateTemplateModule(mod, id);
       entry.state = { module: templateModule, status: "ok" };
     } catch (error) {
-      const error =
-        error instanceof Error ? error : new Error(String(error));
-      entry.state = { error, status: "error" };
+      console.error(
+        `[template-loader] Failed to load template "${id}":`,
+        error
+      );
+      entry.state = {
+        error: error instanceof Error ? error : new Error(String(error)),
+        status: "error",
+      };
     }
   }
 
@@ -382,6 +389,19 @@ export class TemplateLoader {
 // Helpers
 // ---------------------------------------------------------------------
 
+function isZodObject(
+  schema: unknown
+): schema is z.ZodObject<Record<string, z.ZodTypeAny>> {
+  return (
+    typeof schema === "object" &&
+    schema !== null &&
+    "shape" in schema &&
+    typeof (schema as Record<string, unknown>).shape === "object" &&
+    "parse" in schema &&
+    typeof (schema as Record<string, unknown>).parse === "function"
+  );
+}
+
 function validateTemplateModule(
   mod: unknown,
   templateId: string
@@ -394,7 +414,7 @@ function validateTemplateModule(
     );
   }
 
-  if (!(candidate.propsSchema instanceof z.ZodObject)) {
+  if (!isZodObject(candidate.propsSchema)) {
     throw new Error(
       `Template "${templateId}" must export a "propsSchema" that is a z.object({...}) describing its props.`
     );
@@ -410,17 +430,63 @@ function summarizeZodIssues(issues: z.ZodIssue[]): string {
 }
 
 /**
- * Minimal zod -> JSON-Schema-shaped object for transport over the MCP/HTTP
- * boundary (see core's prop-schema module for the full shared version).
- * Kept intentionally small here; the dev-server and mcp packages both
- * import the shared implementation from `@studio/core/shared/schema` --
- * this local copy exists only to keep this file's example self-contained.
+ * Converts a ZodObject schema to a JSON-Schema-shaped representation for
+ * transport to the web UI (prop panel) and MCP clients.
  */
 function zodToJsonSchemaShape(schema: z.ZodTypeAny): Record<string, unknown> {
-  // Real implementation should delegate to a single shared
-  // zod-to-json-schema utility (e.g. the `zod-to-json-schema` package) so
-  // the CLI, MCP server, and web-ui prop panel all describe a template's
-  // props identically. Stubbed here to keep this file's concern (loading)
-  // separate from that concern (schema transport).
-  return { _description: "see shared zod-to-json-schema utility", schema };
+  if (typeof schema !== "object" || !schema || !("shape" in schema)) {
+    return {};
+  }
+
+  const zodObject = schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
+  const properties: Record<string, Record<string, unknown>> = {};
+
+  for (const [key, field] of Object.entries(zodObject.shape)) {
+    const prop: Record<string, unknown> = {};
+
+    const defaultValue = (field._def as { defaultValue?: unknown })
+      ?.defaultValue;
+    if (defaultValue !== undefined) {
+      prop.default = defaultValue;
+    }
+
+    if (field.description) {
+      prop.description = field.description;
+    }
+
+    let base = field as z.ZodTypeAny & { unwrap?: () => z.ZodTypeAny };
+    while (
+      base.unwrap &&
+      (base.type === "default" || base.type === "optional")
+    ) {
+      base = base.unwrap() as z.ZodTypeAny & { unwrap?: () => z.ZodTypeAny };
+    }
+
+    switch (base.type) {
+      case "string": {
+        prop.type = "string";
+        break;
+      }
+      case "number": {
+        prop.type = "number";
+        break;
+      }
+      case "boolean": {
+        prop.type = "boolean";
+        break;
+      }
+      case "array": {
+        prop.type = "array";
+        const element = (base._def as { element?: { type?: string } })?.element;
+        if (element) {
+          prop.items = { type: element.type ?? "string" };
+        }
+        break;
+      }
+    }
+
+    properties[key] = prop;
+  }
+
+  return { properties };
 }

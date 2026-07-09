@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { API_ROUTES } from "../constants";
+import type { RenderAdapter } from "../lib/renderer";
 
 interface CanvasProps {
   templateId: string | null;
@@ -19,11 +19,13 @@ interface CanvasProps {
    * (with no prop panel changes) would never refresh the preview.
    */
   reloadToken: number;
+  renderAdapter: RenderAdapter;
 }
 
 interface RenderState {
   url: string;
   status: "loading" | "loaded" | "error";
+  message?: string;
 }
 
 const RenderContent = ({ state }: { state: RenderState | null }) => {
@@ -36,7 +38,9 @@ const RenderContent = ({ state }: { state: RenderState | null }) => {
   }
 
   if (state.status === "error") {
-    return <div className="canvas-error">Render failed</div>;
+    return (
+      <div className="canvas-error">{state.message || "Render failed"}</div>
+    );
   }
 
   if (state.url) {
@@ -57,6 +61,7 @@ export const Canvas = ({
   props,
   preset,
   reloadToken,
+  renderAdapter,
 }: CanvasProps) => {
   const [render, setRender] = useState<RenderState | null>(null);
   const lastKeyRef = useRef("");
@@ -82,44 +87,34 @@ export const Canvas = ({
       lastKeyRef.current = key;
       setRender({ status: "loading", url: "" });
 
-      try {
-        const response = await fetch(API_ROUTES.render, {
-          body: JSON.stringify({
-            preset: preset.id,
-            props,
-            templateId,
-          }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-          signal: controller.signal,
-        });
+      const result = await renderAdapter.render(templateId, props, {
+        preset: preset.id,
+        signal: controller.signal,
+      });
 
-        if (!response.ok) {
-          setRender({ status: "error", url: "" });
+      if (!result.ok) {
+        if (controller.signal.aborted) {
           return;
         }
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-
-        if (currentUrlRef.current) {
-          URL.revokeObjectURL(currentUrlRef.current);
-        }
-        currentUrlRef.current = url;
-
-        setRender({ status: "loaded", url });
-      } catch {
-        if (!controller.signal.aborted) {
-          setRender({ status: "error", url: "" });
-        }
+        setRender({ message: result.error, status: "error", url: "" });
+        return;
       }
+
+      const url = URL.createObjectURL(result.blob);
+
+      if (currentUrlRef.current) {
+        URL.revokeObjectURL(currentUrlRef.current);
+      }
+      currentUrlRef.current = url;
+
+      setRender({ status: "loaded", url });
     }, 200);
 
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [templateId, props, preset, reloadToken]);
+  }, [templateId, props, preset, reloadToken, renderAdapter]);
 
   // Revoke the last blob URL on unmount too, not just on replacement.
   useEffect(

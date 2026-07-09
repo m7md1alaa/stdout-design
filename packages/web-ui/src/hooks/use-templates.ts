@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { API_ROUTES } from "../constants";
 
-interface TemplateSchema {
+export interface TemplateSchema {
   id: string;
   description: string;
   propsSchema: Record<string, unknown>;

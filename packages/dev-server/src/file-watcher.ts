@@ -1,3 +1,4 @@
+import { ErrorCode, logError } from "@stdout-design/core";
 import { watch } from "chokidar";
 import type { FSWatcher } from "chokidar";
 
@@ -154,9 +155,12 @@ export class FileWatcher {
     for (const listener of this.listeners) {
       try {
         listener(event);
-      } catch {
-        // A listener throwing must not prevent other listeners (or future
-        // watch events) from running.
+      } catch (error) {
+        logError(
+          ErrorCode.INTERNAL_ERROR,
+          "Listener threw during file-watch event dispatch",
+          { error: String(error), eventType: event.type }
+        );
       }
     }
   }
