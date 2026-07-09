@@ -26,10 +26,7 @@ export {
   validateProps,
   PropValidationError,
 } from "./shared/validation.js";
-export type {
-  PropSchema,
-  PropValidationIssue,
-} from "./shared/validation.js";
+export type { PropSchema, PropValidationIssue } from "./shared/validation.js";
 
 export {
   getRenderer,
