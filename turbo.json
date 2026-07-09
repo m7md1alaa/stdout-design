@@ -13,6 +13,9 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "check-types:tsgo": {
+      "dependsOn": ["^check-types:tsgo"]
+    },
     "@stdout-design/core#build": {
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]

@@ -16,11 +16,12 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "check-types": "tsc --noEmit",
+    "check-types:tsgo": "tsgo --noEmit",
     "lint": "ultracite check"
   },
   "dependencies": {
-    "takumi-js": "^2.0.0",
     "@takumi-rs/core": "^2.0.0",
+    "takumi-js": "^2.0.0",
     "zod": "catalog:"
   },
   "devDependencies": {

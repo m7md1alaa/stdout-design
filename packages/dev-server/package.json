@@ -17,6 +17,7 @@
     "dev": "tsdown --watch",
     "serve": "bun src/serve.ts",
     "check-types": "tsc --noEmit",
+    "check-types:tsgo": "tsgo --noEmit",
     "test": "bun test",
     "lint": "ultracite check"
   },

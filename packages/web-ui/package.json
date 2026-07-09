@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check-types": "tsc --noEmit",
+    "check-types:tsgo": "tsgo --noEmit",
     "lint": "ultracite check",
     "preview": "vite preview"
   },
@@ -24,7 +26,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "typescript": "~6.0.2",
+    "typescript": "catalog:",
     "vite": "catalog:"
   }
 }

@@ -10,12 +10,13 @@
     "dev": "turbo run dev serve",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "check-types:tsgo": "turbo check-types:tsgo",
     "check": "ultracite check",
     "fix": "ultracite fix"
   },
   "dependencies": {
-    "dotenv": "^17.2.2",
-    "zod": "^4.1.13"
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
@@ -24,13 +25,14 @@
     "@types/bun": "^1.3.14",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "oxfmt": "latest",
     "oxlint": "latest",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "turbo": "^2.9.16",
-    "typescript": "catalog:",
-    "ultracite": "7.8.3"
+    "turbo": "^2.10.4",
+    "typescript": "^7.0.2",
+    "ultracite": "^7.9.3"
   },
   "packageManager": "bun@1.3.13",
   "catalog": {
@@ -39,7 +41,7 @@
     "react-dom": "19.2.7",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "typescript": "^6",
+    "typescript": "^7",
     "zod": "^4.4.3",
     "tsdown": "^0.22.3"
   }
