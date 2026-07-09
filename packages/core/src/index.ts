@@ -16,13 +16,26 @@ export type {
   CacheStats,
 } from "./node/render-cache.js";
 
-export { defineSchema, validateProps } from "./shared/validation.js";
-export type { PropSchema } from "./shared/validation.js";
+// Consolidated: this now resolves to the file that carries the structured
+// PropValidationError/PropValidationIssue contract. There is only one
+// validation implementation in the package -- the old schema.parse()-based
+// one (which threw raw, unshaped ZodErrors) has been deleted, not kept
+// alongside this as a second path.
+export {
+  defineSchema,
+  validateProps,
+  PropValidationError,
+} from "./shared/validation.js";
+export type {
+  PropSchema,
+  PropValidationIssue,
+} from "./shared/validation.js";
 
 export {
   getRenderer,
   resetRenderer,
   renderToPixels,
   measureTemplate,
+  renderAutoSized,
 } from "./node/renderer.js";
 export type { RenderOutput } from "./node/renderer.js";

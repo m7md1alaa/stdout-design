@@ -30,6 +30,7 @@
       "persistent": true
     },
     "@stdout-design/dev-server#serve": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },

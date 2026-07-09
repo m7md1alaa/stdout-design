@@ -19,11 +19,13 @@
     "lint": "ultracite check"
   },
   "dependencies": {
-    "takumi-js": "^1.8.6",
+    "takumi-js": "^2.0.0",
+    "@takumi-rs/core": "^2.0.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
+    "@takumi-rs/wasm": "^2.0.0",
     "tsdown": "catalog:",
     "typescript": "catalog:"
   }
