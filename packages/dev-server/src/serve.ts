@@ -1,13 +1,15 @@
-import { resolve } from "node:path";
+import path from "node:path";
 
 import { ErrorCode, logError } from "@stdout-design/core";
 
 import { createDevServer } from "./index.js";
 
+const { resolve } = path;
+
 const rootDir =
   process.argv[2] ?? resolve(import.meta.dir, "../../../examples");
 
-const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+const port = Math.trunc(Number(process.env.PORT ?? "3000"));
 
 const server = await createDevServer({
   port,

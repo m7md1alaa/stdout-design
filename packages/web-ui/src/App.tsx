@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 import { Canvas } from "./components/canvas";
 import { ErrorBoundary } from "./components/error-boundary";
@@ -12,7 +12,7 @@ import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
 import type { RenderAdapter } from "./lib/renderer";
 
-import "./App.css";
+import "./app.css";
 
 const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
 
@@ -58,7 +58,12 @@ const App = () => {
   // when no prop value actually changed.
   const [reloadToken, setReloadToken] = useState(0);
 
-  const currentTemplate = templates.find((t) => t.id === selectedTemplate);
+  const effectiveTemplateId = selectedTemplate ?? templates[0]?.id ?? null;
+  const effectivePresetId =
+    selectedPreset ?? defaultPreset ?? presets[0]?.id ?? null;
+
+  const currentTemplate = templates.find((t) => t.id === effectiveTemplateId);
+  const currentPreset = presets.find((p) => p.id === effectivePresetId) ?? null;
 
   useSSE(
     useCallback(
@@ -69,29 +74,14 @@ const App = () => {
         }
         if (
           event.type === "template" &&
-          event.templateId === selectedTemplate
+          event.templateId === effectiveTemplateId
         ) {
           setReloadToken((t) => t + 1);
         }
       },
-      [reload, selectedTemplate]
+      [reload, effectiveTemplateId]
     )
   );
-
-  useEffect(() => {
-    const first = templates?.[0];
-    if (first && !selectedTemplate) {
-      setSelectedTemplate(first.id);
-      setPropValues(computeDefaultProps(first));
-    }
-  }, [templates, selectedTemplate]);
-
-  useEffect(() => {
-    const first = presets?.[0];
-    if (first && !selectedPreset) {
-      setSelectedPreset(defaultPreset ?? first.id);
-    }
-  }, [presets, defaultPreset, selectedPreset]);
 
   const handleTemplateChange = useCallback(
     (id: string) => {
@@ -106,15 +96,13 @@ const App = () => {
     setPropValues((prev) => ({ ...prev, [path]: value }));
   }, []);
 
-  const currentPreset = presets.find((p) => p.id === selectedPreset) ?? null;
-
   const handleExport = useCallback(async () => {
-    if (!(selectedTemplate && currentPreset)) {
+    if (!(effectiveTemplateId && effectivePresetId)) {
       return;
     }
 
-    const result = await renderAdapter.render(selectedTemplate, propValues, {
-      preset: currentPreset.id,
+    const result = await renderAdapter.render(effectiveTemplateId, propValues, {
+      preset: effectivePresetId,
     });
 
     if (!result.ok) {
@@ -124,13 +112,13 @@ const App = () => {
     const url = URL.createObjectURL(result.blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${selectedTemplate}-${currentPreset.id}.png`;
+    a.download = `${effectiveTemplateId}-${effectivePresetId}.png`;
     a.click();
     // Safe to revoke immediately after a synchronous click() triggers the
     // download -- unlike Canvas's preview URL, this one has no ongoing
     // <img> consumer that needs it to stay alive.
     URL.revokeObjectURL(url);
-  }, [selectedTemplate, currentPreset, propValues]);
+  }, [effectiveTemplateId, effectivePresetId, propValues]);
 
   if (loading) {
     return (
@@ -143,7 +131,7 @@ const App = () => {
   if (error) {
     return (
       <div className="app-error">
-        <p>Couldn't load the studio: {error}</p>
+        <p>Couldn&apos;t load the studio: {error}</p>
         <button type="button" onClick={() => reload()}>
           Retry
         </button>
@@ -162,7 +150,7 @@ const App = () => {
 
           <TemplateSelector
             templates={templates}
-            selected={selectedTemplate}
+            selected={effectiveTemplateId}
             onChange={handleTemplateChange}
           />
 
@@ -181,7 +169,7 @@ const App = () => {
               type="button"
               className="btn-export"
               onClick={handleExport}
-              disabled={!selectedTemplate || !currentPreset}
+              disabled={!effectiveTemplateId || !currentPreset}
             >
               Export PNG
             </button>
@@ -194,8 +182,10 @@ const App = () => {
               <button
                 key={preset.id}
                 type="button"
-                className={`preset-tab ${selectedPreset === preset.id ? "active" : ""}`}
-                onClick={() => setSelectedPreset(preset.id)}
+                className={`preset-tab ${effectivePresetId === preset.id ? "active" : ""}`}
+                onClick={() => {
+                  setSelectedPreset(preset.id);
+                }}
               >
                 <span className="preset-tab-name">{preset.id}</span>
                 <span className="preset-tab-dims">
@@ -206,7 +196,7 @@ const App = () => {
           </div>
 
           <Canvas
-            templateId={selectedTemplate}
+            templateId={effectiveTemplateId}
             props={propValues}
             preset={currentPreset}
             reloadToken={reloadToken}

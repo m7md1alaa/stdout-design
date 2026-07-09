@@ -228,8 +228,7 @@ Some tools expect dependencies in specific locations. Use package manager config
 
 ```yaml
 # .npmrc (pnpm)
-public-hoist-pattern[]=*eslint*
-public-hoist-pattern[]=*prettier*
+public-hoist-pattern[]=*eslint* public-hoist-pattern[]=*prettier*
 ```
 
 ## Lockfile

@@ -95,17 +95,17 @@ Configure remote caching.
 }
 ```
 
-| Option          | Default                | Description                                            |
-| --------------- | ---------------------- | ------------------------------------------------------ |
-| `enabled`       | `true`                 | Enable/disable remote caching                          |
-| `signature`     | `false`                | Sign artifacts with `TURBO_REMOTE_CACHE_SIGNATURE_KEY` |
-| `preflight`     | `false`                | Send OPTIONS request before cache requests             |
-| `timeout`       | `30`                   | Timeout in seconds for cache operations                |
-| `uploadTimeout` | `60`                   | Timeout in seconds for uploads                         |
-| `apiUrl`        | `"https://vercel.com"` | Remote cache API endpoint                              |
-| `loginUrl`      | `"https://vercel.com"` | Login endpoint                                         |
-| `teamId`        | -                      | Team ID (must start with `team_`)                      |
-| `teamSlug`      | -                      | Team slug for querystring                              |
+| Option | Default | Description |
+| --- | --- | --- |
+| `enabled` | `true` | Enable/disable remote caching |
+| `signature` | `false` | Sign artifacts with `TURBO_REMOTE_CACHE_SIGNATURE_KEY` |
+| `preflight` | `false` | Send OPTIONS request before cache requests |
+| `timeout` | `30` | Timeout in seconds for cache operations |
+| `uploadTimeout` | `60` | Timeout in seconds for uploads |
+| `apiUrl` | `"https://vercel.com"` | Remote cache API endpoint |
+| `loginUrl` | `"https://vercel.com"` | Login endpoint |
+| `teamId` | - | Team ID (must start with `team_`) |
+| `teamSlug` | - | Team slug for querystring |
 
 See https://turborepo.dev/docs/core-concepts/remote-caching for setup.
 
@@ -179,11 +179,11 @@ When enabled:
 
 **Key rename mapping:**
 
-| Old (top-level)                                                                                                                  | New (`global.`)           |
-| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| `globalDependencies`                                                                                                             | `inputs`                  |
-| `globalEnv`                                                                                                                      | `env`                     |
-| `globalPassThroughEnv`                                                                                                           | `passThroughEnv`          |
+| Old (top-level) | New (`global.`) |
+| --- | --- |
+| `globalDependencies` | `inputs` |
+| `globalEnv` | `env` |
+| `globalPassThroughEnv` | `passThroughEnv` |
 | `ui`, `envMode`, `cacheDir`, `daemon`, `concurrency`, `noUpdateNotifier`, `dangerouslyDisablePackageManagerCheck`, `remoteCache` | Same names under `global` |
 
 **Behavior change for `global.inputs`:**

@@ -51,6 +51,7 @@ export class ErrorBoundary extends Component<
   }
 
   handleReset = (): void => {
+    // oxlint-disable-next-line react/no-set-state
     this.setState({ error: null });
   };
 

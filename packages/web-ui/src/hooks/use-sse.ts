@@ -18,7 +18,10 @@ export interface SSEReloadEvent {
  */
 export const useSSE = (onReload: (event: SSEReloadEvent) => void) => {
   const onReloadRef = useRef(onReload);
-  onReloadRef.current = onReload;
+
+  useEffect(() => {
+    onReloadRef.current = onReload;
+  }, [onReload]);
 
   useEffect(() => {
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;

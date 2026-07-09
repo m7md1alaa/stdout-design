@@ -254,7 +254,7 @@ export class RenderCache {
       // Size mismatch implies a partial/corrupt write (e.g. disk full
       // mid-write in a previous process). Don't trust it.
       db.run("DELETE FROM stage_b_entries WHERE hash = ?", [key]);
-      await this.tryUnlink(filePath);
+      await RenderCache.tryUnlink(filePath);
       return null;
     }
 
@@ -284,7 +284,7 @@ export class RenderCache {
     // truncated.
     const tmpPath = `${filePath}.tmp-${process.pid}-${now}`;
     await writeFile(tmpPath, bytes);
-    await this.atomicRename(tmpPath, filePath);
+    await RenderCache.atomicRename(tmpPath, filePath);
 
     const existing = db
       .query<Pick<StageBRow, "created_at">, [string]>(
@@ -402,6 +402,7 @@ export class RenderCache {
         return;
       }
       remaining -= row.size_bytes;
+      // oxlint-disable-next-line no-await-in-loop
       await this.deleteEntryFile(row);
     }
   }
@@ -429,7 +430,7 @@ export class RenderCache {
     return freed;
   }
 
-  private async tryUnlink(filePath: string): Promise<void> {
+  private static async tryUnlink(filePath: string): Promise<void> {
     try {
       await unlink(filePath);
     } catch (error) {
@@ -440,7 +441,7 @@ export class RenderCache {
     }
   }
 
-  private async atomicRename(from: string, to: string): Promise<void> {
+  private static async atomicRename(from: string, to: string): Promise<void> {
     try {
       await rename(from, to);
     } catch (error) {

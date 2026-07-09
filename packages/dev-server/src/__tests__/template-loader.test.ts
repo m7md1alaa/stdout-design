@@ -1,9 +1,10 @@
 import { beforeAll, afterAll, it, expect } from "bun:test";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import path from "node:path";
 
 import { TemplateLoader } from "../template-loader.js";
+
+const { join } = path;
 
 const testProjectDir = join(import.meta.dir, "fixtures", "test-project");
 
@@ -53,5 +54,5 @@ it("loads a template with zod props schema successfully", async () => {
   const card = infos.find((t) => t.id === "test-card");
 
   expect(card).toBeDefined();
-  expect(card!.status).toBe("ok");
+  expect(card?.status).toBe("ok");
 });

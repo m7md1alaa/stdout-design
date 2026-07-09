@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { API_ROUTES } from "../constants";
 
@@ -51,8 +51,6 @@ export const useTemplates = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const [templatesRes, configRes] = await Promise.all([
         fetch(API_ROUTES.templates),
@@ -66,9 +64,10 @@ export const useTemplates = () => {
 
       setTemplates(templatesData);
       setConfig(configData);
-    } catch (error) {
+      // oxlint-disable-next-line unicorn/catch-error-name
+    } catch (cause) {
       const message =
-        error instanceof Error ? error.message : "Failed to load studio data";
+        cause instanceof Error ? cause.message : "Failed to load studio data";
       console.error(message);
       setError(message);
     } finally {
@@ -76,7 +75,18 @@ export const useTemplates = () => {
     }
   }, []);
 
+  const reload = useCallback(() => {
+    setLoading(true);
+    fetchData();
+  }, [fetchData]);
+
+  const initialisedRef = useRef(false);
+
   useEffect(() => {
+    if (initialisedRef.current) {
+      return;
+    }
+    initialisedRef.current = true;
     fetchData();
   }, [fetchData]);
 
@@ -89,7 +99,7 @@ export const useTemplates = () => {
     loading,
     locales: config?.locales ?? [],
     presets: config?.presets ?? [],
-    reload: fetchData,
+    reload,
     templates,
   };
 };

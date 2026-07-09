@@ -876,71 +876,71 @@ With `futureFlags.globalConfiguration`, the same config moves global settings un
 
 ### Configuration
 
-| File                                                                            | Purpose                                                                   |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [configuration/RULE.md](./references/configuration/RULE.md)                     | turbo.json overview, Package Configurations                               |
-| [configuration/tasks.md](./references/configuration/tasks.md)                   | dependsOn, outputs, inputs, env, cache, persistent                        |
+| File | Purpose |
+| --- | --- |
+| [configuration/RULE.md](./references/configuration/RULE.md) | turbo.json overview, Package Configurations |
+| [configuration/tasks.md](./references/configuration/tasks.md) | dependsOn, outputs, inputs, env, cache, persistent |
 | [configuration/global-options.md](./references/configuration/global-options.md) | globalEnv, globalDependencies, global key, futureFlags, cacheDir, envMode |
-| [configuration/gotchas.md](./references/configuration/gotchas.md)               | Common configuration mistakes                                             |
+| [configuration/gotchas.md](./references/configuration/gotchas.md) | Common configuration mistakes |
 
 ### Caching
 
-| File                                                            | Purpose                                      |
-| --------------------------------------------------------------- | -------------------------------------------- |
-| [caching/RULE.md](./references/caching/RULE.md)                 | How caching works, hash inputs               |
+| File | Purpose |
+| --- | --- |
+| [caching/RULE.md](./references/caching/RULE.md) | How caching works, hash inputs |
 | [caching/remote-cache.md](./references/caching/remote-cache.md) | Vercel Remote Cache, self-hosted, login/link |
-| [caching/gotchas.md](./references/caching/gotchas.md)           | Debugging cache misses, --summarize, --dry   |
+| [caching/gotchas.md](./references/caching/gotchas.md) | Debugging cache misses, --summarize, --dry |
 
 ### Environment Variables
 
-| File                                                          | Purpose                                   |
-| ------------------------------------------------------------- | ----------------------------------------- |
-| [environment/RULE.md](./references/environment/RULE.md)       | env, globalEnv, passThroughEnv            |
-| [environment/modes.md](./references/environment/modes.md)     | Strict vs Loose mode, framework inference |
-| [environment/gotchas.md](./references/environment/gotchas.md) | .env files, CI issues                     |
+| File | Purpose |
+| --- | --- |
+| [environment/RULE.md](./references/environment/RULE.md) | env, globalEnv, passThroughEnv |
+| [environment/modes.md](./references/environment/modes.md) | Strict vs Loose mode, framework inference |
+| [environment/gotchas.md](./references/environment/gotchas.md) | .env files, CI issues |
 
 ### Filtering
 
-| File                                                        | Purpose                  |
-| ----------------------------------------------------------- | ------------------------ |
-| [filtering/RULE.md](./references/filtering/RULE.md)         | --filter syntax overview |
-| [filtering/patterns.md](./references/filtering/patterns.md) | Common filter patterns   |
+| File | Purpose |
+| --- | --- |
+| [filtering/RULE.md](./references/filtering/RULE.md) | --filter syntax overview |
+| [filtering/patterns.md](./references/filtering/patterns.md) | Common filter patterns |
 
 ### CI/CD
 
-| File                                                      | Purpose                         |
-| --------------------------------------------------------- | ------------------------------- |
-| [ci/RULE.md](./references/ci/RULE.md)                     | General CI principles           |
-| [ci/github-actions.md](./references/ci/github-actions.md) | Complete GitHub Actions setup   |
-| [ci/vercel.md](./references/ci/vercel.md)                 | Vercel deployment, turbo-ignore |
-| [ci/patterns.md](./references/ci/patterns.md)             | --affected, caching strategies  |
+| File | Purpose |
+| --- | --- |
+| [ci/RULE.md](./references/ci/RULE.md) | General CI principles |
+| [ci/github-actions.md](./references/ci/github-actions.md) | Complete GitHub Actions setup |
+| [ci/vercel.md](./references/ci/vercel.md) | Vercel deployment, turbo-ignore |
+| [ci/patterns.md](./references/ci/patterns.md) | --affected, caching strategies |
 
 ### CLI
 
-| File                                            | Purpose                                       |
-| ----------------------------------------------- | --------------------------------------------- |
-| [cli/RULE.md](./references/cli/RULE.md)         | turbo run basics                              |
+| File | Purpose |
+| --- | --- |
+| [cli/RULE.md](./references/cli/RULE.md) | turbo run basics |
 | [cli/commands.md](./references/cli/commands.md) | turbo run flags, turbo-ignore, other commands |
 
 ### Best Practices
 
-| File                                                                          | Purpose                                                         |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [best-practices/RULE.md](./references/best-practices/RULE.md)                 | Monorepo best practices overview                                |
-| [best-practices/structure.md](./references/best-practices/structure.md)       | Repository structure, workspace config, TypeScript/ESLint setup |
-| [best-practices/packages.md](./references/best-practices/packages.md)         | Creating internal packages, JIT vs Compiled, exports            |
-| [best-practices/dependencies.md](./references/best-practices/dependencies.md) | Dependency management, installing, version sync                 |
+| File | Purpose |
+| --- | --- |
+| [best-practices/RULE.md](./references/best-practices/RULE.md) | Monorepo best practices overview |
+| [best-practices/structure.md](./references/best-practices/structure.md) | Repository structure, workspace config, TypeScript/ESLint setup |
+| [best-practices/packages.md](./references/best-practices/packages.md) | Creating internal packages, JIT vs Compiled, exports |
+| [best-practices/dependencies.md](./references/best-practices/dependencies.md) | Dependency management, installing, version sync |
 
 ### Watch Mode
 
-| File                                        | Purpose                                         |
-| ------------------------------------------- | ----------------------------------------------- |
+| File | Purpose |
+| --- | --- |
 | [watch/RULE.md](./references/watch/RULE.md) | turbo watch, interruptible tasks, dev workflows |
 
 ### Boundaries (Experimental)
 
-| File                                                  | Purpose                                               |
-| ----------------------------------------------------- | ----------------------------------------------------- |
+| File | Purpose |
+| --- | --- |
 | [boundaries/RULE.md](./references/boundaries/RULE.md) | Enforce package isolation, tag-based dependency rules |
 
 ## Source Documentation

@@ -97,6 +97,7 @@ export const createDevServer = async (options: DevServerOptions) => {
       await s.writeSSE({ data: "{}", event: "connected" });
 
       while (!c.req.raw.signal.aborted) {
+        // oxlint-disable-next-line no-await-in-loop
         await s.write(": keepalive\n\n");
         // oxlint-disable-next-line no-await-in-loop
         await s.sleep(15_000);

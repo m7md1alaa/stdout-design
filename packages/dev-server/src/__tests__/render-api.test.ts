@@ -1,9 +1,11 @@
 import { afterAll, beforeAll, expect, it } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 import type { DevServer } from "../index.js";
 import { createDevServer } from "../index.js";
+
+const { join } = path;
 
 const testProjectDir = join(import.meta.dir, "fixtures", "render-test-project");
 

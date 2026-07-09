@@ -152,13 +152,13 @@ Studio treats AI agents as first-class citizens, not an afterthought:
 - **Agent-readable output manifests:** Batch renders generate `studio-manifest.json`. This gives the agent a structured, programmatically readable map of exactly where every generated asset lives, allowing it to instantly pipe those paths into an auto-tweet script, PR description, or changelog post.
 - **Feature parity across all three interfaces (UI/CLI/MCP):**
 
-| Capability       | studio dev (Live UI)           | studio render / capture (CLI)        | MCP (Agent)                          |
-| ---------------- | ------------------------------ | ------------------------------------ | ------------------------------------ |
-| Prop Editing     | Visual sliders & color pickers | Terminal flags (--prop)              | JSON object payloads                 |
-| Batch Processing | Dropdown toggle for data rows  | --data posts.csv or --script flow.ts | render_batch / capture executors     |
-| Validation       | Red error boundaries on canvas | Strict exit code (1)                 | Error strings returned to LLM        |
-| Multi-Targeting  | Side-by-side visual matrix     | --preset all                         | presets: ["all"]                     |
-| Video Modes      | Live preview of capture method | --native or --headless               | capture_mode: "native" \| "headless" |
+| Capability | studio dev (Live UI) | studio render / capture (CLI) | MCP (Agent) |
+| --- | --- | --- | --- |
+| Prop Editing | Visual sliders & color pickers | Terminal flags (--prop) | JSON object payloads |
+| Batch Processing | Dropdown toggle for data rows | --data posts.csv or --script flow.ts | render_batch / capture executors |
+| Validation | Red error boundaries on canvas | Strict exit code (1) | Error strings returned to LLM |
+| Multi-Targeting | Side-by-side visual matrix | --preset all | presets: ["all"] |
+| Video Modes | Live preview of capture method | --native or --headless | capture_mode: "native" \| "headless" |
 
 ### Tier 5 — Polish / ecosystem
 

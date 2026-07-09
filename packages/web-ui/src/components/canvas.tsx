@@ -72,7 +72,6 @@ export const Canvas = ({
 
   useEffect(() => {
     if (!(templateId && preset)) {
-      setRender(null);
       return;
     }
 

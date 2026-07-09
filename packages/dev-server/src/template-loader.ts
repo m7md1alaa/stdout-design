@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import react from "@vitejs/plugin-react";
@@ -10,6 +10,15 @@ import { ViteNodeRunner } from "vite-node/client";
 import { ViteNodeServer } from "vite-node/server";
 import { installSourcemapsSupport } from "vite-node/source-map";
 import { z } from "zod";
+
+import { TemplateConfigError } from "./template-config-error.js";
+import {
+  summarizeZodIssues,
+  validateTemplateModule,
+  zodToJsonSchemaShape,
+} from "./template-helpers.js";
+
+const { resolve } = path;
 
 /**
  * Loads templates and studio.config.ts via a real Vite SSR module graph
@@ -100,22 +109,11 @@ interface RegisteredTemplate {
   state: TemplateLoadState | null;
 }
 
-export class TemplateConfigError extends Error {
-  constructor(
-    message: string,
-    public readonly issues: z.ZodIssue[]
-  ) {
-    super(message);
-    this.name = "TemplateConfigError";
-  }
-}
-
 export class TemplateLoader {
   private readonly rootDir: string;
   private readonly configPath: string;
 
   private viteServer: ViteDevServer | null = null;
-  private nodeServer: ViteNodeServer | null = null;
   private runner: ViteNodeRunner | null = null;
 
   private config: StudioConfig | null = null;
@@ -150,14 +148,14 @@ export class TemplateLoader {
     // Vite's own dependency-graph invalidation (configFileDependencies,
     // moduleGraph) is what we lean on for "did this file or anything it
     // imports change" -- we don't reimplement that ourselves.
-    this.nodeServer = new ViteNodeServer(this.viteServer);
+    const nodeServer = new ViteNodeServer(this.viteServer);
     installSourcemapsSupport({
-      getSourceMap: (source) => this.nodeServer!.getSourceMap(source),
+      getSourceMap: (source) => nodeServer.getSourceMap(source),
     });
 
     this.runner = new ViteNodeRunner({
-      fetchModule: (id) => this.nodeServer!.fetchModule(id),
-      resolveId: (id, importer) => this.nodeServer!.resolveId(id, importer),
+      fetchModule: (id) => nodeServer.fetchModule(id),
+      resolveId: (id, importer) => nodeServer.resolveId(id, importer),
       root: this.viteServer.config.root,
     });
 
@@ -168,7 +166,6 @@ export class TemplateLoader {
     await this.viteServer?.close();
     this.started = false;
     this.viteServer = null;
-    this.nodeServer = null;
     this.runner = null;
   }
 
@@ -194,6 +191,7 @@ export class TemplateLoader {
     return this.config;
   }
 
+  // oxlint-disable-next-line eslint/require-await
   async getConfig(): Promise<StudioConfig> {
     if (!this.config) {
       return this.loadConfig();
@@ -240,13 +238,14 @@ export class TemplateLoader {
     }
 
     await this.loadOne(id);
-    return this.toTemplateInfo(entry);
+    return TemplateLoader.toTemplateInfo(entry);
   }
 
   /**
    * Full reload: config + every template. Used when studio.config.ts
    * itself changes, since template registration may have changed.
    */
+  // oxlint-disable-next-line eslint/require-await
   async reloadAll(): Promise<TemplateInfo[]> {
     this.invalidateModule(this.configPath);
     return this.loadAll();
@@ -262,12 +261,12 @@ export class TemplateLoader {
 
   getTemplateInfo(id: string): TemplateInfo | null {
     const entry = this.templates.get(id);
-    return entry ? this.toTemplateInfo(entry) : null;
+    return entry ? TemplateLoader.toTemplateInfo(entry) : null;
   }
 
   getAllTemplateInfo(): TemplateInfo[] {
     return [...this.templates.values()].map((entry) =>
-      this.toTemplateInfo(entry)
+      TemplateLoader.toTemplateInfo(entry)
     );
   }
 
@@ -324,7 +323,7 @@ export class TemplateLoader {
     }
   }
 
-  private async importFresh(modulePath: string): Promise<unknown> {
+  private importFresh(modulePath: string): Promise<unknown> {
     if (!this.runner) {
       throw new Error(
         "TemplateLoader.start() must be called before loading modules."
@@ -346,7 +345,7 @@ export class TemplateLoader {
     this.runner.moduleCache.delete(modulePath);
   }
 
-  private toTemplateInfo(entry: RegisteredTemplate): TemplateInfo {
+  private static toTemplateInfo(entry: RegisteredTemplate): TemplateInfo {
     if (!entry.state) {
       return {
         contentHash: entry.contentHash,
@@ -383,110 +382,4 @@ export class TemplateLoader {
       throw new Error("TemplateLoader.start() must be called before use.");
     }
   }
-}
-
-// ---------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------
-
-function isZodObject(
-  schema: unknown
-): schema is z.ZodObject<Record<string, z.ZodTypeAny>> {
-  return (
-    typeof schema === "object" &&
-    schema !== null &&
-    "shape" in schema &&
-    typeof (schema as Record<string, unknown>).shape === "object" &&
-    "parse" in schema &&
-    typeof (schema as Record<string, unknown>).parse === "function"
-  );
-}
-
-function validateTemplateModule(
-  mod: unknown,
-  templateId: string
-): TemplateModule {
-  const candidate = mod as Partial<TemplateModule> | null | undefined;
-
-  if (!candidate || typeof candidate.default !== "function") {
-    throw new Error(
-      `Template "${templateId}" must have a default export that is a component function.`
-    );
-  }
-
-  if (!isZodObject(candidate.propsSchema)) {
-    throw new Error(
-      `Template "${templateId}" must export a "propsSchema" that is a z.object({...}) describing its props.`
-    );
-  }
-
-  return candidate as TemplateModule;
-}
-
-function summarizeZodIssues(issues: z.ZodIssue[]): string {
-  return issues
-    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
-    .join("; ");
-}
-
-/**
- * Converts a ZodObject schema to a JSON-Schema-shaped representation for
- * transport to the web UI (prop panel) and MCP clients.
- */
-function zodToJsonSchemaShape(schema: z.ZodTypeAny): Record<string, unknown> {
-  if (typeof schema !== "object" || !schema || !("shape" in schema)) {
-    return {};
-  }
-
-  const zodObject = schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
-  const properties: Record<string, Record<string, unknown>> = {};
-
-  for (const [key, field] of Object.entries(zodObject.shape)) {
-    const prop: Record<string, unknown> = {};
-
-    const defaultValue = (field._def as { defaultValue?: unknown })
-      ?.defaultValue;
-    if (defaultValue !== undefined) {
-      prop.default = defaultValue;
-    }
-
-    if (field.description) {
-      prop.description = field.description;
-    }
-
-    let base = field as z.ZodTypeAny & { unwrap?: () => z.ZodTypeAny };
-    while (
-      base.unwrap &&
-      (base.type === "default" || base.type === "optional")
-    ) {
-      base = base.unwrap() as z.ZodTypeAny & { unwrap?: () => z.ZodTypeAny };
-    }
-
-    switch (base.type) {
-      case "string": {
-        prop.type = "string";
-        break;
-      }
-      case "number": {
-        prop.type = "number";
-        break;
-      }
-      case "boolean": {
-        prop.type = "boolean";
-        break;
-      }
-      case "array": {
-        prop.type = "array";
-        const element = (base._def as { element?: { type?: string } })?.element;
-        if (element) {
-          prop.items = { type: element.type ?? "string" };
-        }
-        break;
-      }
-    }
-
-    properties[key] = prop;
-  }
-
-  return { properties };
 }

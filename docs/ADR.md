@@ -44,10 +44,10 @@ Per Takumi's own performance guidance: **one `Renderer` instance, reused across 
 
 ### 1.4 Two-tier responsiveness in `studio dev`
 
-| Tier | Call                                      | Cost                           | Trigger                                                                              |
-| ---- | ----------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| 1    | `renderer.measure(node, { stylesheets })` | Cheap, no rasterization        | Every prop change, no debounce — instant dimension/layout feedback                   |
-| 2    | `renderer.render(...)`                    | Real cost, cache-checked first | Debounced (default 200ms, per-template configurable), gives the actual pixel preview |
+| Tier | Call | Cost | Trigger |
+| --- | --- | --- | --- |
+| 1 | `renderer.measure(node, { stylesheets })` | Cheap, no rasterization | Every prop change, no debounce — instant dimension/layout feedback |
+| 2 | `renderer.render(...)` | Real cost, cache-checked first | Debounced (default 200ms, per-template configurable), gives the actual pixel preview |
 
 This avoids paying full render cost on every keystroke while keeping layout feedback (e.g. "this card will be 1080×1410, not square, given current text length") truly instant.
 

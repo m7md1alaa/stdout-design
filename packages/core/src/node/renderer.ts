@@ -44,12 +44,7 @@ export const getRenderer = (config?: ConstructRendererOptions): Renderer => {
     return activeRenderer;
   }
 
-  activeRenderer = new RendererImpl({
-    fonts: config?.fonts,
-    loadDefaultFonts:
-      config?.loadDefaultFonts ?? (config?.fonts?.length ? false : undefined),
-    persistentImages: config?.persistentImages,
-  });
+  activeRenderer = new RendererImpl();
   activeConfigFingerprint = fingerprint;
 
   return activeRenderer;
