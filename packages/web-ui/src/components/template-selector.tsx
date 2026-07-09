@@ -38,4 +38,4 @@ export const TemplateSelector = ({
       </select>
     </div>
   );
-}
+};

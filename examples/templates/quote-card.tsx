@@ -3,16 +3,22 @@ import { z } from "zod";
 export const templateId = "quote-card" as const;
 
 export const propsSchema = z.object({
-  quote: z.string().min(1).describe("The quoted text"),
   author: z.string().min(1).describe("Name of the person being quoted"),
-  role: z.string().default("").describe("Role or title of the author"),
   avatarUrl: z.string().url().describe("URL to the author's avatar image"),
   background: z.string().default("#1e1b4b").describe("Background color"),
+  quote: z.string().min(1).describe("The quoted text"),
+  role: z.string().default("").describe("Role or title of the author"),
 });
 
 export type Props = z.infer<typeof propsSchema>;
 
-export default function QuoteCard({ quote, author, role, avatarUrl, background }: Props) {
+export default function QuoteCard({
+  quote,
+  author,
+  role,
+  avatarUrl,
+  background,
+}: Props) {
   return (
     <div
       tw="flex flex-col items-center justify-center w-full h-full p-16"

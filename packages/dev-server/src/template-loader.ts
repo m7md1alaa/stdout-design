@@ -142,6 +142,7 @@ export class TemplateLoader {
       optimizeDeps: { noDiscovery: true },
       root: this.rootDir,
       server: { hmr: false, middlewareMode: true },
+      ssr: { optimizeDeps: { include: ["zod"] } },
     });
 
     // Vite's own dependency-graph invalidation (configFileDependencies,
@@ -310,7 +311,8 @@ export class TemplateLoader {
       const templateModule = validateTemplateModule(mod, id);
       entry.state = { module: templateModule, status: "ok" };
     } catch (error) {
-      const error = error instanceof Error ? error : new Error(String(error));
+      const error =
+        error instanceof Error ? error : new Error(String(error));
       entry.state = { error, status: "error" };
     }
   }

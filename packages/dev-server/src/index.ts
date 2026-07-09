@@ -1,5 +1,3 @@
-import { setTimeout as sleep } from "node:timers/promises";
-
 import {
   compileTemplate,
   renderToPixels,
@@ -9,7 +7,7 @@ import {
 } from "@stdout-design/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { stream as streamSSE } from "hono/streaming";
+import { streamSSE } from "hono/streaming";
 import { createElement } from "react";
 import type React from "react";
 
@@ -91,16 +89,16 @@ export const createDevServer = async (options: DevServerOptions) => {
   app.get("/events", (c) =>
     streamSSE(c, async (s) => {
       const unsubscribe = fileWatcher.onEvent((event) => {
-        s.write(`event: reload\ndata: ${JSON.stringify(event)}\n\n`);
+        s.writeSSE({ data: JSON.stringify(event), event: "reload" });
       });
 
       s.onAbort(unsubscribe);
-      s.write(`event: connected\ndata: {}\n\n`);
+      await s.writeSSE({ data: "{}", event: "connected" });
 
       while (!c.req.raw.signal.aborted) {
-        s.write(": keepalive\n\n");
+        await s.write(": keepalive\n\n");
         // oxlint-disable-next-line no-await-in-loop
-        await sleep(15_000);
+        await s.sleep(15_000);
       }
     })
   );

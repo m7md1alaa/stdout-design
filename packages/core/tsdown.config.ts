@@ -1,11 +1,11 @@
-import { defineConfig } from 'tsdown'
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
   clean: true,
   deps: {
-    neverBundle: ['bun:sqlite'],
+    neverBundle: ["bun:sqlite"],
   },
   dts: true,
-  entry: ['./src/index.ts'],
-  format: 'esm',
-})
+  entry: ["./src/index.ts"],
+  format: "esm",
+});
