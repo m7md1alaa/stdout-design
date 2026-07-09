@@ -7,7 +7,7 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "turbo run dev serve",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "check": "ultracite check",

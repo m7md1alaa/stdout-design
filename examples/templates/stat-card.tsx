@@ -3,10 +3,13 @@ import { z } from "zod";
 export const templateId = "stat-card" as const;
 
 export const propsSchema = z.object({
-  title: z.string().min(1).describe("The headline above the stat"),
-  stat: z.string().min(1).describe("The big number or value to display"),
+  accentColor: z
+    .string()
+    .default("#6366f1")
+    .describe("Accent color for the stat value"),
   label: z.string().default("").describe("Supporting text below the stat"),
-  accentColor: z.string().default("#6366f1").describe("Accent color for the stat value"),
+  stat: z.string().min(1).describe("The big number or value to display"),
+  title: z.string().min(1).describe("The headline above the stat"),
 });
 
 export type Props = z.infer<typeof propsSchema>;
