@@ -21,13 +21,10 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@stdout-design/batch-engine": "workspace:*",
     "@stdout-design/core": "workspace:*",
     "@stdout-design/dev-server": "workspace:*",
     "commander": "^15.0.0",
-    "csv-parse": "^7.0.1",
-    "ora": "^9.4.1",
-    "react": "catalog:"
+    "ora": "^9.4.1"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",

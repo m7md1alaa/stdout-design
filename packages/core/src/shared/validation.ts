@@ -59,8 +59,9 @@ const isObject = (
 const isArray = (schema: z.ZodTypeAny): schema is z.ZodArray<z.ZodTypeAny> =>
   schema.type === "array";
 
-const isEnum = (schema: z.ZodTypeAny): schema is z.ZodEnum<Record<string, string>> =>
-  schema.type === "enum";
+const isEnum = (
+  schema: z.ZodTypeAny
+): schema is z.ZodEnum<Record<string, string>> => schema.type === "enum";
 
 const isUnion = (
   schema: z.ZodTypeAny

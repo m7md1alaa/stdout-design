@@ -1,5 +1,4 @@
-import type { Manifest } from "@stdout-design/batch-engine";
-import type { CacheStats } from "@stdout-design/core";
+import type { CacheStats, Manifest } from "@stdout-design/core";
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) {

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 
-import { logWarn } from "@stdout-design/core";
+import { logWarn } from "../shared/logger.js";
 
 export const ensureDir = async (dir: string): Promise<void> => {
   if (!existsSync(dir)) {

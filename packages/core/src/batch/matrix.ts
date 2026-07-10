@@ -1,5 +1,4 @@
-import type { Preset } from "@stdout-design/core";
-
+import type { Preset } from "../shared/types.js";
 import type { MatrixCell } from "./types.js";
 
 export interface MatrixLocaleInput {

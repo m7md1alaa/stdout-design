@@ -19,14 +19,6 @@
     "check-types:tsgo": {
       "dependsOn": ["^check-types:tsgo"]
     },
-    "@stdout-design/batch-engine#build": {
-      "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
-      "outputs": ["dist/**"]
-    },
-    "@stdout-design/batch-engine#dev": {
-      "cache": false,
-      "persistent": true
-    },
     "@stdout-design/cli#build": {
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]

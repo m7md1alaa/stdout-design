@@ -1,8 +1,6 @@
-import type {
-  CompiledTemplate,
-  Preset,
-  RenderCache,
-} from "@stdout-design/core";
+import type { RenderCache } from "../node/render-cache.js";
+import type { CompiledTemplate } from "../shared/render.js";
+import type { Preset } from "../shared/types.js";
 
 export type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
 

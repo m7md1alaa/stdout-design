@@ -46,3 +46,35 @@ export {
   renderAutoSized,
 } from "./node/renderer.js";
 export type { RenderOutput } from "./node/renderer.js";
+
+export { expandMatrix } from "./batch/matrix.js";
+export type {
+  MatrixInput,
+  MatrixLocaleInput,
+  DataRow,
+} from "./batch/matrix.js";
+
+export { renderOne } from "./batch/render-one.js";
+export type { RenderOneInput, RenderOneOutput } from "./batch/types.js";
+
+export { generateOutputFilename } from "./batch/naming.js";
+export type { NamingOptions } from "./batch/naming.js";
+
+export { writeManifest } from "./batch/manifest.js";
+export type { Manifest, ManifestEntry } from "./batch/types.js";
+
+export type { MatrixCell } from "./batch/types.js";
+
+export { renderComponent } from "./batch/single.js";
+export type { SingleInput, SingleOutput } from "./batch/single.js";
+
+export { runBatch } from "./batch/batch.js";
+export type { BatchInput, BatchOutput } from "./batch/batch.js";
+
+export {
+  loadConfig,
+  loadTemplate,
+  parseDataFile,
+  resolveLocales,
+} from "./batch/loaders.js";
+export type { LoadedTemplate } from "./batch/loaders.js";

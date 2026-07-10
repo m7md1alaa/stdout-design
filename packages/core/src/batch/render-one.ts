@@ -1,5 +1,5 @@
-import { renderToPixels, RenderCache } from "@stdout-design/core";
-
+import { RenderCache } from "../node/render-cache.js";
+import { renderToPixels } from "../node/renderer.js";
 import type { RenderOneInput, RenderOneOutput } from "./types.js";
 import { ensureDir, tryWriteFile } from "./utils.js";
 

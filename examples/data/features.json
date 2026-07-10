@@ -4,20 +4,26 @@
     "description": "Render your TSX components to pixels in milliseconds — no headless browser required.",
     "image": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=400&fit=crop",
     "tags": ["performance", "core"],
-    "background": "#0a0a0a"
+    "background": "#0a0a0a",
+    "step": 1,
+    "theme": "dark"
   },
   {
     "headline": "Multi-Platform Output",
     "description": "One template, every format you need — Instagram, X, Product Hunt, App Store.",
     "image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
     "tags": ["presets", "cross-platform"],
-    "background": "#0a0a0a"
+    "background": "#0a0a0a",
+    "step": 2,
+    "theme": "dark"
   },
   {
     "headline": "Agent-Ready MCP Server",
     "description": "Let AI agents generate, iterate, and batch-render marketing assets on command.",
     "image": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400&fit=crop",
     "tags": ["MCP", "AI", "automation"],
-    "background": "#0a0a0a"
+    "background": "#0a0a0a",
+    "step": 3,
+    "theme": "glass"
   }
 ]
