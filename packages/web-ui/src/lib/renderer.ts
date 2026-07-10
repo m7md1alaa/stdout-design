@@ -1,6 +1,12 @@
+export interface ValidationIssue {
+  path: string;
+  message: string;
+  code?: string;
+}
+
 export type RenderResult =
   | { ok: true; blob: Blob }
-  | { ok: false; error: string };
+  | { ok: false; error: string; issues?: ValidationIssue[] };
 
 export interface RenderAdapter {
   render: (

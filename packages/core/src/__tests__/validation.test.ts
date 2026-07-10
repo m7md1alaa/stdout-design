@@ -27,8 +27,9 @@ describe("defineSchema", () => {
 
 describe("PropValidationError", () => {
   it("sets the name and issues", () => {
-    const issues = [
+    const issues: PropValidationIssue[] = [
       {
+        code: "invalid_type",
         expected: "string",
         field: "title",
         message: "Expected string, received number",
@@ -45,14 +46,16 @@ describe("PropValidationError", () => {
   });
 
   it("formats multiple issues", () => {
-    const issues = [
+    const issues: PropValidationIssue[] = [
       {
+        code: "invalid_type",
         expected: "string",
         field: "title",
         message: "Required",
         received: "undefined",
       },
       {
+        code: "invalid_type",
         expected: "number",
         field: "count",
         message: "Required",
@@ -67,7 +70,7 @@ describe("PropValidationError", () => {
   });
 
   it("handles empty issues", () => {
-    const error = new PropValidationError([]);
+    const error = new PropValidationError([] as PropValidationIssue[]);
     expect(error.message).toBe("Invalid props: ");
     expect(error.issues).toEqual([]);
   });
@@ -215,5 +218,172 @@ describe("validateProps", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(PropValidationError);
     }
+  });
+
+  describe("context-aware messages", () => {
+    it("suggests .default({}) for nested object without default", () => {
+      const schema = z.object({
+        nested: z.object({
+          foo: z.string(),
+        }),
+      });
+      try {
+        validateProps(schema, {});
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("nested");
+        expect(issue?.message).toMatch(/\.default\(\{\}\)/u);
+        expect(issue?.code).toBe("invalid_type");
+        expect(issue?.suggestion).toMatch(/\.default\(\{\}\)/u);
+      }
+    });
+
+    it("suggests .default([]) for array without default", () => {
+      const schema = z.object({
+        tags: z.array(z.string()),
+      });
+      try {
+        validateProps(schema, {});
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("tags");
+        expect(issue?.message).toMatch(/\.default\(\[\]\)/u);
+        expect(issue?.code).toBe("invalid_type");
+        expect(issue?.suggestion).toMatch(/\.default\(\[\]\)/u);
+      }
+    });
+
+    it("lists valid values for enum fields", () => {
+      const schema = z.object({
+        role: z.enum(["admin", "user", "moderator"]),
+      });
+      try {
+        validateProps(schema, { role: "superadmin" });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("role");
+        expect(issue?.message).toBe("expected one of: admin, user, moderator");
+        expect(issue?.code).toBe("invalid_value");
+        expect(issue?.suggestion).toBe("use one of: admin, user, moderator");
+      }
+    });
+
+    it("mentions URL format for URL string fields", () => {
+      const schema = z.object({
+        image: z.string().url(),
+      });
+      try {
+        validateProps(schema, { image: "not-a-url" });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("image");
+        expect(issue?.message).toMatch(/URL/u);
+        expect(issue?.code).toBe("invalid_format");
+        expect(issue?.suggestion).toMatch(/URL/u);
+      }
+    });
+
+    it("shows minimum for too_small string", () => {
+      const schema = z.object({
+        name: z.string().min(3),
+      });
+      try {
+        validateProps(schema, { name: "ab" });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("name");
+        expect(issue?.message).toMatch(/at least 3/u);
+        expect(issue?.code).toBe("too_small");
+      }
+    });
+
+    it("describes unrecognized keys", () => {
+      const schema = z.object({ name: z.string() }).strict();
+      try {
+        validateProps(schema, { extraField: "oops", name: "hello" });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("");
+        expect(issue?.message).toMatch(/unexpected field/u);
+        expect(issue?.message).toMatch(/extraField/u);
+        expect(issue?.code).toBe("unrecognized_keys");
+      }
+    });
+
+    it("describes union type mismatch", () => {
+      const schema = z.object({
+        value: z.union([z.string(), z.number()]),
+      });
+      try {
+        validateProps(schema, { value: true });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("value");
+        expect(issue?.message).toMatch(/one of/u);
+        expect(issue?.code).toBe("invalid_union");
+      }
+    });
+
+    it("mentions email format for email fields", () => {
+      const schema = z.object({
+        email: z.string().email(),
+      });
+      try {
+        validateProps(schema, { email: "not-an-email" });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        const [issue] = issues;
+        expect(issue?.field).toBe("email");
+        expect(issue?.message).toMatch(/email/u);
+        expect(issue?.code).toBe("invalid_format");
+      }
+    });
+
+    it("enriches each issue when there are multiple", () => {
+      const schema = z.object({
+        name: z.string(),
+        tags: z.array(z.string()),
+      });
+      try {
+        validateProps(schema, { name: 42, tags: undefined });
+        expect.unreachable();
+      } catch (error) {
+        const { issues } = asPropValidationError(error);
+        expect(issues).toHaveLength(2);
+        for (const issue of issues) {
+          expect(issue.code).toBeTruthy();
+        }
+        const tagIssue = issues.find((i) => i.field === "tags");
+        expect(tagIssue?.message).toMatch(/\.default\(\[\]\)/u);
+      }
+    });
+
+    it("includes suggestions in the error message string", () => {
+      const schema = z.object({
+        nested: z.object({ foo: z.string() }),
+      });
+      try {
+        validateProps(schema, {});
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(PropValidationError);
+        expect((error as PropValidationError).message).toMatch(/Suggestion:/u);
+      }
+    });
   });
 });

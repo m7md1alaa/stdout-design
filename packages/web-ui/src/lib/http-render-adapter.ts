@@ -1,5 +1,19 @@
 import { logError } from "./logger";
-import type { RenderAdapter } from "./renderer";
+import type { RenderAdapter, ValidationIssue } from "./renderer";
+
+const parseIssues = (
+  json: Record<string, unknown>
+): ValidationIssue[] | undefined => {
+  const raw = json.issues;
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  return raw.map((issue: Record<string, unknown>) => ({
+    code: String(issue.code ?? ""),
+    message: String(issue.message ?? ""),
+    path: Array.isArray(issue.path) ? issue.path.join(".") : "",
+  }));
+};
 
 export const createHttpRenderAdapter = (baseUrl: string): RenderAdapter => {
   const render: RenderAdapter["render"] = async (
@@ -30,13 +44,15 @@ export const createHttpRenderAdapter = (baseUrl: string): RenderAdapter => {
 
       if (!response.ok) {
         let message = "Render failed";
+        let issues: ValidationIssue[] | undefined;
         try {
-          const json = (await response.json()) as { error?: string };
-          message = json.error ?? message;
+          const json = (await response.json()) as Record<string, unknown>;
+          message = String(json.error ?? message);
+          issues = parseIssues(json);
         } catch {
           // Response body wasn't JSON — use default message.
         }
-        return { error: message, ok: false };
+        return { error: message, issues, ok: false };
       }
 
       const blob = await response.blob();
