@@ -43,7 +43,7 @@ const applyLocale = async (
     localePath
   )) as Record<string, unknown>;
 
-  const merged = { ...props, locale };
+  const merged: Record<string, unknown> = { ...props, locale };
   for (const [key, value] of Object.entries(translations)) {
     if (Array.isArray(value) && Array.isArray(merged[key])) {
       merged[key] = value;

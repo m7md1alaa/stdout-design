@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
+import { logWarn } from "../shared/logger.js";
 import { createStageAKey, createStageBKey } from "./cache-keys.js";
 import { ConcurrencyLimiter } from "./concurrency-limiter.js";
 import { EvictionCoordinator } from "./eviction-coordinator.js";
@@ -141,7 +142,18 @@ export class RenderCache {
     const metadata = this.requireMetadata();
     const fsStore = this.requireFsStore();
 
-    const row = await metadata.getEntry(key);
+    let row;
+    try {
+      row = await metadata.getEntry(key);
+    } catch (error: unknown) {
+      logWarn("Stage B metadata read failed, attempting recovery", {
+        error: error instanceof Error ? error.message : String(error),
+        key,
+      });
+      await this.recoverMetadata();
+      return null;
+    }
+
     if (!row) {
       return null;
     }
@@ -156,11 +168,24 @@ export class RenderCache {
     if (bytes === null) {
       // FsStore already determined the file is missing, truncated, or
       // content-corrupted -- self-heal by forgetting the stale row.
-      await metadata.deleteEntry(key);
+      try {
+        await metadata.deleteEntry(key);
+      } catch {
+        // best-effort cleanup
+      }
       return null;
     }
 
-    await metadata.touchAccess(key);
+    try {
+      await metadata.touchAccess(key);
+    } catch (error: unknown) {
+      logWarn("Stage B touchAccess failed, attempting recovery", {
+        error: error instanceof Error ? error.message : String(error),
+        key,
+      });
+      await this.recoverMetadata();
+      // byte read still succeeded, so return the bytes
+    }
     return bytes;
   }
 
@@ -267,6 +292,12 @@ export class RenderCache {
       throw new Error("RenderCache.init() must be called before use.");
     }
     return this.metadata;
+  }
+
+  private async recoverMetadata(): Promise<void> {
+    this.metadata?.close();
+    this.metadata = new MetadataStore(this.cacheDir);
+    await this.metadata.init();
   }
 
   private requireFsStore(): FsStore {

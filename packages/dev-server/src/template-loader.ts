@@ -7,7 +7,6 @@ import { studioConfigSchema, zodToJsonSchemaShape } from "@stdout-design/core";
 import type { StudioConfig, TemplateModule } from "@stdout-design/core";
 import react from "@vitejs/plugin-react";
 import { createServer } from "vite";
-import type { ViteDevServer } from "vite";
 import { ViteNodeRunner } from "vite-node/client";
 import { ViteNodeServer } from "vite-node/server";
 import { installSourcemapsSupport } from "vite-node/source-map";
@@ -47,7 +46,8 @@ export class TemplateLoader {
   private readonly rootDir: string;
   private readonly configPath: string;
 
-  private viteServer: ViteDevServer | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private viteServer: any = null;
   private runner: ViteNodeRunner | null = null;
 
   private config: StudioConfig | null = null;

@@ -5,7 +5,8 @@ import type { ComponentType } from "react";
 import { createElement } from "react";
 
 import { RenderCache } from "../node/render-cache.js";
-import type { Font } from "../node/takumi-types-shim.js";
+import type { Font, FontDescriptor } from "../node/takumi-types-shim.js";
+import { logDebug } from "../shared/logger.js";
 import { compileTemplate } from "../shared/render.js";
 import {
   loadConfig,
@@ -18,6 +19,45 @@ import { expandMatrix } from "./matrix.js";
 import { generateOutputFilename } from "./naming.js";
 import { renderOne } from "./render-one.js";
 import type { Manifest } from "./types.js";
+
+const isFontDescriptor = (f: Font): f is FontDescriptor =>
+  typeof f === "object" && !(f instanceof Uint8Array);
+
+const resolveArabicFonts = async (
+  _locales: { id: string }[]
+): Promise<{ fonts: Font[]; fontFamilies: string[] }> => {
+  let fonts: Font[] = [];
+  let fontFamilies: string[] = [];
+
+  try {
+    fonts = await googleFonts([
+      { name: "Noto Sans Arabic", weight: [400, 700] },
+    ]);
+    fontFamilies = fonts
+      .filter(isFontDescriptor)
+      .map((f) => String(f.name ?? ""))
+      .filter(Boolean);
+    logDebug("googleFonts resolved", {
+      count: fonts.length,
+      hasData: fonts.filter(isFontDescriptor).map((f) => typeof f.data),
+      names: fonts.filter(isFontDescriptor).map((f) => f.name),
+    });
+  } catch (error) {
+    logDebug("googleFonts failed, using direct URL fallback", {
+      error: String(error),
+    });
+    fonts = [
+      {
+        data: new Uint8Array(0),
+        name: "Noto Sans Arabic",
+        weight: 400,
+      } as unknown as Font,
+    ];
+    fontFamilies = ["Noto Sans Arabic"];
+  }
+
+  return { fontFamilies, fonts };
+};
 
 export interface BatchInput {
   rootDir: string;
@@ -97,19 +137,29 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
   await cache.init();
 
   const arabicLocales = locales.filter((l) => l.id.startsWith("ar"));
+  logDebug("Arabic locale detection", {
+    arabicCount: arabicLocales.length,
+    localeIds: locales.map((l) => l.id),
+  });
+
   let fonts: Font[] = [];
   let fontFamilies: string[] | undefined;
   if (arabicLocales.length > 0) {
-    fonts = await googleFonts([
-      { name: "Noto Sans Arabic", weight: [400, 700] },
-    ]);
-    fontFamilies = ["Noto Sans Arabic"];
+    const { fonts: resolvedFonts, fontFamilies: resolvedFamilies } =
+      await resolveArabicFonts(locales);
+    fonts = resolvedFonts;
+    fontFamilies = resolvedFamilies;
   }
 
   const succeeded: Manifest["succeeded"] = [];
   const failed: Manifest["failed"] = [];
 
   const renderOptions = fonts.length > 0 ? { fontFamilies, fonts } : undefined;
+  logDebug("renderOptions before loop", {
+    fontFamilies,
+    fontsCount: fonts.length,
+    hasOptions: renderOptions !== undefined,
+  });
 
   try {
     // oxlint-disable eslint/no-await-in-loop

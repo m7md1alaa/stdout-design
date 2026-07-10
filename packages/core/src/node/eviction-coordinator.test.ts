@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { install as installFakeTimers } from "@sinonjs/fake-timers";
-import type { InstalledClock } from "@sinonjs/fake-timers";
+import type { Clock } from "@sinonjs/fake-timers";
 import lockfile from "proper-lockfile";
 
 import { EvictionCoordinator } from "./eviction-coordinator.js";
@@ -22,7 +22,7 @@ const rmDir = (dir: string): void =>
 // ---------------------------------------------------------------------
 
 describe("EvictionCoordinator: debounce behavior (fake timers)", () => {
-  let clock: InstalledClock;
+  let clock: Clock;
   let dir: string;
 
   beforeEach(() => {

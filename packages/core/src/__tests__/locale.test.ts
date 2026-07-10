@@ -58,10 +58,14 @@ describe("expandMatrix locale injection", () => {
     });
 
     expect(cells).toHaveLength(2);
-    expect(cells[0].locale).toBe("en");
-    expect(cells[0].props.locale).toBe("en");
-    expect(cells[1].locale).toBe("ar");
-    expect(cells[1].props.locale).toBe("ar");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[0]!.locale).toBe("en");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[0]!.props.locale).toBe("en");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[1]!.locale).toBe("ar");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[1]!.props.locale).toBe("ar");
   });
 
   it("merges locale data strings over base props", () => {
@@ -71,8 +75,10 @@ describe("expandMatrix locale injection", () => {
       rows: [{ key: "row-1", name: "hello" }],
     });
 
-    expect(cells[0].props.name).toBe("مرحبا");
-    expect(cells[0].props.locale).toBe("ar");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[0]!.props.name).toBe("مرحبا");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[0]!.props.locale).toBe("ar");
   });
 
   it("merges locale data arrays over base props", () => {
@@ -82,7 +88,8 @@ describe("expandMatrix locale injection", () => {
       rows: [{ items: ["open", "source"], key: "row-1" }],
     });
 
-    expect(cells[0].props.items).toEqual(["مفتوح", "المصدر"]);
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[0]!.props.items).toEqual(["مفتوح", "المصدر"]);
   });
 
   it("does not clobber non-matching types during merge", () => {
@@ -92,7 +99,8 @@ describe("expandMatrix locale injection", () => {
       rows: [{ count: 1, key: "row-1" }],
     });
 
-    expect(cells[0].props.count).toBe(1);
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[0]!.props.count).toBe(1);
   });
 });
 

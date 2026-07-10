@@ -48,7 +48,7 @@ export default function BentoFeature({
         backgroundColor: background,
         color: "#ffffff",
         fontFamily: isRtl
-          ? "Noto Sans Arabic, system-ui, sans-serif"
+          ? "'Noto Sans Arabic arabic', 'Noto Sans Arabic latin', system-ui, sans-serif"
           : "system-ui, sans-serif",
       }}
     >
