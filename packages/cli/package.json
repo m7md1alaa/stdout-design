@@ -16,9 +16,11 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "check-types": "tsc --noEmit",
-    "lint": "ultracite check"
+    "lint": "ultracite check",
+    "test": "bun test"
   },
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "@stdout-design/batch-engine": "workspace:*",
     "@stdout-design/core": "workspace:*",
     "@stdout-design/dev-server": "workspace:*",

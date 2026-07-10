@@ -105,10 +105,11 @@ program
   .command("init")
   .description("Scaffold a new studio project")
   .argument("[projectDir]", "Project directory (default: cwd)")
-  .action(async (projectDir) => {
+  .option("-y, --yes", "Skip prompts, use defaults")
+  .action(async (projectDir, options) => {
     try {
       const { init } = await import("./commands/init.js");
-      await init(projectDir);
+      await init(projectDir, { yes: options.yes ?? false });
     } catch (error) {
       console.error(formatError(error));
       process.exit(1);

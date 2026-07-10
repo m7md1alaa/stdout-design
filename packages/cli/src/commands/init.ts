@@ -92,9 +92,16 @@ export default (props: Props): TakumiNode => {
 };
 `;
 
-export const init = async (projectDir: string | undefined): Promise<void> => {
-  const dir = path.resolve(projectDir ?? process.cwd());
+export interface ScaffoldOptions {
+  install: boolean;
+  locales: string[];
+  templates: string[];
+}
 
+export const scaffold = async (
+  dir: string,
+  options: ScaffoldOptions
+): Promise<void> => {
   if (!existsSync(dir)) {
     await mkdir(dir, { recursive: true });
   }
@@ -105,32 +112,144 @@ export const init = async (projectDir: string | undefined): Promise<void> => {
     return;
   }
 
-  const templatesDir = path.resolve(dir, "templates");
-  await mkdir(templatesDir, { recursive: true });
+  const hasTemplates = options.templates.length > 0;
 
-  const localesDir = path.resolve(dir, "locales");
-  await mkdir(localesDir, { recursive: true });
+  if (hasTemplates) {
+    const templatesDir = path.resolve(dir, "templates");
+    await mkdir(templatesDir, { recursive: true });
+  }
+
+  if (options.locales.length > 0) {
+    const localesDir = path.resolve(dir, "locales");
+    await mkdir(localesDir, { recursive: true });
+  }
 
   await writeFile(configPath, getConfigTemplate());
 
-  await writeFile(
-    path.resolve(templatesDir, "bento-feature.tsx"),
-    getBentoFeatureTemplate()
-  );
+  const writes: Promise<void>[] = [];
 
-  await writeFile(
-    path.resolve(localesDir, "en.json"),
-    JSON.stringify({ title: "Featured App" }, null, 2)
-  );
+  for (const template of options.templates) {
+    if (template === "bento-feature") {
+      const templatesDir = path.resolve(dir, "templates");
+      writes.push(
+        writeFile(
+          path.resolve(templatesDir, "bento-feature.tsx"),
+          getBentoFeatureTemplate()
+        )
+      );
+    }
+  }
 
-  await writeFile(
-    path.resolve(localesDir, "ar.json"),
-    JSON.stringify({ title: "التطبيق المميز" }, null, 2)
-  );
+  for (const locale of options.locales) {
+    const localesDir = path.resolve(dir, "locales");
+    if (locale === "en") {
+      writes.push(
+        writeFile(
+          path.resolve(localesDir, "en.json"),
+          JSON.stringify({ title: "Featured App" }, null, 2)
+        )
+      );
+    }
+    if (locale === "ar") {
+      writes.push(
+        writeFile(
+          path.resolve(localesDir, "ar.json"),
+          JSON.stringify({ title: "التطبيق المميز" }, null, 2)
+        )
+      );
+    }
+  }
+
+  await Promise.all(writes);
 
   console.log(`Scaffolded studio project in ${dir}`);
   console.log("");
   console.log("Next steps:");
-  console.log(`  cd ${projectDir || "."}`);
+  console.log(`  cd ${dir}`);
   console.log("  studio dev");
+
+  if (options.install) {
+    console.log("");
+    console.log("Installing dependencies...");
+    const { spawnSync } = await import("node:child_process");
+    spawnSync("bun", ["install"], { cwd: dir, stdio: "inherit" });
+  }
+};
+
+export const init = async (
+  projectDir: string | undefined,
+  options?: { yes?: boolean }
+): Promise<void> => {
+  const dir = path.resolve(projectDir ?? process.cwd());
+
+  if (options?.yes) {
+    await scaffold(dir, {
+      install: true,
+      locales: ["en", "ar"],
+      templates: ["bento-feature"],
+    });
+    return;
+  }
+
+  const { intro, confirm, multiselect, outro, cancel, isCancel } =
+    await import("@clack/prompts");
+
+  intro("Studio Init");
+
+  if (existsSync(path.resolve(dir, "studio.config.ts"))) {
+    console.log("studio.config.ts already exists — skipping scaffold.");
+    outro("Done");
+    return;
+  }
+
+  const selectedTemplates = await multiselect({
+    message: "Which templates would you like to scaffold?",
+    options: [
+      {
+        hint: "Apple-style feature card",
+        label: "Bento Feature",
+        value: "bento-feature",
+      },
+    ],
+  });
+
+  if (isCancel(selectedTemplates)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
+
+  const templates = selectedTemplates as string[];
+
+  const selectedLocales = await multiselect({
+    message: "Which locales would you like to include?",
+    options: [
+      { label: "English", value: "en" },
+      { label: "Arabic", value: "ar" },
+    ],
+  });
+
+  if (isCancel(selectedLocales)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
+
+  const locales = selectedLocales as string[];
+
+  const shouldInstall = await confirm({
+    initialValue: true,
+    message: "Install dependencies?",
+  });
+
+  if (isCancel(shouldInstall)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
+
+  await scaffold(dir, {
+    install: shouldInstall as boolean,
+    locales,
+    templates,
+  });
+
+  outro("Done");
 };
