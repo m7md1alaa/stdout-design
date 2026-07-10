@@ -4,18 +4,27 @@ export const templateId = "bento-feature" as const;
 
 export const propsSchema = z.object({
   background: z.string().default("#0a0a0a").describe("Background color"),
-  description: z.string().default("").describe("Supporting description text"),
+  description: z
+    .string()
+    .default("Production-ready image generation for your stack.")
+    .describe("Supporting description text"),
   headline: z
     .string()
     .min(1)
-    .default("Headline")
+    .default("The Open Graph Image Framework")
     .describe("Main headline for the feature card"),
   image: z
     .string()
     .url()
-    .default("https://placehold.co/600x400")
+    .default(
+      "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=400&fit=crop"
+    )
     .describe("URL to the feature image"),
-  tags: z.array(z.string()).default([]).describe("Feature tags or badges"),
+  locale: z.string().optional().describe("Current locale code for RTL support"),
+  tags: z
+    .array(z.string())
+    .default(["open-source", "image-gen"])
+    .describe("Feature tags or badges"),
 });
 
 export type Props = z.infer<typeof propsSchema>;
@@ -26,13 +35,30 @@ export default function BentoFeature({
   image,
   tags,
   background,
+  locale,
 }: Props) {
+  const isRtl = locale?.startsWith("ar") ?? false;
+
   return (
     <div
+      lang={isRtl ? "ar" : undefined}
+      dir={isRtl ? "rtl" : "ltr"}
       tw="flex w-full h-full p-8"
-      style={{ backgroundColor: background, color: "#ffffff" }}
+      style={{
+        backgroundColor: background,
+        color: "#ffffff",
+        fontFamily: isRtl
+          ? "Noto Sans Arabic, system-ui, sans-serif"
+          : "system-ui, sans-serif",
+      }}
     >
-      <div tw="flex flex-col justify-between flex-1 pr-8">
+      <div
+        tw="flex flex-col justify-between flex-1"
+        style={{
+          paddingLeft: isRtl ? "2rem" : 0,
+          paddingRight: isRtl ? 0 : "2rem",
+        }}
+      >
         {tags.length > 0 ? (
           <div tw="flex flex-wrap gap-2">
             {tags.map((tag) => (

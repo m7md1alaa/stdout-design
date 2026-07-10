@@ -46,6 +46,7 @@ export {
   renderAutoSized,
 } from "./node/renderer.js";
 export type { RenderOutput } from "./node/renderer.js";
+export type { Font, RenderOptions } from "./node/takumi-types-shim.js";
 
 export { expandMatrix } from "./batch/matrix.js";
 export type {

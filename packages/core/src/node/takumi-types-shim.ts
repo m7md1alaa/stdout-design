@@ -40,7 +40,11 @@ import { Renderer as RuntimeRenderer } from "takumi-js/node";
 
 export interface FontDescriptor {
   name?: string;
-  data: Uint8Array | ArrayBuffer | Buffer;
+  data:
+    | Uint8Array
+    | ArrayBuffer
+    | Buffer
+    | (() => Promise<ArrayBuffer | Uint8Array>);
   weight?: number;
   style?:
     | "normal"
@@ -96,6 +100,8 @@ export interface RenderOptions {
   fonts?: Font[];
   /** Ordered fallback chain of family names. Defaults to every registered family in registration order. */
   fontFamilies?: string[];
+  /** BCP-47 language tag for locale-aware shaping. Inherited by children. */
+  lang?: string;
   stylesheets?: string[];
   devicePixelRatio?: number;
   timeMs?: number;

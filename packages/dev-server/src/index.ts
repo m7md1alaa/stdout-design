@@ -5,9 +5,11 @@ import {
   renderToPixels,
   measureTemplate,
   RenderCache,
+  logWarn,
 } from "@stdout-design/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { streamSSE } from "hono/streaming";
 import { createElement } from "react";
 import type React from "react";
@@ -41,9 +43,11 @@ const applyLocale = async (
     localePath
   )) as Record<string, unknown>;
 
-  const merged = { ...props };
+  const merged = { ...props, locale };
   for (const [key, value] of Object.entries(translations)) {
-    if (typeof value === "string" && typeof merged[key] === "string") {
+    if (Array.isArray(value) && Array.isArray(merged[key])) {
+      merged[key] = value;
+    } else if (typeof value === "string" && typeof merged[key] === "string") {
       merged[key] = value;
     }
   }
@@ -89,6 +93,8 @@ export const createDevServer = async (options: DevServerOptions) => {
       origin: ["http://localhost:5173", `http://localhost:${port}`],
     })
   );
+
+  app.use("*", logger());
 
   // SSE endpoint for file-watch reload notifications
   app.get("/events", (c) =>
@@ -139,6 +145,9 @@ export const createDevServer = async (options: DevServerOptions) => {
   app.post("/render", async (c) => {
     const parsedBody = renderRequestSchema.safeParse(await c.req.json());
     if (!parsedBody.success) {
+      logWarn("Invalid render request body", {
+        issues: parsedBody.error.issues,
+      });
       return c.json(
         { error: "Invalid request body", issues: parsedBody.error.issues },
         400
@@ -148,9 +157,14 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
+      logWarn("Render template not found", { templateId });
       return c.json({ error: `Template "${templateId}" not found` }, 404);
     }
     if (templateInfo.status === "error") {
+      logWarn("Render template load error", {
+        errorMessage: templateInfo.errorMessage,
+        templateId,
+      });
       return c.json(
         {
           error: `Template "${templateId}" failed to load: ${templateInfo.errorMessage}`,
@@ -173,6 +187,9 @@ export const createDevServer = async (options: DevServerOptions) => {
       : config.presets.find((p) => p.id === config.defaultPreset);
 
     if (!preset) {
+      logWarn("Render preset not found", {
+        presetId: presetId ?? config.defaultPreset,
+      });
       return c.json(
         { error: `Preset "${presetId ?? config.defaultPreset}" not found` },
         404
@@ -181,6 +198,10 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const parsed = templateModule.propsSchema.safeParse(props);
     if (!parsed.success) {
+      logWarn("Invalid render props", {
+        issues: parsed.error.issues,
+        templateId,
+      });
       return c.json(
         { error: "Invalid props", issues: parsed.error.issues },
         400
@@ -200,6 +221,7 @@ export const createDevServer = async (options: DevServerOptions) => {
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : "Failed to load locale";
+        logWarn("Render locale load failed", { locale, message });
         return c.json({ error: `Locale "${locale}": ${message}` }, 400);
       }
     } else {
@@ -274,6 +296,9 @@ export const createDevServer = async (options: DevServerOptions) => {
   app.post("/measure", async (c) => {
     const parsedBody = measureRequestSchema.safeParse(await c.req.json());
     if (!parsedBody.success) {
+      logWarn("Invalid measure request body", {
+        issues: parsedBody.error.issues,
+      });
       return c.json(
         { error: "Invalid request body", issues: parsedBody.error.issues },
         400
@@ -283,9 +308,14 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
+      logWarn("Measure template not found", { templateId });
       return c.json({ error: `Template "${templateId}" not found` }, 404);
     }
     if (templateInfo.status === "error") {
+      logWarn("Measure template load error", {
+        errorMessage: templateInfo.errorMessage,
+        templateId,
+      });
       return c.json(
         {
           error: `Template "${templateId}" failed to load: ${templateInfo.errorMessage}`,
@@ -304,6 +334,10 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const parsed = templateModule.propsSchema.safeParse(props);
     if (!parsed.success) {
+      logWarn("Invalid measure props", {
+        issues: parsed.error.issues,
+        templateId,
+      });
       return c.json(
         { error: "Invalid props", issues: parsed.error.issues },
         400

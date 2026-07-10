@@ -15,10 +15,12 @@ export const renderOne = async (
     width,
     height,
     format = "png",
+    locale,
     cache,
     outDir,
     filename,
     signal,
+    renderOptions,
   } = input;
 
   const propsJSON = JSON.stringify(props);
@@ -44,10 +46,17 @@ export const renderOne = async (
     };
   }
 
+  const lang = locale?.startsWith("ar") ? "ar" : undefined;
+
   const output = await renderToPixels(
     compiledTemplate,
     { height, width },
-    { format },
+    {
+      fontFamilies: renderOptions?.fontFamilies,
+      fonts: renderOptions?.fonts,
+      format,
+      lang,
+    },
     signal
   );
 

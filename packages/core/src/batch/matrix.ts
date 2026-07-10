@@ -30,7 +30,9 @@ const mergeLocale = (
 
   const merged = { ...props };
   for (const [key, value] of Object.entries(localeData)) {
-    if (typeof value === "string" && typeof merged[key] === "string") {
+    if (Array.isArray(value) && Array.isArray(merged[key])) {
+      merged[key] = value;
+    } else if (typeof value === "string" && typeof merged[key] === "string") {
       merged[key] = value;
     }
   }
@@ -66,7 +68,7 @@ export const expandMatrix = (input: MatrixInput): MatrixCell[] => {
         cells.push({
           locale: locale.id,
           preset: { height: preset.height, id: preset.id, width: preset.width },
-          props: localeProps,
+          props: { ...localeProps, locale: locale.id },
           rowIndex,
           rowKey,
         });

@@ -1,4 +1,5 @@
 import type { RenderCache } from "../node/render-cache.js";
+import type { RenderOptions } from "../node/takumi-types-shim.js";
 import type { CompiledTemplate } from "../shared/render.js";
 import type { Preset } from "../shared/types.js";
 
@@ -19,11 +20,14 @@ export interface RenderOneInput {
   props: Record<string, unknown>;
   width: number;
   height: number;
+  locale?: string;
   format?: OutputFormat;
   cache: RenderCache;
   outDir: string;
   filename: string;
   signal?: AbortSignal;
+  renderOptions?: Pick<RenderOptions, "fonts" | "fontFamilies" | "lang"> &
+    Record<string, unknown>;
 }
 
 export interface RenderOneOutput {

@@ -1,9 +1,11 @@
 import path from "node:path";
 
+import { googleFonts } from "@takumi-rs/helpers";
 import type { ComponentType } from "react";
 import { createElement } from "react";
 
 import { RenderCache } from "../node/render-cache.js";
+import type { Font } from "../node/takumi-types-shim.js";
 import { compileTemplate } from "../shared/render.js";
 import {
   loadConfig,
@@ -94,8 +96,20 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
   const cache = new RenderCache({ cacheDir });
   await cache.init();
 
+  const arabicLocales = locales.filter((l) => l.id.startsWith("ar"));
+  let fonts: Font[] = [];
+  let fontFamilies: string[] | undefined;
+  if (arabicLocales.length > 0) {
+    fonts = await googleFonts([
+      { name: "Noto Sans Arabic", weight: [400, 700] },
+    ]);
+    fontFamilies = ["Noto Sans Arabic"];
+  }
+
   const succeeded: Manifest["succeeded"] = [];
   const failed: Manifest["failed"] = [];
+
+  const renderOptions = fonts.length > 0 ? { fontFamilies, fonts } : undefined;
 
   try {
     // oxlint-disable eslint/no-await-in-loop
@@ -120,8 +134,10 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
           contentHash,
           filename,
           height: cell.preset.height,
+          locale: cell.locale,
           outDir,
           props: cell.props,
+          renderOptions,
           templateId,
           width: cell.preset.width,
         });
