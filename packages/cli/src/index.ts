@@ -3,7 +3,7 @@ import { Command } from "commander";
 
 import { formatError } from "./lib/display.js";
 
-const program = new Command();
+const program = new Command().allowExcessArguments(true);
 
 program
   .name("studio")
