@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import {
   compileTemplate,
   renderToPixels,
@@ -60,7 +62,9 @@ export const createDevServer = async (options: DevServerOptions) => {
 
   const templateLoader = new TemplateLoader(rootDir);
   const fileWatcher = new FileWatcher(rootDir, templateLoader);
-  const renderCache = new RenderCache({ cacheDir });
+  const renderCache = new RenderCache({
+    cacheDir: cacheDir ?? path.join(rootDir, ".studio-cache"),
+  });
 
   await renderCache.init();
   // start() boots the vite-node SSR pipeline that loadAll/loadDataModule

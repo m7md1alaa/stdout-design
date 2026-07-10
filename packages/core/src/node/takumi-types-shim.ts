@@ -38,12 +38,6 @@
 
 import { Renderer as RuntimeRenderer } from "takumi-js/node";
 
-export interface ConstructRendererOptions {
-  fonts?: Font[];
-  loadDefaultFonts?: boolean;
-  persistentImages?: ImageSourceEntry[];
-}
-
 export interface FontDescriptor {
   name?: string;
   data: Uint8Array | ArrayBuffer | Buffer;

@@ -43,20 +43,18 @@ describe("getRenderer", () => {
     expect(a).toBe(b);
   });
 
-  it("returns the same instance when config is unchanged", () => {
+  it("returns the same instance when called twice without reset", () => {
     resetRenderer();
-    const config = { fonts: [], persistentImages: [] };
-    const a = getRenderer(config);
-    const b = getRenderer(config);
+    const a = getRenderer();
+    const b = getRenderer();
     expect(a).toBe(b);
   });
 
-  it("creates a new instance when config changes", () => {
+  it("resetRenderer creates a different instance", () => {
     resetRenderer();
-    const a = getRenderer({ fonts: [] });
-    const b = getRenderer({
-      fonts: [{ data: Buffer.from("test"), name: "Inter", weight: 400 }],
-    });
+    const a = getRenderer();
+    resetRenderer();
+    const b = getRenderer();
     expect(a).not.toBe(b);
   });
 

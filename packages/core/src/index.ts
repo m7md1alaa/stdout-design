@@ -31,6 +31,7 @@ export type { PropSchema, PropValidationIssue } from "./shared/validation.js";
 export {
   getRenderer,
   resetRenderer,
+  registerFont,
   renderToPixels,
   measureTemplate,
   renderAutoSized,

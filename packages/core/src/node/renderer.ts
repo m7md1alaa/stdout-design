@@ -1,6 +1,6 @@
 import type { CompiledTemplate } from "../shared/render.js";
 import type {
-  ConstructRendererOptions,
+  Font,
   MeasuredNode,
   RenderOptions,
   Renderer,
@@ -8,53 +8,49 @@ import type {
 import { Renderer as RendererImpl } from "./takumi-types-shim.js";
 
 /**
- * Renderer lifecycle.
+ * Renderer lifecycle -- v2.
  *
- * Takumi's own performance guidance is to reuse a single Renderer instance
- * across renders (it owns loaded fonts/persistent images, and recreating it
- * per-call throws that away). We keep one module-level singleton, but --
- * unlike a naive singleton -- we support reconfiguring it when
- * studio.config.ts changes (e.g. a font is added), instead of silently
- * keeping the stale renderer for the rest of the process's life.
+ * v1 kept a single Renderer instance and rebuilt it whenever
+ * font/persistent-image config changed, because fonts and images were
+ * construction-time state (`new Renderer({ fonts, persistentImages })`).
+ * That reconfigure-on-drift mechanism required every caller to pass the
+ * current config on every call so drift could be detected -- and in the
+ * shipped v1 code, `renderToPixels`/`measureTemplate` never actually did
+ * that (both called `getRenderer()` with no arguments), so config changes
+ * silently never took effect.
+ *
+ * v2 removes the problem at the source: `new Renderer()` takes no
+ * arguments at all. Fonts are now a per-render option
+ * (`render(node, { fonts })`), so there is nothing renderer-construction-
+ * time to drift out of sync with `studio.config.ts` in the first place.
+ * The singleton below exists purely to reuse the renderer's internal font
+ * cache/thread pool across calls, per Takumi's own performance guidance --
+ * it carries no configuration state to go stale.
  */
 
 let activeRenderer: Renderer | null = null;
-let activeConfigFingerprint: string | null = null;
 
-const fingerprintConfig = (config?: ConstructRendererOptions): string => {
-  // Cheap, stable-enough fingerprint for "did the renderer-relevant config
-  // change" -- not a content hash of font bytes, just enough to detect that
-  // the *set of inputs* changed so we know to rebuild.
-  const fontCount = config?.fonts?.length ?? 0;
-  const persistentImageCount = config?.persistentImages?.length ?? 0;
-  return `${fontCount}:${persistentImageCount}:${config?.loadDefaultFonts ?? "auto"}`;
-};
-
-/**
- * Returns the current renderer, constructing it on first use. If `config`
- * differs from whatever the renderer was last constructed with, the
- * renderer is rebuilt -- callers (e.g. the file watcher reacting to
- * studio.config.ts changes) are expected to pass the current config each
- * time so this can detect drift, rather than silently reusing stale fonts.
- */
-export const getRenderer = (config?: ConstructRendererOptions): Renderer => {
-  const fingerprint = fingerprintConfig(config);
-
-  if (activeRenderer && activeConfigFingerprint === fingerprint) {
-    return activeRenderer;
+const getRenderer = (): Renderer => {
+  if (!activeRenderer) {
+    activeRenderer = new RendererImpl();
   }
-
-  activeRenderer = new RendererImpl();
-  activeConfigFingerprint = fingerprint;
-
   return activeRenderer;
 };
 
-/** Forces the next getRenderer() call to construct a fresh instance. */
+/** Forces the next render/measure call to construct a fresh renderer instance. */
 export const resetRenderer = (): void => {
   activeRenderer = null;
-  activeConfigFingerprint = null;
 };
+
+/**
+ * Preload a font once and reuse it across many renders without re-passing
+ * its bytes on every call. Optional -- per Takumi's v2 guidance, passing
+ * `fonts` directly in a render/measure call's options covers most cases.
+ */
+export const registerFont = (
+  font: Font,
+  signal?: AbortSignal
+): Promise<string[]> => getRenderer().registerFont(font, signal);
 
 export interface RenderOutput {
   bytes: Buffer;
@@ -68,12 +64,14 @@ export interface RenderOutput {
  *
  * `width`/`height` are REQUIRED here, not optional pass-through fields.
  * Takumi's `render()` returns only a Buffer -- it does not report back the
- * dimensions it used (auto-sized renders are genuinely possible via
- * Takumi's own API, but this wrapper does not support that mode, precisely
- * because there would be no reliable way to report the actual output
- * dimensions back to the caller for cache-key construction and manifest
- * metadata). Callers that need auto-sizing must call `measureTemplate`
- * first and pass the resulting width/height through explicitly.
+ * dimensions it used, so auto-sized output isn't supported by this
+ * wrapper. Callers that need auto-sizing must call `measureTemplate` first
+ * and pass the resulting width/height through explicitly (see
+ * `renderAutoSized` below).
+ *
+ * Any `fonts`/`fontFamilies`/`images` the template needs must be supplied
+ * via `options` -- there is no construction-time renderer config to fall
+ * back on in v2.
  */
 export const renderToPixels = async (
   template: CompiledTemplate,
@@ -139,3 +137,5 @@ export const renderAutoSized = async (
     signal
   );
 };
+
+export { getRenderer };
