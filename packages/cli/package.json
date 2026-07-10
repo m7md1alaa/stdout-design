@@ -1,0 +1,36 @@
+{
+  "name": "@stdout-design/cli",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "studio": "./dist/index.mjs"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "ultracite check"
+  },
+  "dependencies": {
+    "@stdout-design/batch-engine": "workspace:*",
+    "@stdout-design/core": "workspace:*",
+    "@stdout-design/dev-server": "workspace:*",
+    "commander": "^12.0.0",
+    "csv-parse": "^5.5.0",
+    "ora": "^8.0.0",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@stdout-design/config": "workspace:*",
+    "@types/react": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}
