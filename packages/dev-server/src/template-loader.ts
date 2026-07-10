@@ -3,88 +3,22 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { studioConfigSchema, zodToJsonSchemaShape } from "@stdout-design/core";
+import type { StudioConfig, TemplateModule } from "@stdout-design/core";
 import react from "@vitejs/plugin-react";
 import { createServer } from "vite";
 import type { ViteDevServer } from "vite";
 import { ViteNodeRunner } from "vite-node/client";
 import { ViteNodeServer } from "vite-node/server";
 import { installSourcemapsSupport } from "vite-node/source-map";
-import { z } from "zod";
 
 import { TemplateConfigError } from "./template-config-error.js";
 import {
   summarizeZodIssues,
   validateTemplateModule,
-  zodToJsonSchemaShape,
 } from "./template-helpers.js";
 
 const { resolve } = path;
-
-/**
- * Loads templates and studio.config.ts via a real Vite SSR module graph
- * (through vite-node) instead of Node's native `import()` with a
- * timestamp-busted cache key.
- *
- * This matters for two concrete reasons:
- *
- * 1. `import(\`\${path}?t=\${Date.now()}\`)` creates a brand new entry in
- *    Node's ESM module registry on every single reload, and that registry
- *    is never garbage collected for the life of the process. In a long
- *    `studio dev` session with frequent saves, that is an unbounded memory
- *    leak. vite-node's `ModuleCacheMap` is an explicit, inspectable cache
- *    we control directly -- we invalidate exactly the entries that changed,
- *    nothing leaks.
- *
- * 2. A broken template file (syntax error, throwing on import, a missing
- *    dependency) must not crash the whole loader. Every template is loaded
- *    in isolation; a failure marks that one template as errored and leaves
- *    every other template usable.
- */
-
-// ---------------------------------------------------------------------
-// Config schema -- validated at load time so a malformed studio.config.ts
-// fails with a specific, actionable error instead of a confusing
-// downstream TypeError several calls later.
-// ---------------------------------------------------------------------
-
-const templateEntrySchema = z.object({
-  componentPath: z.string().min(1, "componentPath is required"),
-  description: z.string().optional(),
-});
-
-const presetSchema = z.object({
-  height: z.number().int().positive(),
-  id: z.string().min(1),
-  platform: z.string().min(1),
-  width: z.number().int().positive(),
-});
-
-const studioConfigSchema = z.object({
-  defaultPreset: z.string().optional(),
-  locales: z.array(z.string()).optional(),
-  outDir: z.string().optional(),
-  presets: z.array(presetSchema),
-  templates: z.record(z.string(), templateEntrySchema),
-});
-
-export type StudioConfig = z.infer<typeof studioConfigSchema>;
-
-// ---------------------------------------------------------------------
-// Template module contract -- what a template file is expected to export.
-// ---------------------------------------------------------------------
-
-export interface TemplateModule {
-  /** A React function component. Typed loosely here (not importing `react`
-   * into core's template-loading types) to keep this package decoupled
-   * from a specific React version; callers that need the stricter
-   * `FunctionComponent<P>` shape (e.g. `createElement`) should treat this
-   * as `FunctionComponent<Record<string, unknown>>` at the call site. */
-  default: (props: Record<string, unknown>) => unknown;
-  /** Must be a ZodObject (not a bare ZodTypeAny) -- templates take a named
-   * props bag, not an arbitrary schema shape. This matches PropSchema in
-   * core's shared/props.ts, which validateProps requires. */
-  propsSchema: z.ZodObject<Record<string, z.ZodTypeAny>>;
-}
 
 export type TemplateLoadState =
   | { status: "ok"; module: TemplateModule }

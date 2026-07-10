@@ -1,4 +1,11 @@
-export type { StudioConfig, TemplateEntry, Preset } from "./shared/types.js";
+export type {
+  StudioConfig,
+  TemplateEntry,
+  Preset,
+  TemplateModule,
+} from "./shared/types.js";
+
+export { studioConfigSchema } from "./shared/config-schema.js";
 
 export { compileTemplate } from "./shared/render.js";
 export type { CompiledTemplate } from "./shared/render.js";
@@ -25,6 +32,8 @@ export {
   defineSchema,
   validateProps,
   PropValidationError,
+  isZodObject,
+  zodToJsonSchemaShape,
 } from "./shared/validation.js";
 export type { PropSchema, PropValidationIssue } from "./shared/validation.js";
 

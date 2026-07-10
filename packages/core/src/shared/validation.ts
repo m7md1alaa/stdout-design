@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 /**
  * Single source of truth for the prop-schema type. Previously declared
@@ -58,4 +58,24 @@ export const validateProps = <T extends PropSchema>(
   }));
 
   throw new PropValidationError(issues);
+};
+
+export const isZodObject = (
+  schema: unknown
+): schema is z.ZodObject<Record<string, z.ZodTypeAny>> =>
+  typeof schema === "object" &&
+  schema !== null &&
+  "shape" in schema &&
+  typeof (schema as Record<string, unknown>).shape === "object" &&
+  "parse" in schema &&
+  typeof (schema as Record<string, unknown>).parse === "function";
+
+export const zodToJsonSchemaShape = (
+  schema: z.ZodTypeAny
+): Record<string, unknown> => {
+  if (typeof schema !== "object" || !schema || !("shape" in schema)) {
+    return {};
+  }
+
+  return z.toJSONSchema(schema);
 };

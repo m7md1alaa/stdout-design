@@ -2,20 +2,13 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { ErrorCode, AppError, logDebug } from "@stdout-design/core";
-
-export interface StudioConfig {
-  templates: Record<string, { componentPath: string; description?: string }>;
-  presets: {
-    id: string;
-    width: number;
-    height: number;
-    platform: string;
-  }[];
-  defaultPreset?: string;
-  locales?: string[];
-  outDir?: string;
-}
+import {
+  AppError,
+  ErrorCode,
+  logDebug,
+  studioConfigSchema,
+} from "@stdout-design/core";
+import type { StudioConfig } from "@stdout-design/core";
 
 export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
   const configPath = path.resolve(rootDir, "studio.config.ts");
@@ -34,26 +27,16 @@ export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
   const mod = await import(pathToFileURL(configPath).href);
   const raw = mod.default ?? mod;
 
-  if (!raw || typeof raw !== "object") {
+  const parsed = studioConfigSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
+      .join("; ");
     throw new AppError(
       ErrorCode.CONFIG_INVALID,
-      "studio.config.ts must export a default config object."
+      `studio.config.ts is invalid: ${issues}`
     );
   }
 
-  if (!raw.templates || typeof raw.templates !== "object") {
-    throw new AppError(
-      ErrorCode.CONFIG_INVALID,
-      'studio.config.ts must have a "templates" record.'
-    );
-  }
-
-  if (!Array.isArray(raw.presets) || raw.presets.length === 0) {
-    throw new AppError(
-      ErrorCode.CONFIG_INVALID,
-      'studio.config.ts must have a "presets" array with at least one preset.'
-    );
-  }
-
-  return raw as StudioConfig;
+  return parsed.data;
 };

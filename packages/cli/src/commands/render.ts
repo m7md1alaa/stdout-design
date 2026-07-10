@@ -15,6 +15,7 @@ import {
   logDebug,
   RenderCache,
   validateProps,
+  zodToJsonSchemaShape,
 } from "@stdout-design/core";
 import { parse } from "csv-parse/sync";
 import { createElement } from "react";
@@ -23,7 +24,7 @@ import { loadConfig } from "../lib/config-loader.js";
 import { formatManifestSummary } from "../lib/display.js";
 import { parsePropArgs, mergeDefaultProps } from "../lib/prop-parser.js";
 import { suggestClosest } from "../lib/suggest.js";
-import { loadTemplate, zodToJsonSchemaShape } from "../lib/template-loader.js";
+import { loadTemplate } from "../lib/template-loader.js";
 
 interface RenderOptions {
   data?: string;
@@ -348,10 +349,7 @@ export const render = async (
   const parsedProps = parsePropArgs(propArgs, schema);
   const mergedProps = mergeDefaultProps(schema, parsedProps);
 
-  const validatedProps = validateProps(
-    module.propsSchema as unknown as Parameters<typeof validateProps>[0],
-    mergedProps
-  );
+  const validatedProps = validateProps(module.propsSchema, mergedProps);
 
   let presetIds: string[];
 

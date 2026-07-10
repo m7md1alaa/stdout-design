@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 export interface TemplateEntry {
   componentPath: string;
   description?: string;
@@ -16,4 +18,9 @@ export interface StudioConfig {
   defaultPreset?: string;
   locales?: string[];
   outDir?: string;
+}
+
+export interface TemplateModule {
+  default: (props: Record<string, unknown>) => unknown;
+  propsSchema: z.ZodObject<Record<string, z.ZodTypeAny>>;
 }
