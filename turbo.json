@@ -16,6 +16,17 @@
     "check-types:tsgo": {
       "dependsOn": ["^check-types:tsgo"]
     },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "@stdout-design/batch-engine#build": {
+      "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
+      "outputs": ["dist/**"]
+    },
+    "@stdout-design/batch-engine#dev": {
+      "cache": false,
+      "persistent": true
+    },
     "@stdout-design/core#build": {
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]

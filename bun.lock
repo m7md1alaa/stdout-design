@@ -25,6 +25,18 @@
         "ultracite": "^7.9.3",
       },
     },
+    "packages/batch-engine": {
+      "name": "@stdout-design/batch-engine",
+      "version": "0.0.0",
+      "dependencies": {
+        "@stdout-design/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@stdout-design/config": "workspace:*",
+        "tsdown": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/config": {
       "name": "@stdout-design/config",
       "version": "0.0.0",

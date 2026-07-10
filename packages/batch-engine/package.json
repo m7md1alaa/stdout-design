@@ -1,0 +1,29 @@
+{
+  "name": "@stdout-design/batch-engine",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "ultracite check"
+  },
+  "dependencies": {
+    "@stdout-design/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@stdout-design/config": "workspace:*",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}
