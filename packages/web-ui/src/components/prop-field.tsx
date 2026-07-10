@@ -30,20 +30,26 @@ export const PropField = ({
 
   if (isColorField(name, schema)) {
     return (
-      <div className="prop-field">
-        <label htmlFor={`prop-${name}`}>{label}</label>
-        <div className="prop-color-row">
+      <div className="mb-3">
+        <label
+          htmlFor={`prop-${name}`}
+          className="mb-1 block text-xs font-medium text-content-secondary"
+        >
+          {label}
+        </label>
+        <div className="flex items-center gap-2">
           <input
             id={`prop-${name}`}
             type="color"
             value={currentValue as string}
             onChange={(e) => onChange(e.target.value)}
+            className="h-8 w-8 cursor-pointer rounded-sm border border-border bg-none p-0"
           />
           <input
             type="text"
             value={currentValue as string}
             onChange={(e) => onChange(e.target.value)}
-            className="prop-color-text"
+            className="flex-1 rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content focus:border-accent focus:outline-none"
           />
         </div>
       </div>
@@ -56,10 +62,15 @@ export const PropField = ({
     const hasRange = min !== undefined && max !== undefined;
 
     return (
-      <div className="prop-field">
-        <label htmlFor={`prop-${name}`}>{label}</label>
+      <div className="mb-3">
+        <label
+          htmlFor={`prop-${name}`}
+          className="mb-1 block text-xs font-medium text-content-secondary"
+        >
+          {label}
+        </label>
         {hasRange ? (
-          <div className="prop-slider-row">
+          <div className="flex items-center gap-2">
             <input
               id={`prop-${name}`}
               type="range"
@@ -68,8 +79,11 @@ export const PropField = ({
               step="1"
               value={Number(currentValue)}
               onChange={(e) => onChange(Number(e.target.value))}
+              className="flex-1 accent-accent"
             />
-            <span className="prop-value-label">{String(currentValue)}</span>
+            <span className="min-w-[30px] text-right font-mono text-xs text-content-tertiary">
+              {String(currentValue)}
+            </span>
           </div>
         ) : (
           <input
@@ -77,6 +91,7 @@ export const PropField = ({
             type="number"
             value={Number(currentValue)}
             onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content focus:border-accent focus:outline-none"
           />
         )}
       </div>
@@ -85,13 +100,19 @@ export const PropField = ({
 
   if (type === "boolean") {
     return (
-      <div className="prop-field prop-field-toggle">
-        <label htmlFor={`prop-${name}`}>{label}</label>
+      <div className="mb-3 flex items-center justify-between">
+        <label
+          htmlFor={`prop-${name}`}
+          className="text-xs font-medium text-content-secondary"
+        >
+          {label}
+        </label>
         <input
           id={`prop-${name}`}
           type="checkbox"
           checked={Boolean(currentValue)}
           onChange={(e) => onChange(e.target.checked)}
+          className="h-4 w-4 cursor-pointer accent-accent"
         />
       </div>
     );
@@ -99,11 +120,16 @@ export const PropField = ({
 
   if (type === "array") {
     return (
-      <div className="prop-field">
-        <label>{label}</label>
-        <div className="prop-tags">
+      <div className="mb-3">
+        <label className="mb-1 block text-xs font-medium text-content-secondary">
+          {label}
+        </label>
+        <div className="mb-1.5 flex flex-wrap gap-1">
           {(currentValue as string[])?.map((tag: string, i: number) => (
-            <span key={i} className="prop-tag">
+            <span
+              key={i}
+              className="inline-block rounded-[10px] bg-accent-muted px-2 py-0.5 text-[11px] font-medium text-accent-hover"
+            >
               {tag}
             </span>
           ))}
@@ -124,23 +150,29 @@ export const PropField = ({
               }
             }
           }}
+          className="w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content focus:border-accent focus:outline-none"
         />
       </div>
     );
   }
 
-  // Default: string/text
   const isLongText = ((schema.description as string) ?? "").length > 60;
 
   return (
-    <div className="prop-field">
-      <label htmlFor={`prop-${name}`}>{label}</label>
+    <div className="mb-3">
+      <label
+        htmlFor={`prop-${name}`}
+        className="mb-1 block text-xs font-medium text-content-secondary"
+      >
+        {label}
+      </label>
       {isLongText ? (
         <textarea
           id={`prop-${name}`}
           value={currentValue as string}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
+          className="w-full resize-y rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content focus:border-accent focus:outline-none"
         />
       ) : (
         <input
@@ -148,6 +180,7 @@ export const PropField = ({
           type="text"
           value={currentValue as string}
           onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content focus:border-accent focus:outline-none"
         />
       )}
     </div>

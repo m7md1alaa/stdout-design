@@ -12,8 +12,6 @@ import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
 import type { RenderAdapter } from "./lib/renderer";
 
-import "./app.css";
-
 const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
 
 const computeDefaultProps = (
@@ -52,11 +50,8 @@ const App = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [propValues, setPropValues] = useState<Record<string, unknown>>({});
-  // Bumped on every SSE "template" event for the currently selected
-  // template. This -- not propValues identity churn -- is the real signal
-  // Canvas uses to know a hot-reloaded template needs re-fetching even
-  // when no prop value actually changed.
   const [reloadToken, setReloadToken] = useState(0);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const effectiveTemplateId = selectedTemplate ?? templates[0]?.id ?? null;
   const effectivePresetId =
@@ -101,11 +96,14 @@ const App = () => {
       return;
     }
 
+    setExportError(null);
+
     const result = await renderAdapter.render(effectiveTemplateId, propValues, {
       preset: effectivePresetId,
     });
 
     if (!result.ok) {
+      setExportError(result.error);
       return;
     }
 
@@ -114,15 +112,12 @@ const App = () => {
     a.href = url;
     a.download = `${effectiveTemplateId}-${effectivePresetId}.png`;
     a.click();
-    // Safe to revoke immediately after a synchronous click() triggers the
-    // download -- unlike Canvas's preview URL, this one has no ongoing
-    // <img> consumer that needs it to stay alive.
     URL.revokeObjectURL(url);
   }, [effectiveTemplateId, effectivePresetId, propValues]);
 
   if (loading) {
     return (
-      <div className="app-loading">
+      <div className="flex h-screen items-center justify-center text-content-tertiary">
         <p>Loading studio...</p>
       </div>
     );
@@ -130,9 +125,13 @@ const App = () => {
 
   if (error) {
     return (
-      <div className="app-error">
+      <div className="flex h-screen flex-col items-center justify-center gap-4 text-content-tertiary">
         <p>Couldn&apos;t load the studio: {error}</p>
-        <button type="button" onClick={() => reload()}>
+        <button
+          type="button"
+          className="cursor-pointer text-accent hover:text-accent-hover"
+          onClick={() => reload()}
+        >
           Retry
         </button>
       </div>
@@ -141,11 +140,15 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <div className="app">
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <h1 className="sidebar-title">stdout</h1>
-            <span className="sidebar-subtitle">studio</span>
+      <div className="flex h-screen overflow-hidden">
+        <aside className="flex w-sidebar min-w-sidebar flex-col overflow-y-auto border-r border-border bg-surface-secondary">
+          <div className="flex items-baseline gap-2 border-b border-border px-5 py-5 pb-4">
+            <h1 className="text-lg font-bold tracking-tight text-content">
+              stdout
+            </h1>
+            <span className="text-sm font-normal text-content-tertiary">
+              studio
+            </span>
           </div>
 
           <TemplateSelector
@@ -161,34 +164,48 @@ const App = () => {
               onChange={handlePropChange}
             />
           ) : (
-            <div className="no-template">Select a template to begin</div>
+            <div className="px-5 py-10 text-center text-content-tertiary">
+              Select a template to begin
+            </div>
           )}
 
-          <div className="sidebar-actions">
+          <div className="border-t border-border px-5 py-4">
             <button
               type="button"
-              className="btn-export"
+              className="w-full cursor-pointer rounded-sm bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
               onClick={handleExport}
               disabled={!effectiveTemplateId || !currentPreset}
             >
               Export PNG
             </button>
+            {exportError ? (
+              <div className="mt-2 flex items-start gap-2 rounded-sm border border-red-500/30 bg-red-500/10 p-2">
+                <p className="flex-1 text-sm text-danger">{exportError}</p>
+                <button
+                  type="button"
+                  className="cursor-pointer border-none bg-none p-0 text-lg leading-none text-danger opacity-60 hover:opacity-100"
+                  onClick={() => setExportError(null)}
+                >
+                  &times;
+                </button>
+              </div>
+            ) : null}
           </div>
         </aside>
 
-        <main className="main">
-          <div className="preset-tabs">
+        <main className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex overflow-x-auto border-b border-border bg-surface-secondary">
             {presets.map((preset) => (
               <button
                 key={preset.id}
                 type="button"
-                className={`preset-tab ${effectivePresetId === preset.id ? "active" : ""}`}
+                className={`flex cursor-pointer flex-col items-center gap-0.5 whitespace-nowrap border-none bg-none px-4 py-2.5 text-content-tertiary transition-colors hover:text-content-secondary ${effectivePresetId === preset.id ? "border-b-2 border-accent text-accent" : "border-b-2 border-transparent"}`}
                 onClick={() => {
                   setSelectedPreset(preset.id);
                 }}
               >
-                <span className="preset-tab-name">{preset.id}</span>
-                <span className="preset-tab-dims">
+                <span className="text-xs font-semibold">{preset.id}</span>
+                <span className="font-mono text-[10px] text-content-tertiary">
                   {preset.width}&times;{preset.height}
                 </span>
               </button>

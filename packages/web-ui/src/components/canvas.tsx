@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import type { RenderAdapter } from "../lib/renderer";
+import type { RenderAdapter, ValidationIssue } from "../lib/renderer";
 
 interface CanvasProps {
   templateId: string | null;
@@ -11,13 +11,6 @@ interface CanvasProps {
     height: number;
     platform: string;
   } | null;
-  /**
-   * Bumped whenever the dev server reports that this template's source
-   * changed (see useSSE in App.tsx). Folded into the dedup key below so a
-   * hot-reload triggers a re-fetch even when templateId/props/preset are
-   * byte-for-byte unchanged -- without this, editing a template's JSX
-   * (with no prop panel changes) would never refresh the preview.
-   */
   reloadToken: number;
   renderAdapter: RenderAdapter;
 }
@@ -25,6 +18,7 @@ interface CanvasProps {
 interface RenderState {
   url: string;
   status: "loading" | "loaded" | "error";
+  issues?: ValidationIssue[];
   message?: string;
 }
 
@@ -34,12 +28,25 @@ const RenderContent = ({ state }: { state: RenderState | null }) => {
   }
 
   if (state.status === "loading") {
-    return <div className="canvas-loading">Rendering...</div>;
+    return <div className="text-sm text-content-tertiary">Rendering...</div>;
   }
 
   if (state.status === "error") {
     return (
-      <div className="canvas-error">{state.message || "Render failed"}</div>
+      <div className="p-4 text-left text-danger">
+        <p className="mb-2 text-sm font-semibold">
+          {state.message || "Render failed"}
+        </p>
+        {state.issues && state.issues.length > 0 ? (
+          <ul className="m-0 list-disc pl-4 text-xs leading-relaxed">
+            {state.issues.map((issue, i) => (
+              <li key={i}>
+                <strong>{issue.path}</strong>: {issue.message}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     );
   }
 
@@ -65,9 +72,6 @@ export const Canvas = ({
 }: CanvasProps) => {
   const [render, setRender] = useState<RenderState | null>(null);
   const lastKeyRef = useRef("");
-  // Tracks the most recently created object URL so it can be revoked the
-  // moment it's replaced or the component unmounts -- otherwise every
-  // render leaks one blob URL for the life of the tab.
   const currentUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -95,7 +99,12 @@ export const Canvas = ({
         if (controller.signal.aborted) {
           return;
         }
-        setRender({ message: result.error, status: "error", url: "" });
+        setRender({
+          issues: result.issues,
+          message: result.error,
+          status: "error",
+          url: "",
+        });
         return;
       }
 
@@ -115,7 +124,6 @@ export const Canvas = ({
     };
   }, [templateId, props, preset, reloadToken, renderAdapter]);
 
-  // Revoke the last blob URL on unmount too, not just on replacement.
   useEffect(
     () => () => {
       if (currentUrlRef.current) {
@@ -128,7 +136,7 @@ export const Canvas = ({
 
   if (!(templateId && preset)) {
     return (
-      <div className="canvas-empty">
+      <div className="flex flex-1 items-center justify-center text-content-tertiary">
         <p>Select a template to preview</p>
       </div>
     );
@@ -139,15 +147,17 @@ export const Canvas = ({
   const displayHeight = Math.round(preset.height * scale);
 
   return (
-    <div className="canvas-container">
-      <div className="canvas-info">
-        <span className="canvas-preset-label">{preset.id}</span>
-        <span className="canvas-dimensions">
+    <div className="flex flex-1 flex-col items-center justify-center overflow-auto p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="font-mono text-sm font-semibold text-content-secondary">
+          {preset.id}
+        </span>
+        <span className="font-mono text-xs text-content-tertiary">
           {preset.width}&times;{preset.height}
         </span>
       </div>
       <div
-        className="canvas-preview"
+        className="flex items-center justify-center overflow-hidden rounded-lg bg-surface-tertiary shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
         style={{ height: displayHeight, width: displayWidth }}
       >
         <RenderContent state={render} />

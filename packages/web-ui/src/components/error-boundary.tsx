@@ -19,10 +19,16 @@ const DefaultFallback = ({
   error: Error;
   onReset: () => void;
 }) => (
-  <div className="app-error">
+  <div className="flex h-screen flex-col items-center justify-center gap-4 text-content-secondary">
     <p>Something went wrong</p>
-    <pre className="error-detail">{error.message}</pre>
-    <button type="button" onClick={onReset}>
+    <pre className="max-w-md overflow-auto rounded-sm bg-surface-tertiary p-4 text-xs text-content-tertiary">
+      {error.message}
+    </pre>
+    <button
+      type="button"
+      className="cursor-pointer rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+      onClick={onReset}
+    >
       Retry
     </button>
   </div>
