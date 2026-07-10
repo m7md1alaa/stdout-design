@@ -15,18 +15,28 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
+    "test": "bun test",
     "check-types": "tsc --noEmit",
     "check-types:tsgo": "tsgo --noEmit",
     "lint": "ultracite check"
   },
   "dependencies": {
     "@takumi-rs/core": "^2.0.0",
+    "kysely": "^0.28.0",
+    "kysely-bun-sqlite": "^0.4.0",
+    "p-limit": "^7.0.0",
+    "proper-lockfile": "^4.1.2",
     "takumi-js": "^2.0.0",
+    "write-file-atomic": "^6.0.0",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@sinonjs/fake-timers": "^13.0.0",
     "@stdout-design/config": "workspace:*",
     "@takumi-rs/wasm": "^2.0.0",
+    "@types/proper-lockfile": "^4.1.4",
+    "@types/sinonjs__fake-timers": "^15.0.1",
+    "@types/write-file-atomic": "^4.0.3",
     "tsdown": "catalog:",
     "typescript": "catalog:"
   }
