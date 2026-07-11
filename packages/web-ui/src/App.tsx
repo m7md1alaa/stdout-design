@@ -10,7 +10,8 @@ import type { SSEReloadEvent } from "./hooks/use-sse";
 import { useTemplates } from "./hooks/use-templates";
 import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
-import type { RenderAdapter } from "./lib/renderer";
+import type { RenderAdapter, ValidationIssue } from "./lib/renderer";
+import { setNestedValue } from "./lib/utils";
 
 const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
 
@@ -27,8 +28,23 @@ const computeDefaultProps = (
     return defaults;
   }
 
-  for (const [key, prop] of Object.entries(properties)) {
-    if ("default" in prop && prop.default !== undefined) {
+  for (const key of Object.keys(properties)) {
+    const prop = properties[key];
+    if (!prop) {
+      continue;
+    }
+
+    if (prop.type === "object" && prop.properties) {
+      const nested = computeDefaultProps({
+        contentHash: "",
+        description: "",
+        id: "",
+        propsSchema: { properties: prop.properties },
+      });
+      if (Object.keys(nested).length > 0) {
+        defaults[key] = nested;
+      }
+    } else if ("default" in prop && prop.default !== undefined) {
       defaults[key] = prop.default;
     } else if (prop.type === "string") {
       defaults[key] = "";
@@ -44,14 +60,26 @@ const computeDefaultProps = (
 };
 
 const App = () => {
-  const { templates, presets, defaultPreset, loading, error, reload } =
-    useTemplates();
+  const {
+    templates,
+    presets,
+    defaultPreset,
+    initialLoading,
+    reloading,
+    error,
+    reload,
+  } = useTemplates();
 
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-  const [propValues, setPropValues] = useState<Record<string, unknown>>({});
+  const [propStore, setPropStore] = useState<
+    Record<string, Record<string, unknown>>
+  >({});
   const [reloadToken, setReloadToken] = useState(0);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   const effectiveTemplateId = selectedTemplate ?? templates[0]?.id ?? null;
   const effectivePresetId =
@@ -59,6 +87,10 @@ const App = () => {
 
   const currentTemplate = templates.find((t) => t.id === effectiveTemplateId);
   const currentPreset = presets.find((p) => p.id === effectivePresetId) ?? null;
+
+  const propValues = effectiveTemplateId
+    ? (propStore[effectiveTemplateId] ?? computeDefaultProps(currentTemplate))
+    : {};
 
   useSSE(
     useCallback(
@@ -78,20 +110,56 @@ const App = () => {
     )
   );
 
-  const handleTemplateChange = useCallback(
-    (id: string) => {
+  const handleTemplateChange = (id: string) => {
+    if (effectiveTemplateId) {
+      setPropStore((prev) => ({
+        ...prev,
+        [effectiveTemplateId]: prev[effectiveTemplateId],
+      }));
+    }
+
+    setSelectedTemplate(id);
+    setValidationErrors({});
+
+    if (!propStore[id]) {
       const template = templates.find((t) => t.id === id);
-      setSelectedTemplate(id);
-      setPropValues(computeDefaultProps(template));
+      setPropStore((prev) => ({
+        ...prev,
+        [id]: computeDefaultProps(template),
+      }));
+    }
+  };
+
+  const handlePropChange = useCallback(
+    (path: string, value: unknown) => {
+      if (!effectiveTemplateId) {
+        return;
+      }
+      setPropStore((prev) => ({
+        ...prev,
+        [effectiveTemplateId]: setNestedValue(
+          prev[effectiveTemplateId] ?? {},
+          path,
+          value
+        ),
+      }));
+      setValidationErrors((prev) => {
+        const { [path]: _removed, ...rest } = prev;
+        return rest;
+      });
     },
-    [templates]
+    [effectiveTemplateId]
   );
 
-  const handlePropChange = useCallback((path: string, value: unknown) => {
-    setPropValues((prev) => ({ ...prev, [path]: value }));
+  const handleRenderIssues = useCallback((issues: ValidationIssue[]) => {
+    const errorMap: Record<string, string> = {};
+    for (const issue of issues) {
+      errorMap[issue.path] = issue.message;
+    }
+    setValidationErrors(errorMap);
   }, []);
 
-  const handleExport = useCallback(async () => {
+  const handleExport = async () => {
     if (!(effectiveTemplateId && effectivePresetId)) {
       return;
     }
@@ -104,6 +172,9 @@ const App = () => {
 
     if (!result.ok) {
       setExportError(result.error);
+      if (result.issues) {
+        handleRenderIssues(result.issues);
+      }
       return;
     }
 
@@ -113,9 +184,9 @@ const App = () => {
     a.download = `${effectiveTemplateId}-${effectivePresetId}.png`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [effectiveTemplateId, effectivePresetId, propValues]);
+  };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex h-screen items-center justify-center text-content-tertiary">
         <p>Loading studio...</p>
@@ -149,6 +220,9 @@ const App = () => {
             <span className="text-sm font-normal text-content-tertiary">
               studio
             </span>
+            {reloading ? (
+              <span className="ml-auto h-3 w-3 animate-pulse rounded-full bg-accent" />
+            ) : null}
           </div>
 
           <TemplateSelector
@@ -161,6 +235,7 @@ const App = () => {
             <PropPanel
               schema={currentTemplate.propsSchema}
               values={propValues}
+              errors={validationErrors}
               onChange={handlePropChange}
             />
           ) : (
@@ -218,6 +293,7 @@ const App = () => {
             preset={currentPreset}
             reloadToken={reloadToken}
             renderAdapter={renderAdapter}
+            onRenderIssues={handleRenderIssues}
           />
         </main>
       </div>

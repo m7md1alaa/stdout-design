@@ -47,10 +47,11 @@ const parseJsonResponse = async <T>(
 export const useTemplates = () => {
   const [templates, setTemplates] = useState<TemplateSchema[]>([]);
   const [config, setConfig] = useState<ConfigData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [reloading, setReloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isReload = false) => {
     try {
       const [templatesRes, configRes] = await Promise.all([
         fetch(API_ROUTES.templates),
@@ -64,20 +65,24 @@ export const useTemplates = () => {
 
       setTemplates(templatesData);
       setConfig(configData);
+      setError(null);
       // oxlint-disable-next-line unicorn/catch-error-name
     } catch (cause) {
       const message =
         cause instanceof Error ? cause.message : "Failed to load studio data";
       console.error(message);
-      setError(message);
+      if (!isReload) {
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setReloading(false);
     }
   }, []);
 
   const reload = useCallback(() => {
-    setLoading(true);
-    fetchData();
+    setReloading(true);
+    fetchData(true);
   }, [fetchData]);
 
   const initialisedRef = useRef(false);
@@ -94,12 +99,15 @@ export const useTemplates = () => {
     config?.defaultPreset ?? config?.presets?.[0]?.id ?? null;
 
   return {
+    config,
     defaultPreset,
     error,
-    loading,
+    initialLoading,
+    loading: initialLoading && !reloading,
     locales: config?.locales ?? [],
     presets: config?.presets ?? [],
     reload,
+    reloading,
     templates,
   };
 };

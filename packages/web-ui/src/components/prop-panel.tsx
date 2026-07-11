@@ -5,7 +5,14 @@ import { PropField } from "./prop-field";
 interface PropPanelProps {
   schema: Record<string, unknown>;
   values: Record<string, unknown>;
+  errors?: Record<string, string>;
   onChange: (path: string, value: unknown) => void;
+}
+
+interface FlattenedProp {
+  name: string;
+  path: string;
+  schema: Record<string, unknown>;
 }
 
 const getProperties = (
@@ -15,12 +22,54 @@ const getProperties = (
   return props as Record<string, unknown> | undefined;
 };
 
-export const PropPanel = ({ schema, values, onChange }: PropPanelProps) => {
+const flattenSchema = (
+  properties: Record<string, unknown>,
+  prefix = ""
+): FlattenedProp[] => {
+  const result: FlattenedProp[] = [];
+
+  for (const [key, propSchema] of Object.entries(properties)) {
+    const typed = propSchema as Record<string, unknown>;
+    const path = prefix ? `${prefix}.${key}` : key;
+
+    if (typed.type === "object" && typed.properties) {
+      result.push(
+        ...flattenSchema(typed.properties as Record<string, unknown>, path)
+      );
+    } else {
+      result.push({ name: key, path, schema: typed });
+    }
+  }
+
+  return result;
+};
+
+const getNestedValue = (
+  obj: Record<string, unknown>,
+  path: string
+): unknown => {
+  const parts = path.split(".");
+  let current: unknown = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+};
+
+export const PropPanel = ({
+  schema,
+  values,
+  errors,
+  onChange,
+}: PropPanelProps) => {
   const properties = getProperties(schema);
 
   const handleChange = useCallback(
-    (name: string) => (value: unknown) => {
-      onChange(name, value);
+    (path: string) => (value: unknown) => {
+      onChange(path, value);
     },
     [onChange]
   );
@@ -33,6 +82,8 @@ export const PropPanel = ({ schema, values, onChange }: PropPanelProps) => {
     );
   }
 
+  const flattened = flattenSchema(properties);
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="px-5 pb-2 pt-3">
@@ -41,13 +92,14 @@ export const PropPanel = ({ schema, values, onChange }: PropPanelProps) => {
         </h3>
       </div>
       <div className="px-5 pb-5">
-        {Object.entries(properties).map(([name, propSchema]) => (
+        {flattened.map(({ name, path, schema: propSchema }) => (
           <PropField
-            key={name}
+            key={path}
             name={name}
-            schema={propSchema as Record<string, unknown>}
-            value={values[name]}
-            onChange={handleChange(name)}
+            schema={propSchema}
+            value={getNestedValue(values, path)}
+            error={errors?.[path]}
+            onChange={handleChange(path)}
           />
         ))}
       </div>

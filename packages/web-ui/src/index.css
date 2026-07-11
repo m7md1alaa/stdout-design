@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @theme {
   --color-surface: #0a0a0b;
@@ -14,8 +16,8 @@
   --color-accent-muted: rgba(99, 102, 241, 0.15);
   --color-danger: #ef4444;
   --color-success: #22c55e;
-  --radius: 8px;
-  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-sm: 3px;
   --font-mono: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
   --sidebar-width: 320px;
 }
@@ -38,4 +40,44 @@
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 30px;
+}
+
+@utility field-input {
+  @apply w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content transition-colors focus:border-accent focus:outline-none;
+}
+
+@utility range-slider {
+  @apply h-1.5 appearance-none rounded-full bg-surface-tertiary;
+  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+  background-repeat: no-repeat;
+}
+.range-slider::-webkit-slider-thumb {
+  @apply h-3.5 w-3.5 appearance-none rounded-full bg-accent shadow-sm;
+  cursor: pointer;
+}
+.range-slider::-webkit-slider-thumb:hover {
+  @apply bg-accent-hover;
+}
+.range-slider::-moz-range-thumb {
+  @apply h-3.5 w-3.5 rounded-full border-none bg-accent shadow-sm;
+  cursor: pointer;
+}
+
+:root {
+  --background: var(--color-surface);
+  --foreground: var(--color-content);
+  --card: var(--color-surface-secondary);
+  --card-foreground: var(--color-content);
+  --popover: var(--color-surface-tertiary);
+  --popover-foreground: var(--color-content);
+  --primary: var(--color-accent);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-surface-hover);
+  --secondary-foreground: var(--color-content);
+  --muted: var(--color-surface-tertiary);
+  --muted-foreground: var(--color-content-secondary);
+  --destructive: var(--color-danger);
+  --ring: var(--color-accent);
+  --input: var(--color-border);
+  --radius: 0.375rem;
 }

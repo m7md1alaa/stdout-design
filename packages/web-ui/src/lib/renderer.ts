@@ -4,7 +4,7 @@ export interface ValidationIssue {
   code?: string;
 }
 
-export type RenderResult =
+type RenderResult =
   | { ok: true; blob: Blob }
   | { ok: false; error: string; issues?: ValidationIssue[] };
 

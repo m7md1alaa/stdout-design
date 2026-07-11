@@ -13,6 +13,7 @@ interface CanvasProps {
   } | null;
   reloadToken: number;
   renderAdapter: RenderAdapter;
+  onRenderIssues: (issues: ValidationIssue[]) => void;
 }
 
 interface RenderState {
@@ -69,10 +70,16 @@ export const Canvas = ({
   preset,
   reloadToken,
   renderAdapter,
+  onRenderIssues,
 }: CanvasProps) => {
   const [render, setRender] = useState<RenderState | null>(null);
   const lastKeyRef = useRef("");
   const currentUrlRef = useRef<string | null>(null);
+  const onRenderIssuesRef = useRef(onRenderIssues);
+
+  useEffect(() => {
+    onRenderIssuesRef.current = onRenderIssues;
+  }, [onRenderIssues]);
 
   useEffect(() => {
     if (!(templateId && preset)) {
@@ -89,6 +96,7 @@ export const Canvas = ({
     const timer = setTimeout(async () => {
       lastKeyRef.current = key;
       setRender({ status: "loading", url: "" });
+      onRenderIssuesRef.current([]);
 
       const result = await renderAdapter.render(templateId, props, {
         preset: preset.id,
@@ -105,6 +113,9 @@ export const Canvas = ({
           status: "error",
           url: "",
         });
+        if (result.issues) {
+          onRenderIssuesRef.current(result.issues);
+        }
         return;
       }
 
