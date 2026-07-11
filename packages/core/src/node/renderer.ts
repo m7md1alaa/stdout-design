@@ -1,3 +1,4 @@
+import { logDebug } from "../shared/logger.js";
 import type { CompiledTemplate } from "../shared/render.js";
 import type {
   Font,
@@ -80,6 +81,18 @@ export const renderToPixels = async (
   signal?: AbortSignal
 ): Promise<RenderOutput> => {
   const renderer = getRenderer();
+
+  logDebug("renderer.render start", {
+    fontFamilies: options?.fontFamilies,
+    fonts: options?.fonts
+      ?.filter((f) => typeof f === "object" && "name" in f)
+      .map((f) => ({
+        dataType: typeof (f as { data: unknown }).data,
+        name: (f as { name?: string }).name,
+      })),
+    fontsCount: options?.fonts?.length ?? 0,
+    lang: options?.lang,
+  });
 
   const bytes = await renderer.render(
     template.node,

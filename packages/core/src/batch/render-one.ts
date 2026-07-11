@@ -1,5 +1,6 @@
 import { RenderCache } from "../node/render-cache.js";
 import { renderToPixels } from "../node/renderer.js";
+import { logDebug } from "../shared/logger.js";
 import type { RenderOneInput, RenderOneOutput } from "./types.js";
 import { ensureDir, tryWriteFile } from "./utils.js";
 
@@ -47,6 +48,18 @@ export const renderOne = async (
   }
 
   const lang = locale?.startsWith("ar") ? "ar" : undefined;
+
+  logDebug("renderOne -> renderToPixels", {
+    fontFamilies: renderOptions?.fontFamilies,
+    fontNames: renderOptions?.fonts?.map((f) =>
+      typeof f === "object" && "name" in f
+        ? (f as { name: string }).name
+        : "raw"
+    ),
+    fontsCount: renderOptions?.fonts?.length ?? 0,
+    lang,
+    locale,
+  });
 
   const output = await renderToPixels(
     compiledTemplate,

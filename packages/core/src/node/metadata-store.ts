@@ -1,10 +1,12 @@
 import { Database } from "bun:sqlite";
-import { existsSync } from "node:fs";
+import { existsSync, unlinkSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
 import { Kysely, sql } from "kysely";
 import { BunSqliteDialect } from "kysely-bun-sqlite";
+
+import { logWarn } from "../shared/logger.js";
 
 const BUSY_TIMEOUT_MS = 5000;
 
@@ -114,10 +116,47 @@ export class MetadataStore {
     rawDb.run("PRAGMA journal_mode = WAL");
     rawDb.run("PRAGMA synchronous = NORMAL");
     rawDb.run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
-    this.rawDb = rawDb;
+
+    // Checkpoint any stale WAL left over from a previous crash, then
+    // truncate the WAL file so the next cold open starts clean.
+    rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
+
+    // If the DB (or its WAL) was corrupted by a hard kill mid-write, a
+    // `disk I/O error` surfaces on the very next read. Detect it upfront
+    // and self-heal so every future query doesn't just 500.
+    let dbHealthy = true;
+    try {
+      const result = rawDb.query("PRAGMA integrity_check").get() as {
+        integrity_check: string;
+      } | null;
+      if (result?.integrity_check !== "ok") {
+        dbHealthy = false;
+        logWarn("SQLite integrity check failed, recreating cache database", {
+          result: result?.integrity_check ?? "null",
+        });
+      }
+    } catch {
+      dbHealthy = false;
+      logWarn("SQLite integrity check threw, recreating cache database");
+    }
+
+    if (dbHealthy) {
+      this.rawDb = rawDb;
+    } else {
+      rawDb.close();
+      this.deleteDatabaseFiles();
+      const freshDb = new Database(this.dbPath, {
+        create: true,
+        readwrite: true,
+      });
+      freshDb.run("PRAGMA journal_mode = WAL");
+      freshDb.run("PRAGMA synchronous = NORMAL");
+      freshDb.run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+      this.rawDb = freshDb;
+    }
 
     this.db = new Kysely<DatabaseSchema>({
-      dialect: new BunSqliteDialect({ database: rawDb }),
+      dialect: new BunSqliteDialect({ database: this.rawDb }),
     });
 
     await this.createSchema();
@@ -198,8 +237,24 @@ export class MetadataStore {
   }
 
   close(): void {
-    this.rawDb?.close();
+    if (this.rawDb) {
+      this.rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
+      this.rawDb.close();
+    }
     this.initialized = false;
+  }
+
+  private deleteDatabaseFiles(): void {
+    if (this.dbPath === ":memory:") {
+      return;
+    }
+    for (const suffix of ["", "-wal", "-shm"]) {
+      try {
+        unlinkSync(`${this.dbPath}${suffix}`);
+      } catch {
+        // best-effort: file may not exist
+      }
+    }
   }
 
   /** Insert a new entry, or update it in place (same behavior as the old ON CONFLICT DO UPDATE) if the hash already exists -- e.g. a re-render at a different size for the same key. */
