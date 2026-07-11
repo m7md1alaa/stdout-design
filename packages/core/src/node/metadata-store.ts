@@ -11,7 +11,7 @@ import { logWarn } from "../shared/logger.js";
 const BUSY_TIMEOUT_MS = 5000;
 
 /** Kysely schema. Column names match the pre-split SQLite table exactly, plus one addition: `content_hash`, needed for FsStore's corruption check. */
-export interface StageBEntriesTable {
+interface StageBEntriesTable {
   hash: string;
   file_name: string;
   created_at: number;
@@ -23,7 +23,7 @@ export interface StageBEntriesTable {
 }
 
 /** Single-row counter table, maintained entirely by SQLite triggers -- never written to directly from application code, so it can't drift from the real row set after a crash mid-transaction. */
-export interface CacheTotalsTable {
+interface CacheTotalsTable {
   id: number;
   total_size_bytes: number;
   entry_count: number;

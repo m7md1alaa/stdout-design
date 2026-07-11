@@ -19,7 +19,7 @@ import {
 
 const { resolve } = path;
 
-export type TemplateLoadState =
+type TemplateLoadState =
   | { status: "ok"; module: TemplateModule }
   | { status: "error"; error: Error };
 

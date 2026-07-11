@@ -14,7 +14,6 @@ export const propsSchema = z.object({
     .default("The Open Graph Image Framework")
     .describe("Main headline for the feature card"),
   image: z
-    .string()
     .url()
     .default(
       "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=400&fit=crop"

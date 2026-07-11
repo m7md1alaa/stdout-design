@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const getConfigTemplate =
-  () => `import type { StudioConfig } from "@stdout-design/core";
+  () => `import type { StudioConfig } from "@stdout/studio";
 
 const config: StudioConfig = {
   defaultPreset: "instagram-square",
@@ -25,7 +25,7 @@ export default config;
 `;
 
 const getBentoFeatureTemplate =
-  () => `import { defineSchema } from "@stdout-design/core";
+  () => `import { defineSchema } from "@stdout/studio";
 import { createElement, css, text } from "takumi-js";
 import type { TakumiNode } from "takumi-js";
 

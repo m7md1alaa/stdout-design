@@ -3,7 +3,7 @@ import type { RenderOptions } from "../node/takumi-types-shim.js";
 import type { CompiledTemplate } from "../shared/render.js";
 import type { Preset } from "../shared/types.js";
 
-export type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
+type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
 
 export interface MatrixCell {
   rowIndex: number;

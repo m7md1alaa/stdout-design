@@ -18,7 +18,7 @@ export const propsSchema = z.object({
     .default(true)
     .describe("Render background grid pattern"),
   sparkline: z
-    .array(z.number())
+    .array(z.coerce.number())
     .default([30, 45, 25, 60, 85, 70, 95])
     .describe("Data points for the bottom bar chart"),
   stat: z.string().default("124.5K"),

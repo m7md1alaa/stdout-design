@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-export const templateEntrySchema = z.object({
+const templateEntrySchema = z.object({
   componentPath: z.string().min(1, "componentPath is required"),
   description: z.string().optional(),
 });
 
-export const presetSchema = z.object({
+const presetSchema = z.object({
   height: z.number().int().positive(),
   id: z.string().min(1),
   platform: z.string().min(1),

@@ -1,4 +1,4 @@
-export interface PropSchemaField {
+interface PropSchemaField {
   default?: unknown;
   description?: string;
   items?: { type: string };

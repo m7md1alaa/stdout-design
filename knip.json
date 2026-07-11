@@ -1,0 +1,42 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": { "entry": ["turbo.json"] },
+    "packages/config": {},
+    "packages/cli": {},
+    "packages/core": {},
+    "packages/dev-server": {},
+    "packages/web-ui": {}
+  },
+  "ignoreDependencies": [
+    "@fontsource-variable/geist",
+    "@stdout-design/core",
+    "@stdout-design/dev-server",
+    "@takumi-rs/core",
+    "@takumi-rs/helpers",
+    "@takumi-rs/wasm",
+    "@types/react-dom",
+    "@types/sinonjs__fake-timers",
+    "@types/react",
+    "@vitejs/plugin-react",
+    "bun-types",
+    "chokidar",
+    "class-variance-authority",
+    "csv-parse",
+    "dotenv",
+    "hono",
+    "kysely",
+    "kysely-bun-sqlite",
+    "ora",
+    "p-limit",
+    "proper-lockfile",
+    "react",
+    "react-dom",
+    "takumi-js",
+    "vite",
+    "vite-node",
+    "write-file-atomic",
+    "zod"
+  ],
+  "ignore": ["**/__tests__/**", "**/examples/**", "**/fixtures/**"]
+}

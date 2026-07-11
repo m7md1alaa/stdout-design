@@ -58,20 +58,17 @@ export interface FontDescriptor {
 /** A font supplied to a render/measure call: a loaded descriptor, raw bytes, or a bare URL fetched on demand. */
 export type Font = FontDescriptor | Uint8Array | ArrayBuffer | Buffer | string;
 
-export interface ImageSourceEntry {
+interface ImageSourceEntry {
   src: string;
   data: Uint8Array | ArrayBuffer;
 }
 
 /** Shared byte cache across renders -- dedupes concurrent fetches of the same URL. */
-export type ImageFetchCache = Map<string, Promise<ArrayBuffer>>;
+type ImageFetchCache = Map<string, Promise<ArrayBuffer>>;
 
-export type ImageFetchFn = (
-  url: string,
-  signal?: AbortSignal
-) => Promise<ArrayBuffer>;
+type ImageFetchFn = (url: string, signal?: AbortSignal) => Promise<ArrayBuffer>;
 
-export interface ImageResourcesGroup {
+interface ImageResourcesGroup {
   /** Pre-fetched entries, keyed by src. Not re-fetched. */
   sources?: ImageSourceEntry[];
   fetch?: ImageFetchFn;
@@ -80,10 +77,10 @@ export interface ImageResourcesGroup {
 }
 
 /** Either a flat list of pre-fetched images, or the group form with fetch behavior + a shared cache. */
-export type ImagesOption = ImageSourceEntry[] | ImageResourcesGroup;
+type ImagesOption = ImageSourceEntry[] | ImageResourcesGroup;
 
-export type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
-export type DitheringAlgorithm = "none" | "ordered-bayer" | "floyd-steinberg";
+type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
+type DitheringAlgorithm = "none" | "ordered-bayer" | "floyd-steinberg";
 
 export interface RenderOptions {
   width?: number;
@@ -108,7 +105,7 @@ export interface RenderOptions {
   dithering?: DitheringAlgorithm;
 }
 
-export interface MeasuredTextRun {
+interface MeasuredTextRun {
   text: string;
   x: number;
   y: number;
@@ -149,7 +146,7 @@ export interface Renderer {
 }
 
 /** v2: the constructor takes no arguments. Fonts/images are per-render options now. */
-export type RendererConstructor = new () => Renderer;
+type RendererConstructor = new () => Renderer;
 
 // Cast through `unknown` rather than asserting the runtime class directly
 // implements `RendererConstructor` -- see the file header TODO for why

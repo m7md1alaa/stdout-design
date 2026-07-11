@@ -11,7 +11,8 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "check-types:tsgo": "turbo check-types:tsgo",
-    "check": "ultracite check",
+    "check": "ultracite check && bun knip",
+    "knip": "knip",
     "fix": "ultracite fix"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@typescript/native-preview": "^7.0.0-dev.20260707.2",
+    "knip": "^6.26.0",
     "oxfmt": "latest",
     "oxlint": "latest",
     "react": "catalog:",
