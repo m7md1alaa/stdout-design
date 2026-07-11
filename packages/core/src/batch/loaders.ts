@@ -48,7 +48,7 @@ export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
   return parsed.data;
 };
 
-export const loadTemplate = async (
+export const importTemplateForBatch = async (
   rootDir: string,
   componentPath: string,
   templateId: string

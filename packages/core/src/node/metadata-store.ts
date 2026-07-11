@@ -11,7 +11,7 @@ import { logWarn } from "../shared/logger.js";
 const BUSY_TIMEOUT_MS = 5000;
 
 /** Kysely schema. Column names match the pre-split SQLite table exactly, plus one addition: `content_hash`, needed for FsStore's corruption check. */
-interface StageBEntriesTable {
+interface PixelCacheEntriesTable {
   hash: string;
   file_name: string;
   created_at: number;
@@ -30,11 +30,11 @@ interface CacheTotalsTable {
 }
 
 interface DatabaseSchema {
-  stage_b_entries: StageBEntriesTable;
+  pixel_cache_entries: PixelCacheEntriesTable;
   cache_totals: CacheTotalsTable;
 }
 
-export interface StageBEntryInput {
+export interface PixelCacheEntryInput {
   hash: string;
   fileName: string;
   sizeBytes: number;
@@ -43,7 +43,7 @@ export interface StageBEntryInput {
   contentHash: string;
 }
 
-export interface StageBEntryRow {
+export interface PixelCacheEntryRow {
   hash: string;
   fileName: string;
   createdAt: number;
@@ -59,7 +59,7 @@ export interface CacheTotals {
   entryCount: number;
 }
 
-const toRow = (r: StageBEntriesTable): StageBEntryRow => ({
+const toRow = (r: PixelCacheEntriesTable): PixelCacheEntryRow => ({
   contentHash: r.content_hash,
   createdAt: r.created_at,
   fileName: r.file_name,
@@ -71,7 +71,7 @@ const toRow = (r: StageBEntriesTable): StageBEntryRow => ({
 });
 
 /**
- * SQLite-backed metadata store for Stage B cache entries.
+ * SQLite-backed metadata store for pixel cache entries.
  *
  * Two things changed from the pre-split RenderCache:
  *
@@ -167,7 +167,7 @@ export class MetadataStore {
     const db = this.requireDb();
 
     await db.schema
-      .createTable("stage_b_entries")
+      .createTable("pixel_cache_entries")
       .ifNotExists()
       .addColumn("hash", "text", (c) => c.primaryKey())
       .addColumn("file_name", "text", (c) => c.notNull())
@@ -182,7 +182,7 @@ export class MetadataStore {
     await db.schema
       .createIndex("idx_last_accessed")
       .ifNotExists()
-      .on("stage_b_entries")
+      .on("pixel_cache_entries")
       .column("last_accessed_at")
       .execute();
 
@@ -203,8 +203,8 @@ export class MetadataStore {
     // cannot desync from the real row set even if the process crashes
     // mid-write (SQLite's own atomicity covers the trigger's UPDATE too).
     await sql`
-      CREATE TRIGGER IF NOT EXISTS trg_stage_b_insert
-      AFTER INSERT ON stage_b_entries
+      CREATE TRIGGER IF NOT EXISTS trg_pixel_cache_insert
+      AFTER INSERT ON pixel_cache_entries
       BEGIN
         UPDATE cache_totals
         SET total_size_bytes = total_size_bytes + NEW.size_bytes,
@@ -214,8 +214,8 @@ export class MetadataStore {
     `.execute(db);
 
     await sql`
-      CREATE TRIGGER IF NOT EXISTS trg_stage_b_delete
-      AFTER DELETE ON stage_b_entries
+      CREATE TRIGGER IF NOT EXISTS trg_pixel_cache_delete
+      AFTER DELETE ON pixel_cache_entries
       BEGIN
         UPDATE cache_totals
         SET total_size_bytes = total_size_bytes - OLD.size_bytes,
@@ -225,8 +225,8 @@ export class MetadataStore {
     `.execute(db);
 
     await sql`
-      CREATE TRIGGER IF NOT EXISTS trg_stage_b_update_size
-      AFTER UPDATE OF size_bytes ON stage_b_entries
+      CREATE TRIGGER IF NOT EXISTS trg_pixel_cache_update_size
+      AFTER UPDATE OF size_bytes ON pixel_cache_entries
       WHEN OLD.size_bytes != NEW.size_bytes
       BEGIN
         UPDATE cache_totals
@@ -258,12 +258,12 @@ export class MetadataStore {
   }
 
   /** Insert a new entry, or update it in place (same behavior as the old ON CONFLICT DO UPDATE) if the hash already exists -- e.g. a re-render at a different size for the same key. */
-  async upsertEntry(input: StageBEntryInput): Promise<void> {
+  async upsertEntry(input: PixelCacheEntryInput): Promise<void> {
     const db = this.requireDb();
     const now = Date.now();
 
     await db
-      .insertInto("stage_b_entries")
+      .insertInto("pixel_cache_entries")
       .values({
         content_hash: input.contentHash,
         created_at: now,
@@ -287,10 +287,10 @@ export class MetadataStore {
       .execute();
   }
 
-  async getEntry(hash: string): Promise<StageBEntryRow | null> {
+  async getEntry(hash: string): Promise<PixelCacheEntryRow | null> {
     const db = this.requireDb();
     const row = await db
-      .selectFrom("stage_b_entries")
+      .selectFrom("pixel_cache_entries")
       .selectAll()
       .where("hash", "=", hash)
       .executeTakeFirst();
@@ -303,7 +303,7 @@ export class MetadataStore {
   ): Promise<void> {
     const db = this.requireDb();
     await db
-      .updateTable("stage_b_entries")
+      .updateTable("pixel_cache_entries")
       .set({ last_accessed_at: timestamp })
       .where("hash", "=", hash)
       .execute();
@@ -311,18 +311,21 @@ export class MetadataStore {
 
   async deleteEntry(hash: string): Promise<void> {
     const db = this.requireDb();
-    await db.deleteFrom("stage_b_entries").where("hash", "=", hash).execute();
+    await db
+      .deleteFrom("pixel_cache_entries")
+      .where("hash", "=", hash)
+      .execute();
   }
 
   async deleteAll(): Promise<void> {
     const db = this.requireDb();
-    await db.deleteFrom("stage_b_entries").execute();
+    await db.deleteFrom("pixel_cache_entries").execute();
   }
 
-  async listAllOrderedByLastAccessed(): Promise<StageBEntryRow[]> {
+  async listAllOrderedByLastAccessed(): Promise<PixelCacheEntryRow[]> {
     const db = this.requireDb();
     const rows = await db
-      .selectFrom("stage_b_entries")
+      .selectFrom("pixel_cache_entries")
       .selectAll()
       .orderBy("last_accessed_at", "asc")
       .execute();

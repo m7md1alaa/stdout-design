@@ -3,18 +3,18 @@ import { createHash } from "node:crypto";
 /**
  * Cache key derivation, shared by every component that needs to name a
  * cache entry consistently. Pulled out of the old monolithic RenderCache
- * specifically so StageACache, MetadataStore, and FsStore all derive keys
+ * specifically so CompileCache, MetadataStore, and FsStore all derive keys
  * the same way -- a duplicated hashing implementation across components
  * is exactly the kind of drift risk this split is meant to eliminate.
  */
 
-export interface StageAKeyInput {
+export interface CompileCacheKeyInput {
   templateId: string;
   templateContentHash: string;
   propsJSON: string;
 }
 
-export interface StageBKeyInput {
+export interface PixelCacheKeyInput {
   templateContentHash: string;
   propsJSON: string;
   width: number;
@@ -22,7 +22,7 @@ export interface StageBKeyInput {
   format?: string;
 }
 
-export const createStageAKey = (input: StageAKeyInput): string =>
+export const createCompileCacheKey = (input: CompileCacheKeyInput): string =>
   createHash("sha256")
     .update(
       `${input.templateId}\u0000${input.templateContentHash}\u0000${input.propsJSON}`
@@ -30,7 +30,7 @@ export const createStageAKey = (input: StageAKeyInput): string =>
     .digest("hex")
     .slice(0, 16);
 
-export const createStageBKey = (input: StageBKeyInput): string =>
+export const createPixelCacheKey = (input: PixelCacheKeyInput): string =>
   createHash("sha256")
     .update(
       `${input.templateContentHash}\u0000${

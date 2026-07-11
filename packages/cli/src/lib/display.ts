@@ -19,10 +19,10 @@ export const formatCacheStats = (stats: CacheStats): string => {
     "Cache Statistics",
     "━━━━━━━━━━━━━━━━",
     `  Location:    ${stats.cacheDir}`,
-    `  Stage A:     ${stats.stageA.entries} entries (in-memory compile cache)`,
-    `  Stage B:     ${stats.stageB.entries} entries`,
-    `  Disk used:   ${formatBytes(stats.stageB.sizeBytes)}`,
-    `  Disk limit:  ${formatBytes(stats.stageB.maxSizeBytes)}`,
+    `  Compiled:    ${stats.compiled.entries} entries (in-memory compile cache)`,
+    `  Pixel:       ${stats.pixels.entries} entries`,
+    `  Disk used:   ${formatBytes(stats.pixels.sizeBytes)}`,
+    `  Disk limit:  ${formatBytes(stats.pixels.maxSizeBytes)}`,
     "",
   ];
 

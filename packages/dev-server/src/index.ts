@@ -230,14 +230,14 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const propsJSON = JSON.stringify(resolvedProps);
 
-    const stageBKey = RenderCache.createStageBKey({
+    const pixelKey = RenderCache.createStageBKey({
       height: preset.height,
       propsJSON,
       templateContentHash: templateInfo.contentHash,
       width: preset.width,
     });
 
-    const cached = await renderCache.getStageB(stageBKey);
+    const cached = await renderCache.getPixels(pixelKey);
     if (cached) {
       return new Response(new Uint8Array(cached), {
         headers: {
@@ -248,13 +248,13 @@ export const createDevServer = async (options: DevServerOptions) => {
       });
     }
 
-    const stageAKey = RenderCache.createStageAKey({
+    const compileKey = RenderCache.createStageAKey({
       propsJSON,
       templateContentHash: templateInfo.contentHash,
       templateId,
     });
 
-    let compiled = renderCache.getStageA(stageAKey) as Awaited<
+    let compiled = renderCache.getCompiled(compileKey) as Awaited<
       ReturnType<typeof compileTemplate>
     > | null;
 
@@ -264,8 +264,8 @@ export const createDevServer = async (options: DevServerOptions) => {
       >;
       const element = createElement(Component, resolvedProps);
       compiled = await compileTemplate(element);
-      renderCache.setStageAWithContentHash(
-        stageAKey,
+      renderCache.setCompiledWithContentHash(
+        compileKey,
         templateInfo.contentHash,
         compiled
       );
@@ -276,7 +276,7 @@ export const createDevServer = async (options: DevServerOptions) => {
       width: preset.width,
     });
 
-    await renderCache.setStageB(
+    await renderCache.setPixels(
       stageBKey,
       output.bytes,
       preset.width,
@@ -347,13 +347,13 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const propsJSON = JSON.stringify(validatedProps);
 
-    const stageAKey = RenderCache.createStageAKey({
+    const compileKey = RenderCache.createStageAKey({
       propsJSON,
       templateContentHash: templateInfo.contentHash,
       templateId,
     });
 
-    let compiled = renderCache.getStageA(stageAKey) as Awaited<
+    let compiled = renderCache.getCompiled(compileKey) as Awaited<
       ReturnType<typeof compileTemplate>
     > | null;
 
@@ -363,8 +363,8 @@ export const createDevServer = async (options: DevServerOptions) => {
       >;
       const element = createElement(Component, validatedProps);
       compiled = await compileTemplate(element);
-      renderCache.setStageAWithContentHash(
-        stageAKey,
+      renderCache.setCompiledWithContentHash(
+        compileKey,
         templateInfo.contentHash,
         compiled
       );

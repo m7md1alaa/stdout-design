@@ -31,7 +31,7 @@ import { Renderer as RendererImpl } from "./takumi-types-shim.js";
 
 let activeRenderer: Renderer | null = null;
 
-const getRenderer = (): Renderer => {
+const __getRendererForTesting = (): Renderer => {
   if (!activeRenderer) {
     activeRenderer = new RendererImpl();
   }
@@ -39,7 +39,7 @@ const getRenderer = (): Renderer => {
 };
 
 /** Forces the next render/measure call to construct a fresh renderer instance. */
-export const resetRenderer = (): void => {
+export const __resetRendererForTesting = (): void => {
   activeRenderer = null;
 };
 
@@ -51,7 +51,7 @@ export const resetRenderer = (): void => {
 export const registerFont = (
   font: Font,
   signal?: AbortSignal
-): Promise<string[]> => getRenderer().registerFont(font, signal);
+): Promise<string[]> => __getRendererForTesting().registerFont(font, signal);
 
 export interface RenderOutput {
   bytes: Buffer;
@@ -80,7 +80,7 @@ export const renderToPixels = async (
   options?: Omit<RenderOptions, "width" | "height">,
   signal?: AbortSignal
 ): Promise<RenderOutput> => {
-  const renderer = getRenderer();
+  const renderer = __getRendererForTesting();
 
   logDebug("renderer.render start", {
     fontFamilies: options?.fontFamilies,
@@ -118,7 +118,7 @@ export const measureTemplate = (
   options?: RenderOptions,
   signal?: AbortSignal
 ): Promise<MeasuredNode> => {
-  const renderer = getRenderer();
+  const renderer = __getRendererForTesting();
 
   return renderer.measure(
     template.node,
@@ -151,4 +151,4 @@ export const renderAutoSized = async (
   );
 };
 
-export { getRenderer };
+export { __getRendererForTesting };

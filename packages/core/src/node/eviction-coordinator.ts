@@ -23,7 +23,7 @@ const DEFAULT_DEBOUNCE_MS = 250;
  * (advisory locking), replacing two things from the old monolithic
  * RenderCache:
  *
- * 1. Eviction ran synchronously inside every `setStageB` call, doing a
+ * 1. Eviction ran synchronously inside every `setPixels` call, doing a
  *    full-table SUM and (once over budget) a full-table ORDER BY on
  *    every single write. Here, a write just calls `requestEviction()`,
  *    which schedules a debounced check -- the expensive scan runs at

@@ -22,58 +22,58 @@ class MockRenderer {
 mock.module("takumi-js/node", () => ({ Renderer: MockRenderer }));
 
 const {
-  getRenderer,
-  resetRenderer,
+  __getRendererForTesting,
+  __resetRendererForTesting,
   renderToPixels,
   measureTemplate,
   renderAutoSized,
 } = await import("../node/renderer.js");
 
-describe("getRenderer", () => {
+describe("__getRendererForTesting", () => {
   it("returns a renderer with render and measure methods", () => {
-    const renderer = getRenderer();
+    const renderer = __getRendererForTesting();
     expect(renderer).toBeDefined();
     expect(typeof renderer.render).toBe("function");
     expect(typeof renderer.measure).toBe("function");
   });
 
   it("returns the same instance on consecutive calls", () => {
-    const a = getRenderer();
-    const b = getRenderer();
+    const a = __getRendererForTesting();
+    const b = __getRendererForTesting();
     expect(a).toBe(b);
   });
 
   it("returns the same instance when called twice without reset", () => {
-    resetRenderer();
-    const a = getRenderer();
-    const b = getRenderer();
+    __resetRendererForTesting();
+    const a = __getRendererForTesting();
+    const b = __getRendererForTesting();
     expect(a).toBe(b);
   });
 
-  it("resetRenderer creates a different instance", () => {
-    resetRenderer();
-    const a = getRenderer();
-    resetRenderer();
-    const b = getRenderer();
+  it("__resetRendererForTesting creates a different instance", () => {
+    __resetRendererForTesting();
+    const a = __getRendererForTesting();
+    __resetRendererForTesting();
+    const b = __getRendererForTesting();
     expect(a).not.toBe(b);
   });
 
-  it("resetRenderer forces a fresh instance on next call", () => {
-    resetRenderer();
-    const a = getRenderer();
-    resetRenderer();
-    const b = getRenderer();
+  it("__resetRendererForTesting forces a fresh instance on next call", () => {
+    __resetRendererForTesting();
+    const a = __getRendererForTesting();
+    __resetRendererForTesting();
+    const b = __getRendererForTesting();
     expect(a).not.toBe(b);
   });
 
   afterAll(() => {
-    resetRenderer();
+    __resetRendererForTesting();
   });
 });
 
 describe("renderToPixels", () => {
   it("returns rendered pixels with correct dimensions and format", async () => {
-    resetRenderer();
+    __resetRendererForTesting();
     const result = await renderToPixels(
       { node: { type: "container" }, stylesheets: [] },
       { height: 600, width: 800 }
@@ -89,7 +89,7 @@ describe("renderToPixels", () => {
 
 describe("measureTemplate", () => {
   it("returns measured dimensions from the renderer", async () => {
-    resetRenderer();
+    __resetRendererForTesting();
     const result = await measureTemplate({
       node: { type: "container" },
       stylesheets: [],
@@ -101,7 +101,7 @@ describe("measureTemplate", () => {
 
 describe("renderAutoSized", () => {
   it("measures then renders at the measured size", async () => {
-    resetRenderer();
+    __resetRendererForTesting();
     const result = await renderAutoSized({
       node: { type: "container" },
       stylesheets: [],

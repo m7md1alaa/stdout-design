@@ -3,8 +3,8 @@ import {
   ErrorCode,
   AppError,
   zodToJsonSchemaShape,
+  importTemplateForBatch,
   loadConfig,
-  loadTemplate,
 } from "@stdout-design/core";
 
 import { formatManifestSummary } from "../lib/display.js";
@@ -45,7 +45,7 @@ export const render = async (
     );
   }
 
-  const { module } = await loadTemplate(
+  const { module } = await importTemplateForBatch(
     rootDir,
     templateEntry.componentPath,
     templateId

@@ -3,27 +3,27 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
 import { logWarn } from "../shared/logger.js";
-import { createStageAKey, createStageBKey } from "./cache-keys.js";
+import { createCompileCacheKey, createPixelCacheKey } from "./cache-keys.js";
+import { CompileCache } from "./compile-cache.js";
 import { ConcurrencyLimiter } from "./concurrency-limiter.js";
 import { EvictionCoordinator } from "./eviction-coordinator.js";
 import { FsStore } from "./fs-store.js";
 import { MetadataStore } from "./metadata-store.js";
-import { StageACache } from "./stage-a-cache.js";
 
-export type { StageAKeyInput, StageBKeyInput } from "./cache-keys.js";
+export type { CompileCacheKeyInput, PixelCacheKeyInput } from "./cache-keys.js";
 
 export interface CacheStats {
-  stageA: { entries: number };
-  stageB: { entries: number; sizeBytes: number; maxSizeBytes: number };
+  compiled: { entries: number };
+  pixels: { entries: number; sizeBytes: number; maxSizeBytes: number };
   cacheDir: string;
 }
 
 export interface RenderCacheOptions {
   cacheDir?: string;
   maxSizeMB?: number;
-  /** Max in-memory Stage A entries to retain. Default 100. */
-  stageAMaxEntries?: number;
-  /** Caps concurrent Stage B disk writes/reads. Default: unbounded (matches pre-split behavior). */
+  /** Max in-memory compiled entries to retain. Default 100. */
+  compiledMaxEntries?: number;
+  /** Caps concurrent Pixel cache disk writes/reads. Default: unbounded (matches pre-split behavior). */
   maxConcurrentWrites?: number;
   /** Debounce window between a write and the next eviction check. Default 250ms. */
   evictionDebounceMs?: number;
@@ -41,7 +41,7 @@ const DEFAULT_MAX_SIZE_MB = 500;
  * This class used to own SQLite calls, filesystem calls, atomicity
  * handling, and eviction policy directly (~400 lines, five
  * responsibilities). It now owns none of that: it constructs and wires
- * together StageACache, MetadataStore, FsStore, and EvictionCoordinator,
+ * together CompileCache, MetadataStore, FsStore, and EvictionCoordinator,
  * and exposes the exact same public method signatures CLI, MCP, and
  * dev-server already depend on. No downstream consumer needs to change
  * anything as a result of this refactor.
@@ -49,7 +49,7 @@ const DEFAULT_MAX_SIZE_MB = 500;
 export class RenderCache {
   private readonly cacheDir: string;
   private readonly maxSizeBytes: number;
-  private readonly stageA: StageACache;
+  private readonly compiled: CompileCache;
   private readonly maxConcurrentWrites: number | undefined;
   private readonly evictionDebounceMs: number | undefined;
 
@@ -58,14 +58,14 @@ export class RenderCache {
   private eviction: EvictionCoordinator | undefined;
   private initialized = false;
 
-  static readonly createStageAKey = createStageAKey;
-  static readonly createStageBKey = createStageBKey;
+  static readonly createStageAKey = createCompileCacheKey;
+  static readonly createStageBKey = createPixelCacheKey;
 
   constructor(options?: RenderCacheOptions) {
     this.cacheDir = options?.cacheDir ?? ".studio-cache";
     this.maxSizeBytes =
       (options?.maxSizeMB ?? DEFAULT_MAX_SIZE_MB) * 1024 * 1024;
-    this.stageA = new StageACache(options?.stageAMaxEntries);
+    this.compiled = new CompileCache(options?.compiledMaxEntries);
     this.maxConcurrentWrites = options?.maxConcurrentWrites;
     this.evictionDebounceMs = options?.evictionDebounceMs;
   }
@@ -106,39 +106,39 @@ export class RenderCache {
   }
 
   // ---------------------------------------------------------------------
-  // Stage A: unchanged surface, delegated to StageACache.
+  // Compile cache: delegated to CompileCache.
   // ---------------------------------------------------------------------
 
-  getStageA(key: string): unknown {
-    return this.stageA.get(key);
+  getCompiled(key: string): unknown {
+    return this.compiled.get(key);
   }
 
-  setStageA(key: string, value: unknown): void {
-    this.stageA.set(key, value);
+  setCompiled(key: string, value: unknown): void {
+    this.compiled.set(key, value);
   }
 
-  setStageAWithContentHash(
+  setCompiledWithContentHash(
     key: string,
     contentHash: string,
     value: unknown
   ): void {
-    this.stageA.setWithContentHash(key, contentHash, value);
+    this.compiled.setWithContentHash(key, contentHash, value);
   }
 
-  invalidateStageAByContentHash(contentHash: string): void {
-    this.stageA.invalidateByContentHash(contentHash);
+  invalidateCompiledByContentHash(contentHash: string): void {
+    this.compiled.invalidateByContentHash(contentHash);
   }
 
-  clearStageA(): void {
-    this.stageA.clear();
+  clearCompiled(): void {
+    this.compiled.clear();
   }
 
   // ---------------------------------------------------------------------
-  // Stage B: coordinates MetadataStore (row) + FsStore (bytes), triggers
+  // Pixel cache: coordinates MetadataStore (row) + FsStore (bytes), triggers
   // debounced eviction after every write.
   // ---------------------------------------------------------------------
 
-  async getStageB(key: string): Promise<Buffer | null> {
+  async getPixels(key: string): Promise<Buffer | null> {
     const metadata = this.requireMetadata();
     const fsStore = this.requireFsStore();
 
@@ -146,7 +146,7 @@ export class RenderCache {
     try {
       row = await metadata.getEntry(key);
     } catch (error: unknown) {
-      logWarn("Stage B metadata read failed, attempting recovery", {
+      logWarn("Pixel metadata read failed, attempting recovery", {
         error: error instanceof Error ? error.message : String(error),
         key,
       });
@@ -179,7 +179,7 @@ export class RenderCache {
     try {
       await metadata.touchAccess(key);
     } catch (error: unknown) {
-      logWarn("Stage B touchAccess failed, attempting recovery", {
+      logWarn("Pixel touchAccess failed, attempting recovery", {
         error: error instanceof Error ? error.message : String(error),
         key,
       });
@@ -189,7 +189,7 @@ export class RenderCache {
     return bytes;
   }
 
-  async setStageB(
+  async setPixels(
     key: string,
     bytes: Buffer,
     width: number,
@@ -224,8 +224,8 @@ export class RenderCache {
     const totals = await this.requireMetadata().getTotals();
     return {
       cacheDir: this.cacheDir,
-      stageA: { entries: this.stageA.size },
-      stageB: {
+      compiled: { entries: this.compiled.size },
+      pixels: {
         entries: totals.entryCount,
         maxSizeBytes: this.maxSizeBytes,
         sizeBytes: totals.totalSizeBytes,
@@ -235,7 +235,7 @@ export class RenderCache {
 
   /** Full wipe -- unlike a budget-triggered sweep, always removes everything, still lock-coordinated. */
   clean(): Promise<SweepOutcome> {
-    this.stageA.clear();
+    this.compiled.clear();
     return this.requireEviction().runFullSweep();
   }
 

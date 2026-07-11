@@ -33,7 +33,7 @@ export const defaultFsPrimitives: FsPrimitives = {
 };
 
 /**
- * Filesystem I/O for Stage B cache entries.
+ * Filesystem I/O for pixel cache entries.
  *
  * Replaces two things from the old monolithic RenderCache:
  *

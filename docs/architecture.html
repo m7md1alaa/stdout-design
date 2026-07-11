@@ -13,17 +13,24 @@
       });
     </script>
     <style>
-      .seam { stroke-dasharray: 4 4; }
-      .leak { stroke: #dc2626; }
-      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .seam {
+        stroke-dasharray: 4 4;
+      }
+      .leak {
+        stroke: #dc2626;
+      }
+      .deep {
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+      }
     </style>
   </head>
   <body class="bg-stone-50 text-slate-900 font-sans antialiased">
     <main class="max-w-5xl mx-auto px-6 py-16 space-y-16">
-
       <!-- ── Header ── -->
       <header class="space-y-3">
-        <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold">
+        <p
+          class="text-xs uppercase tracking-widest text-stone-400 font-semibold"
+        >
           Architecture review
         </p>
         <h1 class="text-3xl font-serif font-bold tracking-tight text-slate-800">
@@ -46,7 +53,9 @@
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
             Core is the only module that touches
-            <code class="text-emerald-700 bg-emerald-50 px-1 rounded text-xs">@takumi-rs/core</code>
+            <code class="text-emerald-700 bg-emerald-50 px-1 rounded text-xs"
+              >@takumi-rs/core</code
+            >
             directly. Everything else delegates.
           </p>
         </div>
@@ -109,18 +118,18 @@
               B->>S: POST /render {templateId, props}
               Note over S: Validate props (zod)
 
-              alt Stage B cache hit
+              alt Pixel cache hit
                 S-->>B: 200 image/png (X-Cache: hit)
-              else Stage B miss
-                Note over S: Check Stage A cache
-                alt Stage A miss
+              else Pixel miss
+                Note over S: Check Compile cache
+                alt Compile miss
                   S->>C: compileTemplate()  (fromJsx)
                   C-->>S: {node, stylesheets}
                 end
 
                 S->>C: renderToPixels()  (Takumi)
                 C-->>S: PNG bytes
-                Note over S: Store Stage B
+                Note over S: Store Pixel
                 S-->>B: 200 image/png (X-Cache: miss)
               end
 
@@ -139,10 +148,15 @@
             SSR Pipeline — Dev Server
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
-            A persistent Vite SSR pipeline (<code class="text-xs bg-stone-100 px-1 rounded">vite-node</code>)
-            compiles <code class="text-xs bg-stone-100 px-1 rounded">.tsx</code> templates at runtime.
-            The <code class="text-xs bg-stone-100 px-1 rounded">FileWatcher</code> invalidates the module cache on
-            change and pushes reload events over SSE.
+            A persistent Vite SSR pipeline (<code
+              class="text-xs bg-stone-100 px-1 rounded"
+              >vite-node</code
+            >) compiles
+            <code class="text-xs bg-stone-100 px-1 rounded">.tsx</code>
+            templates at runtime. The
+            <code class="text-xs bg-stone-100 px-1 rounded">FileWatcher</code>
+            invalidates the module cache on change and pushes reload events over
+            SSE.
           </p>
         </div>
 
@@ -197,42 +211,83 @@
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
           <div class="border-l-4 border-sky-500 pl-3">
             <span class="font-semibold text-sky-700">TemplateLoader</span>
-            <p class="mt-1">Boots a Vite dev server in middleware mode (no HMR). Creates a <code class="text-[10px]">ViteNodeServer</code> for module transformation and a <code class="text-[10px]">ViteNodeRunner</code> for execution. <code class="text-[10px]">importFresh()</code> calls <code class="text-[10px]">runner.executeFile()</code> — full React JSX + TS pipeline.</p>
+            <p class="mt-1">
+              Boots a Vite dev server in middleware mode (no HMR). Creates a
+              <code class="text-[10px]">ViteNodeServer</code> for module
+              transformation and a
+              <code class="text-[10px]">ViteNodeRunner</code> for execution.
+              <code class="text-[10px]">importFresh()</code> calls
+              <code class="text-[10px]">runner.executeFile()</code> — full React
+              JSX + TS pipeline.
+            </p>
           </div>
           <div class="border-l-4 border-sky-500 pl-3">
-            <span class="font-semibold text-sky-700">Module cache invalidation</span>
-            <p class="mt-1">Deletes module from <code class="text-[10px]">ViteNodeRunner.moduleCache</code> by both file URL pathname and raw path. Replaced the old <code class="text-[10px]">?t=Date.now()</code> approach which caused memory leaks.</p>
+            <span class="font-semibold text-sky-700"
+              >Module cache invalidation</span
+            >
+            <p class="mt-1">
+              Deletes module from
+              <code class="text-[10px]">ViteNodeRunner.moduleCache</code> by
+              both file URL pathname and raw path. Replaced the old
+              <code class="text-[10px]">?t=Date.now()</code> approach which
+              caused memory leaks.
+            </p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
           <div class="border-l-4 border-amber-400 pl-3">
             <span class="font-semibold text-amber-700">FileWatcher</span>
-            <p class="mt-1">Uses chokidar to watch <code class="text-[10px]">templates/</code> + <code class="text-[10px]">studio.config.ts</code>. Per-path debounce (200ms) — change to file B never cancels a pending reload for file A. Three event types: <code class="text-[10px]">"template"</code>, <code class="text-[10px]">"full"</code>, <code class="text-[10px]">"template-error"</code>.</p>
+            <p class="mt-1">
+              Uses chokidar to watch
+              <code class="text-[10px]">templates/</code> +
+              <code class="text-[10px]">studio.config.ts</code>. Per-path
+              debounce (200ms) — change to file B never cancels a pending reload
+              for file A. Three event types:
+              <code class="text-[10px]">"template"</code>,
+              <code class="text-[10px]">"full"</code>,
+              <code class="text-[10px]">"template-error"</code>.
+            </p>
           </div>
           <div class="border-l-4 border-amber-400 pl-3">
             <span class="font-semibold text-amber-700">SSE push</span>
-            <p class="mt-1">Hono <code class="text-[10px]">streamSSE</code> at <code class="text-[10px]">GET /events</code>. Browser connects via native <code class="text-[10px]">EventSource</code> (useSSE hook). 15s keepalive. Exponential backoff retry (1s → 15s, max 10 attempts).</p>
+            <p class="mt-1">
+              Hono <code class="text-[10px]">streamSSE</code> at
+              <code class="text-[10px]">GET /events</code>. Browser connects via
+              native <code class="text-[10px]">EventSource</code> (useSSE hook).
+              15s keepalive. Exponential backoff retry (1s → 15s, max 10
+              attempts).
+            </p>
           </div>
         </div>
 
         <!-- Two paths callout -->
         <div class="rounded-lg border-2 border-sky-300 bg-sky-50 p-4">
-          <p class="text-xs font-semibold text-sky-800 mb-2">Two template loading paths</p>
+          <p class="text-xs font-semibold text-sky-800 mb-2">
+            Two template loading paths
+          </p>
           <div class="grid grid-cols-2 gap-4 text-xs text-sky-700">
             <div class="bg-white rounded p-3 border border-sky-200">
               <span class="font-bold text-sky-800">SSR (dev-server)</span>
               <ul class="mt-1 space-y-0.5 list-disc list-inside text-sky-600">
-                <li><code class="text-[10px]">ViteNodeRunner.executeFile()</code></li>
-                <li>React JSX transform via <code class="text-[10px]">@vitejs/plugin-react</code></li>
+                <li>
+                  <code class="text-[10px]">ViteNodeRunner.executeFile()</code>
+                </li>
+                <li>
+                  React JSX transform via
+                  <code class="text-[10px]">@vitejs/plugin-react</code>
+                </li>
                 <li>Explicit per-file cache invalidation</li>
                 <li>Hot reload via FileWatcher + SSE</li>
-                <li>Two-stage cache (Stage A + Stage B)</li>
+                <li>Two-stage cache (Compile + Pixel)</li>
               </ul>
             </div>
             <div class="bg-white rounded p-3 border border-sky-200">
               <span class="font-bold text-sky-800">Batch (CLI)</span>
               <ul class="mt-1 space-y-0.5 list-disc list-inside text-sky-600">
-                <li>Raw <code class="text-[10px]">import(pathToFileURL(...))</code></li>
+                <li>
+                  Raw
+                  <code class="text-[10px]">import(pathToFileURL(...))</code>
+                </li>
                 <li>Relies on Bun's native TSX support</li>
                 <li>No cache invalidation (process exits)</li>
                 <li>No hot reload — one-shot execution</li>
@@ -253,7 +308,8 @@
             <code class="text-xs bg-stone-100 px-1 rounded">studio render</code>
             loads the config, template, and data; expands the matrix (rows ×
             locales × presets); renders each cell with bounded concurrency; and
-            writes deterministically-named files plus a partial-failure manifest.
+            writes deterministically-named files plus a partial-failure
+            manifest.
           </p>
         </div>
 
@@ -261,7 +317,7 @@
           <pre class="mermaid">
             flowchart LR
               CLI["studio render"] --> Config["loadConfig<br/>studio.config.ts"]
-              CLI --> Template["loadTemplate<br/>TSX component"]
+              CLI --> Template["importTemplateForBatch<br/>TSX component"]
               CLI --> Data["parseDataFile<br/>CSV or JSON"]
               Config --> Matrix["expandMatrix<br/>rows × locales × presets"]
               Template --> Matrix
@@ -278,8 +334,8 @@
         </div>
         <p class="text-xs text-stone-400">
           Every node except the CLI entry point is from
-          <code class="text-emerald-700">@stdout-design/core</code>.
-          The CLI is a thin coordinator.
+          <code class="text-emerald-700">@stdout-design/core</code>. The CLI is
+          a thin coordinator.
         </p>
       </section>
 
@@ -295,24 +351,34 @@
           </p>
         </div>
 
-        <div class="rounded-lg border border-slate-200 bg-white overflow-hidden">
+        <div
+          class="rounded-lg border border-slate-200 bg-white overflow-hidden"
+        >
           <!-- Layer 1 -->
           <div class="flex border-l-4 border-sky-400 py-3 px-5 bg-white">
             <div class="w-36 shrink-0">
-              <span class="text-[10px] uppercase tracking-wider font-semibold text-sky-600">Browser</span>
+              <span
+                class="text-[10px] uppercase tracking-wider font-semibold text-sky-600"
+                >Browser</span
+              >
             </div>
             <div class="text-xs text-slate-600">
-              React app &middot; prop panel &middot; canvas &middot; SSE hook &middot;
+              React app &middot; prop panel &middot; canvas &middot; SSE hook
+              &middot;
               <code class="text-sky-700 text-[10px]">POST /render</code>
             </div>
           </div>
           <!-- Layer 2 -->
           <div class="flex border-l-4 border-sky-500 py-3 px-5 bg-sky-50/30">
             <div class="w-36 shrink-0">
-              <span class="text-[10px] uppercase tracking-wider font-semibold text-sky-700">Dev Server</span>
+              <span
+                class="text-[10px] uppercase tracking-wider font-semibold text-sky-700"
+                >Dev Server</span
+              >
             </div>
             <div class="text-xs text-slate-600">
-              Hono router &middot; CORS &middot; request validation (zod) &middot;
+              Hono router &middot; CORS &middot; request validation (zod)
+              &middot;
               <code class="text-sky-700 text-[10px]">/render</code>
               <code class="text-sky-700 text-[10px]">/measure</code>
               <code class="text-sky-700 text-[10px]">/events</code>
@@ -321,43 +387,64 @@
           <!-- Layer 3 -->
           <div class="flex border-l-4 border-sky-500 py-3 px-5 bg-white">
             <div class="w-36 shrink-0">
-              <span class="text-[10px] uppercase tracking-wider font-semibold text-sky-700">Template Loader</span>
+              <span
+                class="text-[10px] uppercase tracking-wider font-semibold text-sky-700"
+                >Template Loader</span
+              >
             </div>
             <div class="text-xs text-slate-600">
-              vite-node SSR &middot; loads .tsx + locale JSON &middot; module cache invalidation
+              vite-node SSR &middot; loads .tsx + locale JSON &middot; module
+              cache invalidation
             </div>
           </div>
           <!-- Layer 4 (thick — core) -->
-          <div class="flex border-l-4 border-emerald-600 py-4 px-5 bg-emerald-50/60">
+          <div
+            class="flex border-l-4 border-emerald-600 py-4 px-5 bg-emerald-50/60"
+          >
             <div class="w-36 shrink-0">
-              <span class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800">Core Pipeline</span>
+              <span
+                class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800"
+                >Core Pipeline</span
+              >
             </div>
             <div class="text-xs text-slate-700 space-y-1">
-              <div><span class="font-medium text-emerald-700">Stage A:</span> <code class="text-[10px]">compileTemplate()</code> &rarr; fromJsx &rarr; <code>{node, stylesheets}</code></div>
-              <div><span class="font-medium text-emerald-700">Stage B:</span> <code class="text-[10px]">renderToPixels()</code> &rarr; Takumi renderer.render() &rarr; PNG bytes</div>
+              <div>
+                <span class="font-medium text-emerald-700">Compile:</span>
+                <code class="text-[10px]">compileTemplate()</code> &rarr;
+                fromJsx &rarr; <code>{node, stylesheets}</code>
+              </div>
+              <div>
+                <span class="font-medium text-emerald-700">Pixel:</span>
+                <code class="text-[10px]">renderToPixels()</code> &rarr; Takumi
+                renderer.render() &rarr; PNG bytes
+              </div>
             </div>
           </div>
           <!-- Layer 5 -->
           <div class="flex border-l-4 border-stone-400 py-3 px-5 bg-white">
             <div class="w-36 shrink-0">
-              <span class="text-[10px] uppercase tracking-wider font-semibold text-stone-600">Cache + Takumi</span>
+              <span
+                class="text-[10px] uppercase tracking-wider font-semibold text-stone-600"
+                >Cache + Takumi</span
+              >
             </div>
             <div class="text-xs text-slate-600">
-              <code class="text-[10px]">.studio-cache/</code> &middot; content-addressed &middot; two-stage LRU &middot; lock file
+              <code class="text-[10px]">.studio-cache/</code> &middot;
+              content-addressed &middot; two-stage LRU &middot; lock file
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
           <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700">Deep:</span> Core compresses
-            the expensive work into one thick layer — fromJsx + Takumi rendering +
-            two-stage cache.
+            <span class="font-semibold text-emerald-700">Deep:</span> Core
+            compresses the expensive work into one thick layer — fromJsx +
+            Takumi rendering + two-stage cache.
           </div>
           <div class="border-l-4 border-amber-400 pl-3">
-            <span class="font-semibold text-amber-700">Shallow:</span> Everything
-            above core is transport and routing. That's correct — moving
-            rendering logic into any of them would create drift.
+            <span class="font-semibold text-amber-700">Shallow:</span>
+            Everything above core is transport and routing. That's correct —
+            moving rendering logic into any of them would create drift.
           </div>
         </div>
       </section>
@@ -369,40 +456,64 @@
             Module Depth
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
-            Interface versus implementation size. Core is deep — its interface is
-            small relative to what it does. CLI is shallow — it mostly delegates.
+            Interface versus implementation size. Core is deep — its interface
+            is small relative to what it does. CLI is shallow — it mostly
+            delegates.
           </p>
         </div>
 
         <!-- Core (deep) -->
         <div>
           <div class="flex items-center gap-2 mb-3">
-            <span class="text-xs uppercase tracking-wider font-bold text-emerald-700">
+            <span
+              class="text-xs uppercase tracking-wider font-bold text-emerald-700"
+            >
               @stdout-design/core
             </span>
-            <span class="text-[10px] text-emerald-500 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">deep</span>
+            <span
+              class="text-[10px] text-emerald-500 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full"
+              >deep</span
+            >
           </div>
           <div class="flex gap-5">
             <!-- Interface -->
-            <div class="w-56 rounded-lg border-2 border-emerald-500 bg-white p-3" style="min-height: 160px;">
-              <p class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2">Interface</p>
-              <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
+            <div
+              class="w-56 rounded-lg border-2 border-emerald-500 bg-white p-3"
+              style="min-height: 160px"
+            >
+              <p
+                class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
+              >
+                Interface
+              </p>
+              <ul
+                class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed"
+              >
                 <li><code>compileTemplate()</code></li>
                 <li><code>renderToPixels()</code></li>
                 <li><code>measureTemplate()</code></li>
                 <li><code>validateProps()</code></li>
                 <li><code>runBatch()</code></li>
                 <li><code>loadConfig()</code></li>
-                <li><code>loadTemplate()</code></li>
+                <li><code>importTemplateForBatch()</code></li>
                 <li><code>expandMatrix()</code></li>
                 <li><code>defineSchema()</code></li>
                 <li><code>RenderCache</code></li>
               </ul>
             </div>
             <!-- Implementation -->
-            <div class="flex-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 p-3" style="min-height: 380px;">
-              <p class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2">Implementation</p>
-              <div class="grid grid-cols-2 gap-x-5 gap-y-0.5 text-[11px] text-slate-700 leading-relaxed">
+            <div
+              class="flex-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 p-3"
+              style="min-height: 380px"
+            >
+              <p
+                class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2"
+              >
+                Implementation
+              </p>
+              <div
+                class="grid grid-cols-2 gap-x-5 gap-y-0.5 text-[11px] text-slate-700 leading-relaxed"
+              >
                 <div>fromJsx wrapper</div>
                 <div>Renderer lifecycle (get/reset)</div>
                 <div>Two-stage cache hashing</div>
@@ -429,16 +540,30 @@
         <!-- CLI (shallow) -->
         <div class="mt-8">
           <div class="flex items-center gap-2 mb-3">
-            <span class="text-xs uppercase tracking-wider font-bold text-amber-600">
+            <span
+              class="text-xs uppercase tracking-wider font-bold text-amber-600"
+            >
               @stdout-design/cli
             </span>
-            <span class="text-[10px] text-amber-500 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">shallow</span>
+            <span
+              class="text-[10px] text-amber-500 font-semibold bg-amber-50 px-2 py-0.5 rounded-full"
+              >shallow</span
+            >
           </div>
           <div class="flex gap-5">
             <!-- Interface -->
-            <div class="w-56 rounded-lg border-2 border-amber-400 bg-white p-3" style="min-height: 220px;">
-              <p class="text-[10px] uppercase tracking-wider font-semibold text-amber-600 mb-2">Interface</p>
-              <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
+            <div
+              class="w-56 rounded-lg border-2 border-amber-400 bg-white p-3"
+              style="min-height: 220px"
+            >
+              <p
+                class="text-[10px] uppercase tracking-wider font-semibold text-amber-600 mb-2"
+              >
+                Interface
+              </p>
+              <ul
+                class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed"
+              >
                 <li><code>studio dev</code></li>
                 <li><code>studio render</code></li>
                 <li><code>studio cache stats</code></li>
@@ -449,35 +574,63 @@
               </ul>
             </div>
             <!-- Implementation -->
-            <div class="flex-1 rounded-lg border-2 border-amber-500 bg-amber-50 p-3" style="min-height: 260px;">
-              <p class="text-[10px] uppercase tracking-wider font-semibold text-amber-700 mb-2">Implementation</p>
+            <div
+              class="flex-1 rounded-lg border-2 border-amber-500 bg-amber-50 p-3"
+              style="min-height: 260px"
+            >
+              <p
+                class="text-[10px] uppercase tracking-wider font-semibold text-amber-700 mb-2"
+              >
+                Implementation
+              </p>
               <div class="space-y-1 text-[11px] text-slate-700 leading-relaxed">
                 <div class="flex items-center gap-2">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                  ></span>
                   <code class="text-[10px]">studio dev</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
-                  <code class="text-[10px] text-emerald-600">@stdout-design/dev-server</code>
+                  <code class="text-[10px] text-emerald-600"
+                    >@stdout-design/dev-server</code
+                  >
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                  ></span>
                   <code class="text-[10px]">studio render</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
-                  <code class="text-[10px] text-emerald-600">@stdout-design/core</code>
+                  <code class="text-[10px] text-emerald-600"
+                    >@stdout-design/core</code
+                  >
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                  ></span>
                   <code class="text-[10px]">studio cache</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
-                  <code class="text-[10px] text-emerald-600">@stdout-design/core</code>
+                  <code class="text-[10px] text-emerald-600"
+                    >@stdout-design/core</code
+                  >
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                  ></span>
                   <code class="text-[10px]">studio init</code>
-                  <span class="text-stone-400">&rarr; standalone scaffolding</span>
+                  <span class="text-stone-400"
+                    >&rarr; standalone scaffolding</span
+                  >
                 </div>
                 <div class="flex items-start gap-2 mt-2">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1"></span>
-                  <span>Remaining: display formatting, prop argument parsing, typo suggestions</span>
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1"
+                  ></span>
+                  <span
+                    >Remaining: display formatting, prop argument parsing, typo
+                    suggestions</span
+                  >
                 </div>
               </div>
             </div>
@@ -485,8 +638,9 @@
         </div>
 
         <p class="text-xs text-stone-400">
-          Interface rectangles are drawn to approximate scale. Core's implementation
-          is 2&times; the height of its interface. CLI's is nearly 1:1.
+          Interface rectangles are drawn to approximate scale. Core's
+          implementation is 2&times; the height of its interface. CLI's is
+          nearly 1:1.
         </p>
       </section>
 
@@ -497,9 +651,11 @@
             RenderCache Sub-System
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
-            The two-stage cache was decomposed from one monolithic class (~400 lines) into
-            six specialized sub-modules. The <code class="text-xs bg-stone-100 px-1 rounded">RenderCache</code>
-            orchestrator preserves the exact public API — no downstream consumer changed.
+            The two-stage cache was decomposed from one monolithic class (~400
+            lines) into six specialized sub-modules. The
+            <code class="text-xs bg-stone-100 px-1 rounded">RenderCache</code>
+            orchestrator preserves the exact public API — no downstream consumer
+            changed.
           </p>
         </div>
 
@@ -507,7 +663,7 @@
           <pre class="mermaid">
             flowchart LR
               RC["RenderCache<br/><span style='font-size:0.8rem'>Coordinator · Wires sub-components</span>"]
-              SA["StageACache<br/><span style='font-size:0.8rem'>In-memory LRU · Content-hash index</span>"]
+              SA["CompileCache<br/><span style='font-size:0.8rem'>In-memory LRU · Content-hash index</span>"]
               MS["MetadataStore<br/><span style='font-size:0.8rem'>SQLite (Kysely) · Trigger counters</span>"]
               FS["FsStore<br/><span style='font-size:0.8rem'>Atomic file I/O · Bun.hash verification</span>"]
               EC["EvictionCoordinator<br/><span style='font-size:0.8rem'>Debounced · proper-lockfile</span>"]
@@ -537,60 +693,155 @@
         <!-- Interface + Implementation -->
         <div class="flex gap-5">
           <!-- Interface -->
-          <div class="w-56 rounded-lg border-2 border-emerald-500 bg-white p-3" style="min-height: 260px;">
-            <p class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2">Interface</p>
+          <div
+            class="w-56 rounded-lg border-2 border-emerald-500 bg-white p-3"
+            style="min-height: 260px"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
+            >
+              Interface
+            </p>
             <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
-              <li><code>getStageA(key)</code></li>
-              <li><code>setStageA(key, value)</code></li>
-              <li><code>setStageAWithContentHash(...)</code></li>
-              <li><code>invalidateStageAByContentHash(...)</code></li>
-              <li><code>clearStageA()</code></li>
-              <li><code>getStageB(key)</code></li>
-              <li><code>setStageB(key, bytes, w, h)</code></li>
+              <li><code>getCompiled(key)</code></li>
+              <li><code>setCompiled(key, value)</code></li>
+              <li><code>setCompiledWithContentHash(...)</code></li>
+              <li><code>invalidateCompiledByContentHash(...)</code></li>
+              <li><code>clearCompiled()</code></li>
+              <li><code>getPixels(key)</code></li>
+              <li><code>setPixels(key, bytes, w, h)</code></li>
               <li><code>stats()</code></li>
               <li><code>clean()</code></li>
               <li><code>init()</code> / <code>close()</code></li>
             </ul>
           </div>
           <!-- Implementation -->
-          <div class="flex-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 p-3" style="min-height: 420px;">
-            <p class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2">Implementation</p>
+          <div
+            class="flex-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 p-3"
+            style="min-height: 420px"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2"
+            >
+              Implementation
+            </p>
             <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
-              <div><span class="font-medium text-emerald-700">StageACache</span> — in-memory LRU, configurable max entries (default 100). Tracks content-hash → key index for invalidation. No TTL, no size tracking — cheap enough to recompute.</div>
-              <div><span class="font-medium text-emerald-700">MetadataStore</span> — SQLite via Kysely ORM. Two tables: <code class="text-[10px]">stage_b_entries</code> (hash, file_name, size, dimensions, content_hash, access times) + <code class="text-[10px]">cache_totals</code> (single-row counter maintained by SQLite triggers). WAL mode for multi-process safety.</div>
-              <div><span class="font-medium text-emerald-700">FsStore</span> — atomic file writes via <code class="text-[10px]">write-file-atomic</code> (safe across devices). On read: checks <code class="text-[10px]">stat().size</code> + <code class="text-[10px]">Bun.hash()</code> against stored values. Returns <code class="text-[10px]">null</code> on corruption — self-healing, never throws.</div>
-              <div><span class="font-medium text-emerald-700">EvictionCoordinator</span> — debounced (250ms), lock-coordinated via <code class="text-[10px]">proper-lockfile</code>. Partial sweep evicts LRU entries until under budget; full sweep wipes everything. Lock stale timeout: 10s.</div>
-              <div><span class="font-medium text-emerald-700">ConcurrencyLimiter</span> — wraps <code class="text-[10px]">p-limit</code> to cap simultaneous FsStore I/O ops. Prevents RSS spikes from N concurrent large-buffer renders. Unbounded by default (matches pre-split behavior).</div>
-              <div><span class="font-medium text-emerald-700">cache-keys</span> — SHA-256 truncated: 64 bits (16 hex) for Stage A, 128 bits (32 hex) for Stage B. Null-byte delimiters prevent ambiguous concatenation. Single source of truth for key derivation.</div>
+              <div>
+                <span class="font-medium text-emerald-700">CompileCache</span> —
+                in-memory LRU, configurable max entries (default 100). Tracks
+                content-hash → key index for invalidation. No TTL, no size
+                tracking — cheap enough to recompute.
+              </div>
+              <div>
+                <span class="font-medium text-emerald-700">MetadataStore</span>
+                — SQLite via Kysely ORM. Two tables:
+                <code class="text-[10px]">pixel_cache_entries</code> (hash,
+                file_name, size, dimensions, content_hash, access times) +
+                <code class="text-[10px]">cache_totals</code> (single-row
+                counter maintained by SQLite triggers). WAL mode for
+                multi-process safety.
+              </div>
+              <div>
+                <span class="font-medium text-emerald-700">FsStore</span> —
+                atomic file writes via
+                <code class="text-[10px]">write-file-atomic</code> (safe across
+                devices). On read: checks
+                <code class="text-[10px]">stat().size</code> +
+                <code class="text-[10px]">Bun.hash()</code> against stored
+                values. Returns <code class="text-[10px]">null</code> on
+                corruption — self-healing, never throws.
+              </div>
+              <div>
+                <span class="font-medium text-emerald-700"
+                  >EvictionCoordinator</span
+                >
+                — debounced (250ms), lock-coordinated via
+                <code class="text-[10px]">proper-lockfile</code>. Partial sweep
+                evicts LRU entries until under budget; full sweep wipes
+                everything. Lock stale timeout: 10s.
+              </div>
+              <div>
+                <span class="font-medium text-emerald-700"
+                  >ConcurrencyLimiter</span
+                >
+                — wraps <code class="text-[10px]">p-limit</code> to cap
+                simultaneous FsStore I/O ops. Prevents RSS spikes from N
+                concurrent large-buffer renders. Unbounded by default (matches
+                pre-split behavior).
+              </div>
+              <div>
+                <span class="font-medium text-emerald-700">cache-keys</span> —
+                SHA-256 truncated: 64 bits (16 hex) for Compile, 128 bits (32
+                hex) for Pixel. Null-byte delimiters prevent ambiguous
+                concatenation. Single source of truth for key derivation.
+              </div>
             </div>
           </div>
         </div>
 
         <div class="flex gap-6 text-xs text-stone-500">
           <span class="text-stone-400">
-            Interface is ~10 methods. Implementation spans 6 files totaling ~750 lines — depth ratio ~75:1.
+            Interface is ~10 methods. Implementation spans 6 files totaling ~750
+            lines — depth ratio ~75:1.
           </span>
         </div>
 
         <!-- Key design decisions -->
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
           <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700">SQLite triggers for running totals</span>
-            <p class="mt-1">Three triggers (<code class="text-[10px]">trg_stage_b_insert</code>, <code class="text-[10px]">trg_stage_b_delete</code>, <code class="text-[10px]">trg_stage_b_update_size</code>) maintain <code class="text-[10px]">cache_totals</code> atomically within the same transaction as row changes. No <code class="text-[10px]">SELECT SUM()</code> on every write.</p>
+            <span class="font-semibold text-emerald-700"
+              >SQLite triggers for running totals</span
+            >
+            <p class="mt-1">
+              Three triggers (<code class="text-[10px]">trg_stage_b_insert</code
+              >, <code class="text-[10px]">trg_stage_b_delete</code>,
+              <code class="text-[10px]">trg_stage_b_update_size</code>) maintain
+              <code class="text-[10px]">cache_totals</code> atomically within
+              the same transaction as row changes. No
+              <code class="text-[10px]">SELECT SUM()</code> on every write.
+            </p>
           </div>
           <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700">Lock-coordinated eviction</span>
-            <p class="mt-1">Advisory file lock (<code class="text-[10px]">proper-lockfile</code>) ensures only one process runs a sweep at a time. <code class="text-[10px]">retries: 0</code> — if another process holds the lock, the current pass is skipped; next write retries. Eliminates TOCTOU race in cross-process file deletion.</p>
+            <span class="font-semibold text-emerald-700"
+              >Lock-coordinated eviction</span
+            >
+            <p class="mt-1">
+              Advisory file lock (<code class="text-[10px]"
+                >proper-lockfile</code
+              >) ensures only one process runs a sweep at a time.
+              <code class="text-[10px]">retries: 0</code> — if another process
+              holds the lock, the current pass is skipped; next write retries.
+              Eliminates TOCTOU race in cross-process file deletion.
+            </p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
           <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700">Self-healing on corruption</span>
-            <p class="mt-1">On init: <code class="text-[10px]">PRAGMA integrity_check</code> — if it fails, the DB file is deleted and recreated fresh. On read: if <code class="text-[10px]">MetadataStore.getEntry()</code> throws, the metadata store is closed and re-initialized. If <code class="text-[10px]">FsStore.readVerified()</code> returns null, the stale metadata row is deleted.</p>
+            <span class="font-semibold text-emerald-700"
+              >Self-healing on corruption</span
+            >
+            <p class="mt-1">
+              On init: <code class="text-[10px]">PRAGMA integrity_check</code> —
+              if it fails, the DB file is deleted and recreated fresh. On read:
+              if
+              <code class="text-[10px]">MetadataStore.getEntry()</code> throws,
+              the metadata store is closed and re-initialized. If
+              <code class="text-[10px]">FsStore.readVerified()</code> returns
+              null, the stale metadata row is deleted.
+            </p>
           </div>
           <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700">Content-addressed with content hash</span>
-            <p class="mt-1">Each Stage B entry stores a <code class="text-[10px]">Bun.hash()</code> of the file content alongside the bytes. On read, both <code class="text-[10px]">stat().size</code> and the content hash are verified — catches same-size bit flips that size-only checks would miss.</p>
+            <span class="font-semibold text-emerald-700"
+              >Content-addressed with content hash</span
+            >
+            <p class="mt-1">
+              Each Pixel entry stores a
+              <code class="text-[10px]">Bun.hash()</code> of the file content
+              alongside the bytes. On read, both
+              <code class="text-[10px]">stat().size</code> and the content hash
+              are verified — catches same-size bit flips that size-only checks
+              would miss.
+            </p>
           </div>
         </div>
       </section>
@@ -603,7 +854,9 @@
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
             Before: the CLI coordinates eight discrete steps. After: one call to
-            <code class="text-emerald-700 text-xs bg-emerald-50 px-1 rounded">runBatch()</code>
+            <code class="text-emerald-700 text-xs bg-emerald-50 px-1 rounded"
+              >runBatch()</code
+            >
             — core owns everything below.
           </p>
         </div>
@@ -611,38 +864,102 @@
         <div class="grid grid-cols-2 gap-6">
           <!-- Before -->
           <div>
-            <p class="text-[10px] uppercase tracking-wider font-semibold text-red-600 mb-2">Before &mdash; flat</p>
+            <p
+              class="text-[10px] uppercase tracking-wider font-semibold text-red-600 mb-2"
+            >
+              Before &mdash; flat
+            </p>
             <div class="rounded-lg border-2 border-red-300 bg-red-50 p-4">
-              <p class="text-xs font-bold text-red-800 mb-2">studio render (caller)</p>
+              <p class="text-xs font-bold text-red-800 mb-2">
+                studio render (caller)
+              </p>
               <div class="flex flex-wrap gap-1.5">
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">loadConfig</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">loadTemplate</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">parseDataFile</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">expandMatrix</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">renderOne &times;N</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">compileTemplate</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">renderToPixels</span>
-                <span class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700">writeManifest</span>
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >loadConfig</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >importTemplateForBatch</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >parseDataFile</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >expandMatrix</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >renderOne &times;N</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >compileTemplate</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >renderToPixels</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >writeManifest</span
+                >
               </div>
             </div>
           </div>
 
           <!-- After -->
           <div>
-            <p class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2">After &mdash; collapsed</p>
-            <div class="rounded-lg border-2 border-emerald-500 bg-emerald-50 p-4">
-              <p class="text-xs font-bold text-emerald-800 mb-2">studio render (caller)</p>
+            <p
+              class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
+            >
+              After &mdash; collapsed
+            </p>
+            <div
+              class="rounded-lg border-2 border-emerald-500 bg-emerald-50 p-4"
+            >
+              <p class="text-xs font-bold text-emerald-800 mb-2">
+                studio render (caller)
+              </p>
               <div class="rounded-lg border-2 border-emerald-600 bg-white p-3">
-                <p class="text-[11px] font-semibold text-emerald-700 mb-2">runBatch()</p>
+                <p class="text-[11px] font-semibold text-emerald-700 mb-2">
+                  runBatch()
+                </p>
                 <div class="flex flex-wrap gap-1.5 opacity-50">
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">loadConfig</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">loadTemplate</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">parseDataFile</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">expandMatrix</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">renderOne ×N</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">compileTemplate</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">renderToPixels</span>
-                  <span class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500">writeManifest</span>
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >loadConfig</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >importTemplateForBatch</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >parseDataFile</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >expandMatrix</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >renderOne ×N</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >compileTemplate</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >renderToPixels</span
+                  >
+                  <span
+                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    >writeManifest</span
+                  >
                 </div>
               </div>
             </div>
@@ -651,21 +968,31 @@
 
         <div class="flex gap-6 text-xs text-stone-500">
           <div class="flex items-center gap-2">
-            <span class="inline-block w-3 h-3 rounded bg-red-50 border border-red-300"></span>
+            <span
+              class="inline-block w-3 h-3 rounded bg-red-50 border border-red-300"
+            ></span>
             CLI owns everything
           </div>
           <div class="flex items-center gap-2">
-            <span class="inline-block w-3 h-3 rounded bg-emerald-50 border border-emerald-500"></span>
-            CLI calls <code class="text-[10px]">runBatch()</code>; core owns the rest
+            <span
+              class="inline-block w-3 h-3 rounded bg-emerald-50 border border-emerald-500"
+            ></span>
+            CLI calls <code class="text-[10px]">runBatch()</code>; core owns the
+            rest
           </div>
         </div>
       </section>
 
       <!-- ── 9. Top Recommendation ── -->
-      <section id="top-recommendation" class="rounded-xl border-2 border-emerald-500 bg-emerald-50 p-6">
+      <section
+        id="top-recommendation"
+        class="rounded-xl border-2 border-emerald-500 bg-emerald-50 p-6"
+      >
         <div class="space-y-3">
           <div class="flex items-center gap-3">
-            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span
+              class="inline-block w-2 h-2 rounded-full bg-emerald-500"
+            ></span>
             <h2 class="text-lg font-serif font-semibold text-emerald-900">
               Core: one render pipeline, multiple front doors
             </h2>
@@ -673,16 +1000,20 @@
 
           <p class="text-sm text-emerald-800 leading-relaxed max-w-3xl">
             Every front door (CLI, dev-server, web-ui, future MCP) renders
-            through <code class="text-xs bg-white px-1 rounded">@stdout-design/core</code>.
-            Preview == export by construction — there is no second renderer to
-            drift. This is the single most important structural decision in the
-            repo, and it's the same principle that keeps react-email's monorepo
-            coherent.
+            through
+            <code class="text-xs bg-white px-1 rounded"
+              >@stdout-design/core</code
+            >. Preview == export by construction — there is no second renderer
+            to drift. This is the single most important structural decision in
+            the repo, and it's the same principle that keeps react-email's
+            monorepo coherent.
           </p>
 
           <div class="flex flex-wrap gap-3 pt-2">
-            <a href="adr/0001.md"
-               class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline">
+            <a
+              href="adr/0001.md"
+              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+            >
               &rarr; See ADR 0001 for the full decision record
             </a>
             <span class="text-xs text-emerald-500 self-center">
@@ -691,7 +1022,6 @@
           </div>
         </div>
       </section>
-
     </main>
   </body>
 </html>

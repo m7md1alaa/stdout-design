@@ -52,8 +52,8 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
       width: 1920,
     });
 
-    await cache.setStageB(key, bytes, 1920, 1080, "png");
-    const readBack = await cache.getStageB(key);
+    await cache.setPixels(key, bytes, 1920, 1080, "png");
+    const readBack = await cache.getPixels(key);
 
     expect(readBack).not.toBeNull();
     expect(sha256(readBack as Buffer)).toBe(sha256(bytes));
@@ -68,7 +68,7 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
       templateContentHash: "corrupt-me",
       width: 10,
     });
-    const filePath = await cache.setStageB(key, original, 10, 10, "png");
+    const filePath = await cache.setPixels(key, original, 10, 10, "png");
 
     const corrupted = Buffer.from(original);
     // oxlint-disable-next-line eslint/no-bitwise
@@ -79,13 +79,13 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
     // same length as `original`
     await Bun.write(filePath, corrupted);
 
-    const result = await cache.getStageB(key);
+    const result = await cache.getPixels(key);
     // caught by content-hash verification, not silently served
     expect(result).toBeNull();
 
     // Self-healed: the stale row is gone, not just the read failing.
     const stats = await cache.stats();
-    expect(stats.stageB.entries).toBe(0);
+    expect(stats.pixels.entries).toBe(0);
   });
 
   it("a write that fails FsStore verification on next read doesn't leave orphaned bytes counted in totals", async () => {
@@ -97,18 +97,18 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
       templateContentHash: "orphan-check",
       width: 5,
     });
-    const filePath = await cache.setStageB(key, bytes, 5, 5, "png");
+    const filePath = await cache.setPixels(key, bytes, 5, 5, "png");
 
     let stats = await cache.stats();
-    expect(stats.stageB.sizeBytes).toBe(bytes.length);
+    expect(stats.pixels.sizeBytes).toBe(bytes.length);
 
     // Truncate to simulate corruption, then force a read (which self-heals).
     await Bun.write(filePath, bytes.subarray(0, -10));
-    await cache.getStageB(key);
+    await cache.getPixels(key);
 
     stats = await cache.stats();
-    expect(stats.stageB.sizeBytes).toBe(0);
-    expect(stats.stageB.entries).toBe(0);
+    expect(stats.pixels.sizeBytes).toBe(0);
+    expect(stats.pixels.entries).toBe(0);
   });
 
   it("re-rendering the same key at a new size updates totals correctly (upsert path, not insert+orphan)", async () => {
@@ -120,15 +120,15 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
       width: 5,
     });
 
-    await cache.setStageB(key, randomImageBuffer(1 * KB), 5, 5, "png");
+    await cache.setPixels(key, randomImageBuffer(1 * KB), 5, 5, "png");
     let stats = await cache.stats();
-    expect(stats.stageB.sizeBytes).toBe(1 * KB);
-    expect(stats.stageB.entries).toBe(1);
+    expect(stats.pixels.sizeBytes).toBe(1 * KB);
+    expect(stats.pixels.entries).toBe(1);
 
-    await cache.setStageB(key, randomImageBuffer(3 * KB), 5, 5, "png");
+    await cache.setPixels(key, randomImageBuffer(3 * KB), 5, 5, "png");
     stats = await cache.stats();
-    expect(stats.stageB.sizeBytes).toBe(3 * KB);
-    expect(stats.stageB.entries).toBe(1);
+    expect(stats.pixels.sizeBytes).toBe(3 * KB);
+    expect(stats.pixels.entries).toBe(1);
   });
 });
 
@@ -168,10 +168,10 @@ describe("RenderCache: large-buffer concurrent load", () => {
     });
 
     await Promise.all(
-      entries.map((e) => cache.setStageB(e.key, e.bytes, 100, 100, "png"))
+      entries.map((e) => cache.setPixels(e.key, e.bytes, 100, 100, "png"))
     );
     const results = await Promise.all(
-      entries.map((e) => cache.getStageB(e.key))
+      entries.map((e) => cache.getPixels(e.key))
     );
 
     for (const [i, buf] of results.entries()) {
@@ -208,8 +208,8 @@ describe("RenderCache: multi-process access", () => {
       width: 1,
     });
 
-    await cacheA.setStageB(key, bytes, 1, 1, "png");
-    const seenFromB = await cacheB.getStageB(key);
+    await cacheA.setPixels(key, bytes, 1, 1, "png");
+    const seenFromB = await cacheB.getPixels(key);
 
     expect(seenFromB).not.toBeNull();
     expect(sha256(seenFromB as Buffer)).toBe(sha256(bytes));
@@ -232,7 +232,7 @@ describe("RenderCache: multi-process access", () => {
         width: i,
       });
       // oxlint-disable-next-line eslint/no-await-in-loop
-      await cacheA.setStageB(key, randomImageBuffer(10 * KB), i, i, "png");
+      await cacheA.setPixels(key, randomImageBuffer(10 * KB), i, i, "png");
     }
 
     // The EvictionCoordinator's lock means only one of these actually runs
@@ -243,7 +243,7 @@ describe("RenderCache: multi-process access", () => {
     }
 
     const statsA = await cacheA.stats();
-    expect(statsA.stageB.entries).toBe(0);
+    expect(statsA.pixels.entries).toBe(0);
     expect(existsSync(dir)).toBe(true);
 
     cacheA.close();
@@ -259,9 +259,9 @@ describe("RenderCache: eviction under real write traffic", () => {
     dir = makeTempDir();
     cache = new RenderCache({
       cacheDir: dir,
+      compiledMaxEntries: 10,
       evictionDebounceMs: 20,
       maxSizeMB: 1,
-      stageAMaxEntries: 10,
     });
     await cache.init();
   });
@@ -285,7 +285,7 @@ describe("RenderCache: eviction under real write traffic", () => {
       });
       keys.push(key);
       // oxlint-disable-next-line eslint/no-await-in-loop
-      await cache.setStageB(key, randomImageBuffer(ENTRY_SIZE), i, i, "png");
+      await cache.setPixels(key, randomImageBuffer(ENTRY_SIZE), i, i, "png");
       // oxlint-disable-next-line eslint/no-await-in-loop
       await sleep(2);
     }
@@ -294,14 +294,14 @@ describe("RenderCache: eviction under real write traffic", () => {
     await sleep(100);
 
     const stats = await cache.stats();
-    expect(stats.stageB.sizeBytes).toBeLessThanOrEqual(
-      stats.stageB.maxSizeBytes
+    expect(stats.pixels.sizeBytes).toBeLessThanOrEqual(
+      stats.pixels.maxSizeBytes
     );
 
     // oxlint-disable-next-line typescript/no-non-null-assertion
-    const oldest = await cache.getStageB(keys[0]!);
+    const oldest = await cache.getPixels(keys[0]!);
     // oxlint-disable-next-line typescript/no-non-null-assertion
-    const newest = await cache.getStageB(keys.at(-1)!);
+    const newest = await cache.getPixels(keys.at(-1)!);
     expect(oldest).toBeNull();
     expect(newest).not.toBeNull();
   });

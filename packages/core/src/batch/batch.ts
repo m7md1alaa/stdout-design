@@ -9,8 +9,8 @@ import type { Font, FontDescriptor } from "../node/takumi-types-shim.js";
 import { logDebug } from "../shared/logger.js";
 import { compileTemplate } from "../shared/render.js";
 import {
+  importTemplateForBatch,
   loadConfig,
-  loadTemplate,
   parseDataFile,
   resolveLocales,
 } from "./loaders.js";
@@ -101,7 +101,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
     throw new Error(`Template not found: ${templateId}`);
   }
 
-  const { contentHash, module } = await loadTemplate(
+  const { contentHash, module } = await importTemplateForBatch(
     rootDir,
     entry.componentPath,
     templateId

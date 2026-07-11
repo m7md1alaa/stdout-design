@@ -7,11 +7,7 @@ export const renderRequestSchema = z.object({
   templateId: z.string().min(1),
 });
 
-type RenderRequest = z.infer<typeof renderRequestSchema>;
-
 export const measureRequestSchema = z.object({
   props: z.unknown(),
   templateId: z.string().min(1),
 });
-
-type MeasureRequest = z.infer<typeof measureRequestSchema>;

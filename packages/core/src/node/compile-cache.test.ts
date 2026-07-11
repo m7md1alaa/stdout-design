@@ -1,21 +1,21 @@
 import { describe, expect, it } from "bun:test";
 
-import { StageACache } from "./stage-a-cache.js";
+import { CompileCache } from "./compile-cache.js";
 
-describe("StageACache", () => {
+describe("CompileCache", () => {
   it("returns null for a key that was never set", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     expect(cache.get("missing")).toBeNull();
   });
 
   it("stores and retrieves a value", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     cache.set("a", { compiled: 1 });
     expect(cache.get("a")).toEqual({ compiled: 1 });
   });
 
   it("overwrites an existing key without growing insertion order", () => {
-    const cache = new StageACache(2);
+    const cache = new CompileCache(2);
     cache.set("a", 1);
     cache.set("a", 2);
     cache.set("b", 3);
@@ -25,21 +25,42 @@ describe("StageACache", () => {
     expect(cache.get("b")).toBe(3);
   });
 
-  it("evicts strictly in insertion order once the limit is exceeded", () => {
-    const cache = new StageACache(3);
+  it("evicts least-recently-used entries; a recently read entry survives eviction over an untouched one", () => {
+    const cache = new CompileCache(3);
     cache.set("a", 1);
     cache.set("b", 2);
     cache.set("c", 3);
+    // Reading "a" promotes it to MRU position.
+    cache.get("a");
+    // "b" is now the LRU entry, so adding "d" evicts "b", not "a".
     cache.set("d", 4);
 
-    expect(cache.get("a")).toBeNull();
-    expect(cache.get("b")).toBe(2);
+    expect(cache.get("b")).toBeNull();
+    expect(cache.get("a")).toBe(1);
     expect(cache.get("c")).toBe(3);
     expect(cache.get("d")).toBe(4);
   });
 
+  it("repeated reads keep an entry alive under eviction pressure", () => {
+    const cache = new CompileCache(3);
+    cache.set("a", 1);
+    cache.set("b", 2);
+    cache.set("c", 3);
+    // Repeatedly read "a" to keep promoting it.
+    cache.get("a");
+    cache.set("d", 4);
+    cache.get("a");
+    cache.set("e", 5);
+
+    expect(cache.get("b")).toBeNull();
+    expect(cache.get("c")).toBeNull();
+    expect(cache.get("a")).toBe(1);
+    expect(cache.get("d")).toBe(4);
+    expect(cache.get("e")).toBe(5);
+  });
+
   it("evicting via the limit does not leave a stale entry in the content-hash index", () => {
-    const cache = new StageACache(1);
+    const cache = new CompileCache(1);
     cache.setWithContentHash("a", "content-x", 1);
     // evicts "a" via the size limit
     cache.setWithContentHash("b", "content-y", 2);
@@ -53,7 +74,7 @@ describe("StageACache", () => {
   });
 
   it("invalidateByContentHash removes only entries registered under that hash", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     cache.setWithContentHash("a", "content-x", 1);
     // same content hash, different key
     cache.setWithContentHash("b", "content-x", 2);
@@ -68,14 +89,14 @@ describe("StageACache", () => {
   });
 
   it("invalidateByContentHash on an unknown hash is a safe no-op", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     cache.set("a", 1);
     expect(() => cache.invalidateByContentHash("never-seen")).not.toThrow();
     expect(cache.get("a")).toBe(1);
   });
 
   it("a plain set() (no content hash) is untouched by invalidateByContentHash", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     // not registered under any content hash
     cache.set("a", 1);
     cache.invalidateByContentHash("anything");
@@ -83,7 +104,7 @@ describe("StageACache", () => {
   });
 
   it("clear() empties both the value map and the content-hash index", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     cache.setWithContentHash("a", "content-x", 1);
     cache.clear();
 
@@ -97,7 +118,7 @@ describe("StageACache", () => {
   });
 
   it("size reflects the current entry count, not the limit", () => {
-    const cache = new StageACache(5);
+    const cache = new CompileCache(5);
     expect(cache.size).toBe(0);
     cache.set("a", 1);
     cache.set("b", 2);
@@ -105,7 +126,7 @@ describe("StageACache", () => {
   });
 
   it("re-registering the same key under a new content hash does not double-index it under the old one", () => {
-    const cache = new StageACache(10);
+    const cache = new CompileCache(10);
     cache.setWithContentHash("a", "content-x", 1);
     // same key, new content hash
     cache.setWithContentHash("a", "content-y", 2);
@@ -124,7 +145,7 @@ describe("StageACache", () => {
   });
 
   it("default max entries (no constructor argument) is a sane positive number", () => {
-    const cache = new StageACache();
+    const cache = new CompileCache();
     for (let i = 0; i < 150; i += 1) {
       cache.set(`k${i}`, i);
     }

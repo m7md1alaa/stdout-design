@@ -43,8 +43,8 @@ mock.module("@takumi-rs/helpers", () => ({
   ),
 }));
 
-const { resetRenderer } = await import("../node/renderer.js");
-resetRenderer();
+const { __resetRendererForTesting } = await import("../node/renderer.js");
+__resetRendererForTesting();
 
 const { expandMatrix } = await import("../batch/matrix.js");
 const { renderOne } = await import("../batch/render-one.js");
@@ -116,7 +116,7 @@ describe("renderOne with locale", () => {
       }
       tmpDir = "";
     }
-    resetRenderer();
+    __resetRendererForTesting();
   });
 
   it("produces output for ar locale with renderOptions", async () => {

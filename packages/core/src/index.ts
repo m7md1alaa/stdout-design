@@ -18,9 +18,10 @@ export type { LogLevel } from "./shared/logger.js";
 
 export { RenderCache } from "./node/render-cache.js";
 export type {
-  StageAKeyInput,
-  StageBKeyInput,
+  CompileCacheKeyInput,
+  PixelCacheKeyInput,
   CacheStats,
+  RenderCacheOptions,
 } from "./node/render-cache.js";
 
 // Consolidated: this now resolves to the file that carries the structured
@@ -38,8 +39,6 @@ export {
 export type { PropSchema, PropValidationIssue } from "./shared/validation.js";
 
 export {
-  getRenderer,
-  resetRenderer,
   registerFont,
   renderToPixels,
   measureTemplate,
@@ -73,8 +72,8 @@ export { runBatch } from "./batch/batch.js";
 export type { BatchInput, BatchOutput } from "./batch/batch.js";
 
 export {
+  importTemplateForBatch,
   loadConfig,
-  loadTemplate,
   parseDataFile,
   resolveLocales,
 } from "./batch/loaders.js";

@@ -1,23 +1,23 @@
 /**
- * Stage A: in-memory compile-result cache.
+ * CompileCache: in-memory compile-result cache.
  *
  * Process-local only, never persisted, never shared across processes.
- * Cheap to recompute, so this is a pure insertion-order LRU with no
- * durability concerns -- extracted from the old monolithic RenderCache
- * with no behavior change, just decoupled from Stage B's disk/SQLite
- * concerns.
+ * Cheap to recompute, so this uses a simple LRU eviction policy: the
+ * `get()` method promotes a hit to most-recently-used position before
+ * returning, and eviction removes the least-recently-used entry when
+ * capacity is exceeded.
  */
 
-const DEFAULT_STAGE_A_MAX = 100;
+const DEFAULT_COMPILED_MAX = 100;
 
-export class StageACache {
+export class CompileCache {
   private readonly maxEntries: number;
 
   private readonly cache = new Map<string, unknown>();
   private readonly order: string[] = [];
   private readonly contentHashIndex = new Map<string, Set<string>>();
 
-  constructor(maxEntries: number = DEFAULT_STAGE_A_MAX) {
+  constructor(maxEntries: number = DEFAULT_COMPILED_MAX) {
     this.maxEntries = maxEntries;
   }
 
@@ -26,7 +26,15 @@ export class StageACache {
   }
 
   get(key: string): unknown {
-    return this.cache.get(key) ?? null;
+    if (this.cache.has(key)) {
+      const idx = this.order.indexOf(key);
+      if (idx !== -1) {
+        this.order.splice(idx, 1);
+        this.order.push(key);
+      }
+      return this.cache.get(key);
+    }
+    return null;
   }
 
   set(key: string, value: unknown): void {

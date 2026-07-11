@@ -26,7 +26,7 @@ export const renderOne = async (
 
   const propsJSON = JSON.stringify(props);
 
-  const stageBKey = RenderCache.createStageBKey({
+  const pixelKey = RenderCache.createStageBKey({
     format,
     height,
     propsJSON,
@@ -34,7 +34,7 @@ export const renderOne = async (
     width,
   });
 
-  const cached = await cache.getStageB(stageBKey);
+  const cached = await cache.getPixels(pixelKey);
   if (cached) {
     const outputPath = `${outDir}/${filename}`;
     await ensureDir(outDir);
@@ -73,7 +73,7 @@ export const renderOne = async (
     signal
   );
 
-  await cache.setStageB(stageBKey, output.bytes, width, height, format);
+  await cache.setPixels(pixelKey, output.bytes, width, height, format);
 
   const outputPath = `${outDir}/${filename}`;
   await ensureDir(outDir);
