@@ -19,11 +19,11 @@
     "check-types:tsgo": {
       "dependsOn": ["^check-types:tsgo"]
     },
-    "@stdout/studio#build": {
+    "@stdout-design/cli#build": {
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]
     },
-    "@stdout/studio#dev": {
+    "@stdout-design/cli#dev": {
       "cache": false,
       "persistent": true
     },

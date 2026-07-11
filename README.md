@@ -7,7 +7,7 @@ An open-source, local-first studio that renders your own TSX components into fin
 ## Quick start
 
 ```bash
-bun add -d @stdout/studio
+bun add -d @stdout-design/cli
 npx studio render bento-feature --title "10k users" --stat "launched" --out post.png
 ```
 

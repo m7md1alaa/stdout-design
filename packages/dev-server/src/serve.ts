@@ -1,13 +1,8 @@
-import path from "node:path";
-
 import { ErrorCode, logError } from "@stdout-design/core";
 
 import { createDevServer } from "./index.js";
 
-const { resolve } = path;
-
-const rootDir =
-  process.argv[2] ?? resolve(import.meta.dir, "../../../examples");
+const rootDir = process.argv[2] ?? process.cwd();
 
 const port = Math.trunc(Number(process.env.PORT ?? "3000"));
 

@@ -56,12 +56,12 @@
             flowchart LR
               Core["@stdout-design/core<br/><span style='font-size:0.8rem'>Render engine · Cache · Batch</span>"]
               Dev["@stdout-design/dev-server<br/><span style='font-size:0.8rem'>Hono HTTP + SSE</span>"]
-              CLI["@stdout/studio<br/><span style='font-size:0.8rem'>CLI binary</span>"]
+              CLI["@stdout-design/cli<br/><span style='font-size:0.8rem'>CLI binary</span>"]
               Web["web-ui<br/><span style='font-size:0.8rem'>Vite + React</span>"]
 
               Core -->|runtime| Dev
-              Core -.->|devDep| CLI
-              Dev -.->|devDep| CLI
+              Core -->|runtime| CLI
+              Dev -->|runtime| CLI
 
               classDef core fill:#ecfdf5,stroke:#059669,stroke-width:2px;
               classDef dev fill:#f0f9ff,stroke:#0284c7,stroke-width:1px;
@@ -78,10 +78,6 @@
           <span class="flex items-center gap-2">
             <span class="inline-block w-5 h-px bg-slate-600"></span>
             runtime dependency
-          </span>
-          <span class="flex items-center gap-2">
-            <span class="inline-block w-5 h-px border-t border-dashed border-slate-400"></span>
-            dev dependency (used at runtime in monorepo)
           </span>
           <span class="text-stone-400">
             web-ui is standalone — no workspace imports.
@@ -434,7 +430,7 @@
         <div class="mt-8">
           <div class="flex items-center gap-2 mb-3">
             <span class="text-xs uppercase tracking-wider font-bold text-amber-600">
-              @stdout/studio
+              @stdout-design/cli
             </span>
             <span class="text-[10px] text-amber-500 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">shallow</span>
           </div>
@@ -685,9 +681,9 @@
           </p>
 
           <div class="flex flex-wrap gap-3 pt-2">
-            <a href="ADR.md"
+            <a href="adr/0001.md"
                class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline">
-              &rarr; See ADR.md for the full decision record
+              &rarr; See ADR 0001 for the full decision record
             </a>
             <span class="text-xs text-emerald-500 self-center">
               One interface, one place to test.
