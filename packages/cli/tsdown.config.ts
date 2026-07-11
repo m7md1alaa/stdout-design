@@ -11,6 +11,6 @@ export default defineConfig({
     ],
   },
   dts: false,
-  entry: ["./src/index.ts"],
+  entry: ["./src/index.ts", "./src/schema.ts"],
   format: "esm",
 });

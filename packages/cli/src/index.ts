@@ -3,7 +3,7 @@ import { Command } from "commander";
 
 import { formatError } from "./lib/display.js";
 
-export { defineSchema, type StudioConfig } from "@stdout-design/core";
+export type { StudioConfig } from "@stdout-design/core";
 
 const program = new Command().allowExcessArguments(true);
 

@@ -25,7 +25,7 @@ export default config;
 `;
 
 const getBentoFeatureTemplate =
-  () => `import { defineSchema } from "@stdout-design/cli";
+  () => `import { defineSchema } from "@stdout-design/cli/schema";
 import { createElement, css, text } from "takumi-js";
 import type { TakumiNode } from "takumi-js";
 

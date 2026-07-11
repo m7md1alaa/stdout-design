@@ -1,30 +1,36 @@
+import { defineSchema } from "@stdout-design/core/schema";
 import { z } from "zod";
 
 export const templateId = "bento-feature" as const;
 
-export const propsSchema = z.object({
-  background: z.string().default("#0a0a0a").describe("Background color"),
-  description: z
-    .string()
-    .default("Production-ready image generation for your stack.")
-    .describe("Supporting description text"),
-  headline: z
-    .string()
-    .min(1)
-    .default("The Open Graph Image Framework")
-    .describe("Main headline for the feature card"),
-  image: z
-    .url()
-    .default(
-      "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=400&fit=crop"
-    )
-    .describe("URL to the feature image"),
-  locale: z.string().optional().describe("Current locale code for RTL support"),
-  tags: z
-    .array(z.string())
-    .default(["open-source", "image-gen"])
-    .describe("Feature tags or badges"),
-});
+export const propsSchema = defineSchema(
+  z.object({
+    background: z.string().default("#0a0a0a").describe("Background color"),
+    description: z
+      .string()
+      .default("Production-ready image generation for your stack.")
+      .describe("Supporting description text"),
+    headline: z
+      .string()
+      .min(1)
+      .default("The Open Graph Image Framework")
+      .describe("Main headline for the feature card"),
+    image: z
+      .url()
+      .default(
+        "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=400&fit=crop"
+      )
+      .describe("URL to the feature image"),
+    locale: z
+      .string()
+      .optional()
+      .describe("Current locale code for RTL support"),
+    tags: z
+      .array(z.string())
+      .default(["open-source", "image-gen"])
+      .describe("Feature tags or badges"),
+  })
+);
 
 export type Props = z.infer<typeof propsSchema>;
 

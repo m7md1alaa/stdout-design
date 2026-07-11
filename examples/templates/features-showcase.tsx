@@ -1,27 +1,30 @@
+import { defineSchema } from "@stdout-design/core/schema";
 import { z } from "zod";
 
 export const templateId = "features-showcase" as const;
 
-export const propsSchema = z.object({
-  background: z.string().default("#0a0a0a").describe("Background color"),
-  description: z.string().default("").describe("Supporting description text"),
-  headline: z
-    .string()
-    .min(1)
-    .default("Headline")
-    .describe("Main headline for the feature card"),
-  image: z
-    .string()
-    .url()
-    .default("https://placehold.co/600x400")
-    .describe("URL to the feature image"),
-  step: z.number().min(1).default(1).describe("Feature step or index number"),
-  tags: z.array(z.string()).default([]).describe("Feature tags or badges"),
-  theme: z
-    .enum(["dark", "light", "glass"])
-    .default("dark")
-    .describe("Visual theme variant"),
-});
+export const propsSchema = defineSchema(
+  z.object({
+    background: z.string().default("#0a0a0a").describe("Background color"),
+    description: z.string().default("").describe("Supporting description text"),
+    headline: z
+      .string()
+      .min(1)
+      .default("Headline")
+      .describe("Main headline for the feature card"),
+    image: z
+      .string()
+      .url()
+      .default("https://placehold.co/600x400")
+      .describe("URL to the feature image"),
+    step: z.number().min(1).default(1).describe("Feature step or index number"),
+    tags: z.array(z.string()).default([]).describe("Feature tags or badges"),
+    theme: z
+      .enum(["dark", "light", "glass"])
+      .default("dark")
+      .describe("Visual theme variant"),
+  })
+);
 
 export type Props = z.infer<typeof propsSchema>;
 

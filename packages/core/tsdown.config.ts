@@ -6,6 +6,6 @@ export default defineConfig({
     neverBundle: ["bun:sqlite"],
   },
   dts: true,
-  entry: ["./src/index.ts"],
+  entry: ["./src/index.ts", "./src/schema.ts"],
   format: "esm",
 });

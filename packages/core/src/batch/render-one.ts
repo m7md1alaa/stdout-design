@@ -26,7 +26,7 @@ export const renderOne = async (
 
   const propsJSON = JSON.stringify(props);
 
-  const pixelKey = RenderCache.createStageBKey({
+  const pixelKey = RenderCache.createPixelCacheKey({
     format,
     height,
     propsJSON,

@@ -1,36 +1,42 @@
+import { defineSchema } from "@stdout-design/core/schema";
 import { z } from "zod";
 
 export const templateId = "complex-stat-card" as const;
 
-export const propsSchema = z.object({
-  accentColor: z.string().default("#8b5cf6").describe("Primary brand color"),
-  collaborators: z
-    .array(z.url())
-    .default([
-      "https://i.pravatar.cc/150?u=1",
-      "https://i.pravatar.cc/150?u=2",
-      "https://i.pravatar.cc/150?u=3",
-    ])
-    .describe("Avatar URLs for the top right"),
-  label: z.string().default("vs last 7 days"),
-  showGrid: z
-    .boolean()
-    .default(true)
-    .describe("Render background grid pattern"),
-  sparkline: z
-    .array(z.coerce.number())
-    .default([30, 45, 25, 60, 85, 70, 95])
-    .describe("Data points for the bottom bar chart"),
-  stat: z.string().default("124.5K"),
-  theme: z.enum(["light", "dark"]).default("dark").describe("Color theme mode"),
-  title: z.string().default("Weekly Active Users"),
-  trend: z
-    .object({
-      isPositive: z.boolean().default(true),
-      value: z.string().default("14.2%"),
-    })
-    .default({}),
-});
+export const propsSchema = defineSchema(
+  z.object({
+    accentColor: z.string().default("#8b5cf6").describe("Primary brand color"),
+    collaborators: z
+      .array(z.url())
+      .default([
+        "https://i.pravatar.cc/150?u=1",
+        "https://i.pravatar.cc/150?u=2",
+        "https://i.pravatar.cc/150?u=3",
+      ])
+      .describe("Avatar URLs for the top right"),
+    label: z.string().default("vs last 7 days"),
+    showGrid: z
+      .boolean()
+      .default(true)
+      .describe("Render background grid pattern"),
+    sparkline: z
+      .array(z.coerce.number())
+      .default([30, 45, 25, 60, 85, 70, 95])
+      .describe("Data points for the bottom bar chart"),
+    stat: z.string().default("124.5K"),
+    theme: z
+      .enum(["light", "dark"])
+      .default("dark")
+      .describe("Color theme mode"),
+    title: z.string().default("Weekly Active Users"),
+    trend: z
+      .object({
+        isPositive: z.boolean().default(true),
+        value: z.string().default("14.2%"),
+      })
+      .default({}),
+  })
+);
 
 export type Props = z.infer<typeof propsSchema>;
 

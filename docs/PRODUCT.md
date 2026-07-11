@@ -113,7 +113,7 @@ your-repo/
 
 #### Developer Experience
 
-- **One-time setup wizard:** `npx @studio/init` scans for existing Tailwind/design-system config, auto-scaffolds `studio.config.ts`, and adds the CLI as a devDependency. Every subsequent `npm run studio` or `npx studio render` runs from node_modules with zero lag and offline capability.
+- **One-time setup wizard:** `npx @stdout-design/cli init` scans for existing Tailwind/design-system config, auto-scaffolds `studio.config.ts`, and adds the CLI as a devDependency. Every subsequent `npx studio` or `studio` commands run from node_modules with zero lag and offline capability.
 - **AST-driven prop parsing:** No secondary schema validation layer (no Zod). Studio reads TypeScript interfaces directly from template files to generate CLI validation, MCP enum tools, and UI dropdowns automatically.
 - **Automatic mock data injection:** When booting `studio dev`, undefined props are intelligently populated based on naming conventions (`avatarUrl` gets a placeholder image, `revenueStat` gets a sample number).
 - **Typo-tolerant CLI:** Levenshtein distance checks catch user errors. Typing `studio render btn-feature` when the template is `bento-feature` prompts: "Template 'btn-feature' not found. Did you mean 'bento-feature'? (y/n)"

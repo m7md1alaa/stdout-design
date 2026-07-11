@@ -1,25 +1,28 @@
+import { defineSchema } from "@stdout-design/core/schema";
 import { z } from "zod";
 
 export const templateId = "quote-card" as const;
 
-export const propsSchema = z.object({
-  author: z
-    .string()
-    .min(1)
-    .default("Anonymous")
-    .describe("Name of the person being quoted"),
-  avatarUrl: z
-    .url()
-    .default("https://placehold.co/100x100")
-    .describe("URL to the author's avatar image"),
-  background: z.string().default("#1e1b4b").describe("Background color"),
-  quote: z
-    .string()
-    .min(1)
-    .default("The best way to predict the future is to create it.")
-    .describe("The quoted text"),
-  role: z.string().default("").describe("Role or title of the author"),
-});
+export const propsSchema = defineSchema(
+  z.object({
+    author: z
+      .string()
+      .min(1)
+      .default("Anonymous")
+      .describe("Name of the person being quoted"),
+    avatarUrl: z
+      .url()
+      .default("https://placehold.co/100x100")
+      .describe("URL to the author's avatar image"),
+    background: z.string().default("#1e1b4b").describe("Background color"),
+    quote: z
+      .string()
+      .min(1)
+      .default("The best way to predict the future is to create it.")
+      .describe("The quoted text"),
+    role: z.string().default("").describe("Role or title of the author"),
+  })
+);
 
 export type Props = z.infer<typeof propsSchema>;
 

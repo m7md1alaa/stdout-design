@@ -230,7 +230,7 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const propsJSON = JSON.stringify(resolvedProps);
 
-    const pixelKey = RenderCache.createStageBKey({
+    const pixelKey = RenderCache.createPixelCacheKey({
       height: preset.height,
       propsJSON,
       templateContentHash: templateInfo.contentHash,
@@ -248,7 +248,7 @@ export const createDevServer = async (options: DevServerOptions) => {
       });
     }
 
-    const compileKey = RenderCache.createStageAKey({
+    const compileKey = RenderCache.createCompileCacheKey({
       propsJSON,
       templateContentHash: templateInfo.contentHash,
       templateId,
@@ -277,7 +277,7 @@ export const createDevServer = async (options: DevServerOptions) => {
     });
 
     await renderCache.setPixels(
-      stageBKey,
+      pixelKey,
       output.bytes,
       preset.width,
       preset.height
@@ -347,7 +347,7 @@ export const createDevServer = async (options: DevServerOptions) => {
 
     const propsJSON = JSON.stringify(validatedProps);
 
-    const compileKey = RenderCache.createStageAKey({
+    const compileKey = RenderCache.createCompileCacheKey({
       propsJSON,
       templateContentHash: templateInfo.contentHash,
       templateId,

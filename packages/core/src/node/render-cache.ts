@@ -58,8 +58,8 @@ export class RenderCache {
   private eviction: EvictionCoordinator | undefined;
   private initialized = false;
 
-  static readonly createStageAKey = createCompileCacheKey;
-  static readonly createStageBKey = createPixelCacheKey;
+  static readonly createCompileCacheKey = createCompileCacheKey;
+  static readonly createPixelCacheKey = createPixelCacheKey;
 
   constructor(options?: RenderCacheOptions) {
     this.cacheDir = options?.cacheDir ?? ".studio-cache";

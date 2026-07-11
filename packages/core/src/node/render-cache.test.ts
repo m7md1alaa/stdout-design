@@ -44,7 +44,7 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
 
   it("round-trips a large buffer through the full stack (FsStore write -> MetadataStore row -> FsStore verified read)", async () => {
     const bytes = randomImageBuffer(10 * MB);
-    const key = RenderCache.createStageBKey({
+    const key = RenderCache.createPixelCacheKey({
       format: "png",
       height: 1080,
       propsJSON: "{}",
@@ -61,7 +61,7 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
 
   it("FIXED: same-size bit-flip corruption is now detected end-to-end and self-heals the stale row (this was the GAP in the pre-split cache)", async () => {
     const original = randomImageBuffer(4 * KB);
-    const key = RenderCache.createStageBKey({
+    const key = RenderCache.createPixelCacheKey({
       format: "png",
       height: 10,
       propsJSON: "{}",
@@ -90,7 +90,7 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
 
   it("a write that fails FsStore verification on next read doesn't leave orphaned bytes counted in totals", async () => {
     const bytes = randomImageBuffer(2 * KB);
-    const key = RenderCache.createStageBKey({
+    const key = RenderCache.createPixelCacheKey({
       format: "png",
       height: 5,
       propsJSON: "{}",
@@ -112,7 +112,7 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
   });
 
   it("re-rendering the same key at a new size updates totals correctly (upsert path, not insert+orphan)", async () => {
-    const key = RenderCache.createStageBKey({
+    const key = RenderCache.createPixelCacheKey({
       format: "png",
       height: 5,
       propsJSON: "{}",
@@ -157,7 +157,7 @@ describe("RenderCache: large-buffer concurrent load", () => {
 
     const entries = Array.from({ length: CONCURRENCY }, (_, i) => {
       const bytes = randomImageBuffer(SIZE);
-      const key = RenderCache.createStageBKey({
+      const key = RenderCache.createPixelCacheKey({
         format: "png",
         height: 100 + i,
         propsJSON: `{"i":${i}}`,
@@ -200,7 +200,7 @@ describe("RenderCache: multi-process access", () => {
     await Promise.all([cacheA.init(), cacheB.init()]);
 
     const bytes = randomImageBuffer(10 * KB);
-    const key = RenderCache.createStageBKey({
+    const key = RenderCache.createPixelCacheKey({
       format: "png",
       height: 1,
       propsJSON: "{}",
@@ -224,7 +224,7 @@ describe("RenderCache: multi-process access", () => {
     await Promise.all([cacheA.init(), cacheB.init()]);
 
     for (let i = 0; i < 10; i += 1) {
-      const key = RenderCache.createStageBKey({
+      const key = RenderCache.createPixelCacheKey({
         format: "png",
         height: i,
         propsJSON: `{"i":${i}}`,
@@ -276,7 +276,7 @@ describe("RenderCache: eviction under real write traffic", () => {
     const keys: string[] = [];
 
     for (let i = 0; i < 20; i += 1) {
-      const key = RenderCache.createStageBKey({
+      const key = RenderCache.createPixelCacheKey({
         format: "png",
         height: i,
         propsJSON: `{"i":${i}}`,
