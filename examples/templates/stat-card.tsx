@@ -113,6 +113,7 @@ export default function ComplexStatCard({
               style={{
                 borderColor: bg,
                 marginLeft: i > 0 ? "-16px" : "0",
+                position: "relative",
                 zIndex: 10 - i,
               }}
             />

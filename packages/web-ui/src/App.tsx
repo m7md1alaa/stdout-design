@@ -13,6 +13,12 @@ import { createHttpRenderAdapter } from "./lib/http-render-adapter";
 import type { RenderAdapter, ValidationIssue } from "./lib/renderer";
 import { setNestedValue } from "./lib/utils";
 
+interface PropDef {
+  type?: string;
+  default?: unknown;
+  properties?: Record<string, PropDef>;
+}
+
 const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
 
 const computeDefaultProps = (
@@ -21,7 +27,7 @@ const computeDefaultProps = (
   const defaults: Record<string, unknown> = {};
   const properties = (
     template?.propsSchema as {
-      properties?: Record<string, { type?: string; default?: unknown }>;
+      properties?: Record<string, PropDef>;
     }
   )?.properties;
   if (!properties) {
@@ -114,7 +120,8 @@ const App = () => {
     if (effectiveTemplateId) {
       setPropStore((prev) => ({
         ...prev,
-        [effectiveTemplateId]: prev[effectiveTemplateId],
+        [effectiveTemplateId]:
+          prev[effectiveTemplateId] ?? ({} as Record<string, unknown>),
       }));
     }
 

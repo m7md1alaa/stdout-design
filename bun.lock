@@ -27,7 +27,7 @@
       },
     },
     "packages/cli": {
-      "name": "@stdout/studio",
+      "name": "@stdout-design/cli",
       "version": "0.0.0",
       "bin": {
         "studio": "./dist/index.mjs",
@@ -490,13 +490,13 @@
 
     "@sinonjs/fake-timers": ["@sinonjs/fake-timers@15.4.0", "", { "dependencies": { "@sinonjs/commons": "^3.0.1" } }, "sha512-DsG+8/LscQIQg68J6Ef3dv10u6nVyetYn923s3/sus5eaGfTo1of5WMZSLf0UJc9KDuKPilPH0UDJCjvNbDNCA=="],
 
+    "@stdout-design/cli": ["@stdout-design/cli@workspace:packages/cli"],
+
     "@stdout-design/config": ["@stdout-design/config@workspace:packages/config"],
 
     "@stdout-design/core": ["@stdout-design/core@workspace:packages/core"],
 
     "@stdout-design/dev-server": ["@stdout-design/dev-server@workspace:packages/dev-server"],
-
-    "@stdout/studio": ["@stdout/studio@workspace:packages/cli"],
 
     "@tailwindcss/node": ["@tailwindcss/node@4.3.2", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-resolve": "5.21.6", "jiti": "^2.7.0", "lightningcss": "1.32.0", "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailwindcss": "4.3.2" } }, "sha512-yWP/sqEcBLaD8JuA6zNwxoYKr75qxTioYwlRwekj5Jr/I5GXnoJfjetH/psLUIv74cYTH2lBUEzBkinthoYcBg=="],
 

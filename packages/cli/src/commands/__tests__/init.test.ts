@@ -99,6 +99,7 @@ describe("scaffold", () => {
     });
 
     expect(existsSync(path.join(dir, "studio.config.ts"))).toBe(true);
+    expect(existsSync(path.join(dir, "package.json"))).toBe(true);
 
     rmSync(dir, { force: true, recursive: true });
   });

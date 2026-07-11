@@ -793,11 +793,12 @@
               >SQLite triggers for running totals</span
             >
             <p class="mt-1">
-Three triggers (<code class="text-[10px]">trg_pixel_cache_insert</code
-               >, <code class="text-[10px]">trg_pixel_cache_delete</code>,
-               <code class="text-[10px]">trg_pixel_cache_update_size</code>) maintain
-              <code class="text-[10px]">cache_totals</code> atomically within
-              the same transaction as row changes. No
+              Three triggers (<code class="text-[10px]"
+                >trg_pixel_cache_insert</code
+              >, <code class="text-[10px]">trg_pixel_cache_delete</code>,
+              <code class="text-[10px]">trg_pixel_cache_update_size</code>)
+              maintain <code class="text-[10px]">cache_totals</code> atomically
+              within the same transaction as row changes. No
               <code class="text-[10px]">SELECT SUM()</code> on every write.
             </p>
           </div>

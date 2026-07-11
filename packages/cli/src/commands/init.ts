@@ -126,6 +126,19 @@ export const scaffold = async (
 
   await writeFile(configPath, getConfigTemplate());
 
+  const pkgJson = {
+    name: path.basename(dir),
+    private: true,
+    type: "module",
+    dependencies: {
+      "takumi-js": "^2.0.2",
+    },
+  };
+  await writeFile(
+    path.resolve(dir, "package.json"),
+    JSON.stringify(pkgJson, null, 2)
+  );
+
   const writes: Promise<void>[] = [];
 
   for (const template of options.templates) {
