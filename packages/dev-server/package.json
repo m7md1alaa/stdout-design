@@ -1,7 +1,26 @@
 {
   "name": "@stdout-design/dev-server",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Hono-based dev server for stdout-design — live preview, hot reload, and template rendering API",
+  "keywords": [
+    "design",
+    "dev-server",
+    "hono",
+    "image-generation",
+    "live-preview",
+    "social-media",
+    "studio"
+  ],
+  "homepage": "https://github.com/m7md1alaa/stdout-design#readme",
+  "bugs": {
+    "url": "https://github.com/m7md1alaa/stdout-design/issues"
+  },
+  "license": "MIT",
+  "author": "Mohammed alaa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m7md1alaa/stdout-design.git"
+  },
   "files": [
     "dist"
   ],
@@ -10,7 +29,14 @@
     ".": {
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
+    },
+    "./serve": {
+      "import": "./dist/serve.mjs",
+      "types": "./dist/serve.d.mts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown",
@@ -22,19 +48,18 @@
     "lint": "ultracite check"
   },
   "dependencies": {
-    "@stdout-design/core": "workspace:*",
+    "@stdout-design/core": "^0.1.0",
     "@vitejs/plugin-react": "^6.0.1",
     "chokidar": "^5.0.0",
     "hono": "^4.12.26",
-    "react": "catalog:",
-    "vite": "catalog:",
+    "react": "^19.2.7",
+    "vite": "^8.0.12",
     "vite-node": "^6.0.0",
-    "zod": "catalog:"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
-    "bun-types": "^1.3.14",
-    "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "tsdown": "^0.22.4",
+    "typescript": "^7"
   }
 }

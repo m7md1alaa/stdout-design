@@ -1,8 +1,34 @@
 {
-  "name": "web-ui",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@stdout-design/web-ui",
+  "version": "0.1.0",
+  "description": "Vite + React preview UI for stdout-design — live template editing, prop panels, and canvas preview",
+  "keywords": [
+    "design",
+    "image-generation",
+    "live-preview",
+    "react",
+    "social-media",
+    "studio",
+    "ui",
+    "vite"
+  ],
+  "homepage": "https://github.com/m7md1alaa/stdout-design#readme",
+  "bugs": {
+    "url": "https://github.com/m7md1alaa/stdout-design/issues"
+  },
+  "license": "MIT",
+  "author": "Mohammed alaa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m7md1alaa/stdout-design.git"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -17,12 +43,12 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "shadcn": "^4.13.0",
     "tailwind-merge": "^3.6.0",
     "tw-animate-css": "^1.4.0",
-    "zod": "catalog:"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@babel/core": "^8.0.1",
@@ -31,12 +57,12 @@
     "@tailwindcss/vite": "^4.3.2",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^26.1.1",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "tailwindcss": "^4.3.2",
-    "typescript": "catalog:",
-    "vite": "catalog:"
+    "typescript": "^7",
+    "vite": "^8.0.12"
   }
 }

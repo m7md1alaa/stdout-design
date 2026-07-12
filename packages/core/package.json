@@ -1,7 +1,25 @@
 {
   "name": "@stdout-design/core",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Core rendering engine for stdout-design — compile TSX templates to pixel-perfect images via Takumi",
+  "keywords": [
+    "design",
+    "image-generation",
+    "rendering",
+    "social-media",
+    "takumi",
+    "tsx"
+  ],
+  "homepage": "https://github.com/m7md1alaa/stdout-design#readme",
+  "bugs": {
+    "url": "https://github.com/m7md1alaa/stdout-design/issues"
+  },
+  "license": "MIT",
+  "author": "Mohammed alaa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m7md1alaa/stdout-design.git"
+  },
   "files": [
     "dist"
   ],
@@ -24,6 +42,9 @@
       "types": "./dist/schema.d.mts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -40,20 +61,20 @@
     "kysely-bun-sqlite": "^0.4.0",
     "p-limit": "^7.0.0",
     "proper-lockfile": "^4.1.2",
-    "react": "catalog:",
+    "react": "^19.2.7",
     "takumi-js": "^2.0.0",
     "write-file-atomic": "^8.0.0",
-    "zod": "catalog:"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@sinonjs/fake-timers": "^15.4.0",
     "@stdout-design/config": "workspace:*",
     "@takumi-rs/wasm": "^2.0.0",
     "@types/proper-lockfile": "^4.1.4",
-    "@types/react": "catalog:",
+    "@types/react": "^19.2.17",
     "@types/sinonjs__fake-timers": "^15.0.1",
     "@types/write-file-atomic": "^4.0.3",
-    "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "tsdown": "^0.22.4",
+    "typescript": "^7"
   }
 }

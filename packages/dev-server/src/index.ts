@@ -61,8 +61,52 @@ export interface DevServerOptions {
   webUiDist?: string;
 }
 
+const MIME_TYPES: Record<string, string> = {
+  ".css": "text/css",
+  ".html": "text/html",
+  ".ico": "image/x-icon",
+  ".js": "application/javascript",
+  ".json": "application/json",
+  ".mjs": "application/javascript",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
+  ".webmanifest": "application/manifest+json",
+  ".woff2": "font/woff2",
+};
+
+const serveStaticDir = (app: Hono, dir: string, basePath = "/"): void => {
+  app.get(`${basePath}*`, async (c) => {
+    const url = new URL(c.req.url);
+    let filePath = path.join(dir, url.pathname);
+
+    if (!path.extname(filePath)) {
+      filePath = path.join(filePath, "index.html");
+    }
+
+    const file = Bun.file(filePath);
+    const exists = await file.exists();
+    if (!exists) {
+      const indexFile = Bun.file(path.join(dir, "index.html"));
+      const indexExists = await indexFile.exists();
+      if (!indexExists) {
+        return c.notFound();
+      }
+      return new Response(indexFile, {
+        headers: { "Content-Type": "text/html" },
+      });
+    }
+
+    const ext = path.extname(filePath);
+    const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
+    return new Response(file, {
+      headers: { "Content-Type": contentType },
+    });
+  });
+};
+
 export const createDevServer = async (options: DevServerOptions) => {
-  const { rootDir, port, cacheDir, webUiDist: _webUiDist } = options;
+  const { rootDir, port, cacheDir, webUiDist } = options;
 
   const templateLoader = new TemplateLoader(rootDir);
   const fileWatcher = new FileWatcher(rootDir, templateLoader);
@@ -385,6 +429,11 @@ export const createDevServer = async (options: DevServerOptions) => {
     const result = await renderCache.clean();
     return c.json(result);
   });
+
+  // Serve the web-ui static files if a dist path is provided
+  if (webUiDist) {
+    serveStaticDir(app, webUiDist);
+  }
 
   const close = async (): Promise<void> => {
     await fileWatcher.stop();
