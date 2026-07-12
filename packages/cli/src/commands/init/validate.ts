@@ -1,31 +1,30 @@
+import { z } from "zod";
+
+export const projectNameSchema = z
+  .string()
+  .min(1, "Project name cannot be empty.")
+  .max(214, "Project name must be 214 characters or fewer.")
+  .regex(
+    /^[a-z0-9][a-z0-9._-]*$/u,
+    "Project name must start with a lowercase letter or number, and can only contain letters, numbers, dots, hyphens, and underscores."
+  )
+  .refine(
+    (val) => !/[._-]$/u.test(val),
+    "Project name must not end with a dot, hyphen, or underscore."
+  )
+  .refine(
+    (val) => !/__/u.test(val),
+    "Project name must not contain consecutive underscores."
+  )
+  .refine(
+    (val) => !/[._-]{2,}/u.test(val),
+    "Project name must not contain consecutive dots, hyphens, or underscores."
+  );
+
 export const validateProjectName = (name: string): string | null => {
-  if (name.length === 0) {
-    return "Project name cannot be empty.";
+  const result = projectNameSchema.safeParse(name);
+  if (!result.success) {
+    return result.error.issues[0]?.message ?? "Invalid project name.";
   }
-
-  if (name.length > 214) {
-    return "Project name must be 214 characters or fewer.";
-  }
-
-  if (!/^[a-z0-9][a-z0-9._-]*$/u.test(name)) {
-    return "Project name must start with a lowercase letter or number, and can only contain letters, numbers, dots, hyphens, and underscores.";
-  }
-
-  if (!/^[a-z0-9]/u.test(name)) {
-    return "Project name must start with a lowercase letter or number.";
-  }
-
-  if (/[._-]$/u.test(name)) {
-    return "Project name must not end with a dot, hyphen, or underscore.";
-  }
-
-  if (/__/u.test(name)) {
-    return "Project name must not contain consecutive underscores.";
-  }
-
-  if (/[._-]{2,}/u.test(name)) {
-    return "Project name must not contain consecutive dots, hyphens, or underscores.";
-  }
-
   return null;
 };

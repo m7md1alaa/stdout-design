@@ -203,7 +203,7 @@ export const init = async (
           message: "Initialize a git repository?",
         }),
       isCancel,
-      cancel,
+      cancel
     );
   })();
 
