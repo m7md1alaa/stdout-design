@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -134,6 +140,69 @@ describe("scaffold", () => {
 
     rmSync(dir, { force: true, recursive: true });
   });
+
+  test("throws descriptive error for unknown template", async () => {
+    const dir = inTempDir();
+
+    await expect(
+      scaffold(dir, defaultOptions({ templates: ["does-not-exist"] }))
+    ).rejects.toThrow(/Template "does-not-exist" not found/u);
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("falls back to default content for unknown locale", async () => {
+    const dir = inTempDir();
+
+    await scaffold(dir, defaultOptions({ locales: ["fr"] }));
+
+    const fr = JSON.parse(
+      readFileSync(path.join(dir, "locales", "fr.json"), "utf-8")
+    );
+    expect(fr).toEqual({ title: "Featured App" });
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("throws descriptive error for empty projectName", async () => {
+    const dir = inTempDir();
+
+    await expect(
+      scaffold(dir, defaultOptions({ projectName: "" }))
+    ).rejects.toThrow(/Project name cannot be empty/u);
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("overwrites files in already-existing target directory", async () => {
+    const dir = inTempDir();
+    const pkgPath = path.join(dir, "package.json");
+    writeFileSync(pkgPath, JSON.stringify({ name: "old-name" }));
+
+    await scaffold(dir, defaultOptions({ projectName: "new-name" }));
+
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+    expect(pkg.name).toBe("new-name");
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("throws when one of multiple templates does not exist", async () => {
+    const dir = inTempDir();
+
+    await expect(
+      scaffold(
+        dir,
+        defaultOptions({ templates: ["bento-feature", "does-not-exist"] })
+      )
+    ).rejects.toThrow(/Template "does-not-exist" not found/u);
+
+    expect(existsSync(path.join(dir, "templates", "bento-feature.tsx"))).toBe(
+      false
+    );
+
+    rmSync(dir, { force: true, recursive: true });
+  });
 });
 
 describe("init", () => {
@@ -176,5 +245,18 @@ describe("init", () => {
     expect(pkg.name).toBe("my-project");
 
     rmSync(parentDir, { force: true, recursive: true });
+  });
+
+  test("returns early when studio.config.ts already exists", async () => {
+    const dir = inTempDir();
+    const configPath = path.join(dir, "studio.config.ts");
+    writeFileSync(configPath, "// existing config");
+
+    await init(dir, { yes: true });
+
+    const content = readFileSync(configPath, "utf-8");
+    expect(content).toBe("// existing config");
+
+    rmSync(dir, { force: true, recursive: true });
   });
 });

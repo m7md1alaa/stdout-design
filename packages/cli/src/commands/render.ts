@@ -1,7 +1,5 @@
 import {
   runBatch,
-  ErrorCode,
-  AppError,
   zodToJsonSchemaShape,
   importTemplateForBatch,
   loadConfig,
@@ -9,7 +7,7 @@ import {
 
 import { formatManifestSummary } from "../lib/display.js";
 import { parsePropArgs, mergeDefaultProps } from "../lib/prop-parser.js";
-import { suggestClosest } from "../lib/suggest.js";
+import { resolveBatchOptions, resolveTemplate } from "./resolver.js";
 
 interface RenderOptions {
   data?: string;
@@ -30,24 +28,11 @@ export const render = async (
 
   const config = await loadConfig(rootDir);
 
-  const templateEntry = config.templates[templateId];
-  if (!templateEntry) {
-    const suggestions = suggestClosest(
-      templateId,
-      Object.keys(config.templates)
-    );
-    const hint = suggestions ? ` Did you mean "${suggestions}"?` : "";
-
-    throw new AppError(
-      ErrorCode.TEMPLATE_NOT_FOUND,
-      `Template "${templateId}" not found in studio.config.ts.${hint}`,
-      { availableTemplates: Object.keys(config.templates), templateId }
-    );
-  }
+  const resolved = resolveTemplate(config, templateId);
 
   const { module } = await importTemplateForBatch(
     rootDir,
-    templateEntry.componentPath,
+    resolved.componentPath,
     templateId
   );
 
@@ -65,27 +50,18 @@ export const render = async (
   const parsedProps = parsePropArgs(propArgs, schema);
   const mergedProps = mergeDefaultProps(schema, parsedProps);
 
-  const presetIds = options.preset
-    ? options.preset.split(",").map((s) => s.trim())
-    : config.presets.map((p) => p.id);
-
-  const localeIds = options.locale
-    ? options.locale.split(",").map((s) => s.trim())
-    : undefined;
-
-  const outDir = options.outDir ?? config.outDir ?? "out";
-  const concurrency = Number(options.concurrency ?? "4");
+  const batchOpts = resolveBatchOptions(config, options);
 
   const { manifest } = await runBatch({
     baseProps: mergedProps,
-    concurrency,
-    dataFile: options.data,
-    failFast: options.failFast,
-    locales: localeIds,
-    outDir,
-    presets: presetIds,
+    concurrency: batchOpts.concurrency,
+    dataFile: batchOpts.dataFile,
+    failFast: batchOpts.failFast,
+    locales: batchOpts.locales,
+    outDir: batchOpts.outDir,
+    presets: batchOpts.presets,
     rootDir,
-    rows: options.data ? undefined : [{}],
+    rows: batchOpts.dataFile ? undefined : [{}],
     templateId,
   });
 

@@ -54,8 +54,7 @@
   "dependencies": {
     "@clack/prompts": "^1.7.0",
     "@stdout-design/core": "workspace:*",
-    "commander": "^15.0.0",
-    "ora": "^9.4.1"
+    "commander": "^15.0.0"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",

@@ -27,7 +27,6 @@
     "hono",
     "kysely",
     "kysely-bun-sqlite",
-    "ora",
     "p-limit",
     "proper-lockfile",
     "react",

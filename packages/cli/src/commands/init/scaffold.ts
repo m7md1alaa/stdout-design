@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { cp, mkdir, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import path from "node:path";
+
+import { getScaffoldVersion } from "./version.js";
 
 export interface ScaffoldOptions {
   projectName: string;
@@ -48,23 +49,13 @@ const getPkgJson = (name: string, version: string) => ({
   type: "module",
 });
 
-const getScaffoldVersion = (): string => {
-  try {
-    const require = createRequire(import.meta.url);
-    const pkg = require("@stdout-design/cli/package.json");
-    return pkg.version;
-  } catch {
-    return "latest";
-  }
-};
-
 const templateDir = () =>
   path.resolve(import.meta.dirname, "../../../template");
 
 const templatesDir = () =>
   path.resolve(import.meta.dirname, "../../../template/templates");
 
-export const copyStaticAssets = async (dir: string): Promise<void> => {
+const copyStaticAssets = async (dir: string): Promise<void> => {
   const base = templateDir();
 
   await cp(
@@ -74,17 +65,14 @@ export const copyStaticAssets = async (dir: string): Promise<void> => {
   await cp(path.resolve(base, ".gitignore"), path.resolve(dir, ".gitignore"));
 };
 
-export const generateConfig = async (
-  dir: string,
-  version: string
-): Promise<void> => {
+const generateConfig = async (dir: string, version: string): Promise<void> => {
   await writeFile(
     path.resolve(dir, "studio.config.ts"),
     getConfigTemplate(version)
   );
 };
 
-export const generatePackageJson = async (
+const generatePackageJson = async (
   dir: string,
   projectName: string,
   version: string
@@ -95,7 +83,7 @@ export const generatePackageJson = async (
   );
 };
 
-export const copyTemplateFiles = async (
+const copyTemplateFiles = async (
   dir: string,
   templates: string[]
 ): Promise<void> => {
@@ -108,6 +96,15 @@ export const copyTemplateFiles = async (
 
   const srcTemplatesDir = templatesDir();
 
+  for (const template of templates) {
+    const src = path.resolve(srcTemplatesDir, `${template}.tsx`);
+    if (!existsSync(src)) {
+      throw new Error(
+        `Template "${template}" not found at templates/${template}.tsx`
+      );
+    }
+  }
+
   await Promise.all(
     templates.map((template) =>
       cp(
@@ -118,7 +115,7 @@ export const copyTemplateFiles = async (
   );
 };
 
-export const createLocaleFiles = async (
+const createLocaleFiles = async (
   dir: string,
   locales: string[]
 ): Promise<void> => {
@@ -148,6 +145,10 @@ export const scaffold = async (
   dir: string,
   options: ScaffoldOptions
 ): Promise<void> => {
+  if (options.projectName.trim().length === 0) {
+    throw new Error("Project name cannot be empty.");
+  }
+
   const version = getScaffoldVersion();
 
   if (!existsSync(dir)) {

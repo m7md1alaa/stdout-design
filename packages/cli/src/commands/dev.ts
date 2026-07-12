@@ -18,21 +18,20 @@ export const dev = async (
   rootDir: string | undefined,
   options: Record<string, string | undefined>
 ): Promise<void> => {
-  const { createDevServer } = await import(
-    // @ts-expect-error - may not be installed
-    "@stdout-design/dev-server"
-  ).catch(() => {
-    throw new Error(
-      [
-        "studio dev requires a scaffolded project with @stdout-design/dev-server installed.",
-        "Run `studio init` to create one, or install it manually:",
-        "",
-        "  bun add @stdout-design/dev-server",
-        "",
-        "See https://stdout.design/docs for more information.",
-      ].join("\n")
-    );
-  });
+  const { createDevServer } = await import("@stdout-design/dev-server").catch(
+    () => {
+      throw new Error(
+        [
+          "studio dev requires a scaffolded project with @stdout-design/dev-server installed.",
+          "Run `studio init` to create one, or install it manually:",
+          "",
+          "  bun add @stdout-design/dev-server",
+          "",
+          "See https://stdout.design/docs for more information.",
+        ].join("\n")
+      );
+    }
+  );
 
   const resolvedRoot = rootDir ?? process.cwd();
   const port = Number(options.port ?? "3000");
