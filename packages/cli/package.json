@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "stdout-design CLI — shallow front door to @stdout-design/core and @stdout-design/dev-server",
   "keywords": [
     "cli",
@@ -53,13 +53,24 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@stdout-design/core": "workspace:*",
+    "@stdout-design/core": "^0.1.1",
     "commander": "^15.0.0"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
-    "@stdout-design/dev-server": "workspace:*",
     "tsdown": "^0.22.4",
     "typescript": "^7"
+  },
+  "peerDependencies": {
+    "@stdout-design/dev-server": "^0.1.1",
+    "@stdout-design/web-ui": "^0.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@stdout-design/dev-server": {
+      "optional": true
+    },
+    "@stdout-design/web-ui": {
+      "optional": true
+    }
   }
 }

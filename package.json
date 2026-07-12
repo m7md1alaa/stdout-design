@@ -13,7 +13,9 @@
     "check-types:tsgo": "turbo check-types:tsgo",
     "check": "ultracite check && bun knip",
     "knip": "knip",
-    "fix": "ultracite fix"
+    "fix": "ultracite fix",
+    "version:sync": "bun scripts/version-sync.ts",
+    "publish:all": "turbo build && npm publish -w packages/core && npm publish -w packages/dev-server && npm publish -w packages/cli && npm publish -w packages/web-ui"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

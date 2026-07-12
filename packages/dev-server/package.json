@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/dev-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hono-based dev server for stdout-design — live preview, hot reload, and template rendering API",
   "keywords": [
     "design",
@@ -48,7 +48,7 @@
     "lint": "ultracite check"
   },
   "dependencies": {
-    "@stdout-design/core": "^0.1.0",
+    "@stdout-design/core": "^0.1.1",
     "@vitejs/plugin-react": "^6.0.1",
     "chokidar": "^5.0.0",
     "hono": "^4.12.26",

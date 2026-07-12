@@ -1,7 +1,8 @@
 {
   "extends": "@stdout-design/config/tsconfig.base.json",
   "compilerOptions": {
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "types": ["node", "bun"]
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "scripts/*.ts"]
 }
