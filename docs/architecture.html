@@ -31,7 +31,7 @@
         <p
           class="text-xs uppercase tracking-widest text-stone-400 font-semibold"
         >
-          Architecture review
+          Architecture review · target design (ADR 0005–0012 applied)
         </p>
         <h1 class="text-3xl font-serif font-bold tracking-tight text-slate-800">
           stdout-design
@@ -39,8 +39,10 @@
         <p class="text-base text-stone-500 leading-relaxed max-w-2xl">
           One render pipeline, multiple front doors.
           <span class="text-stone-400">
-            Core owns the Takumi binding. CLI, dev-server, and web-ui are thin
-            clients — preview equals export by construction.
+            Core owns the Takumi binding, asset resolution, and orchestration.
+            CLI, dev-server, and web-ui are thin clients that all call the same
+            orchestrator — preview equals export by construction, not by
+            convention.
           </span>
         </p>
       </header>
@@ -56,14 +58,19 @@
             <code class="text-emerald-700 bg-emerald-50 px-1 rounded text-xs"
               >@takumi-rs/core</code
             >
-            directly. Everything else delegates.
+            directly. Everything else delegates. Core itself is no longer one
+            undifferentiated block — see
+            <a href="#core-layers" class="text-emerald-700 underline"
+              >Core Internal Layering</a
+            >
+            below.
           </p>
         </div>
 
         <div class="rounded-lg border border-slate-200 bg-white p-4">
           <pre class="mermaid">
             flowchart LR
-              Core["@stdout-design/core<br/><span style='font-size:0.8rem'>Render engine · Cache · Batch</span>"]
+              Core["@stdout-design/core<br/><span style='font-size:0.8rem'>Engine · Assets · Cache · Orchestrate · Batch · Project</span>"]
               Dev["@stdout-design/dev-server<br/><span style='font-size:0.8rem'>Hono HTTP + SSE</span>"]
               CLI["@stdout-design/cli<br/><span style='font-size:0.8rem'>CLI binary</span>"]
               Web["web-ui<br/><span style='font-size:0.8rem'>Vite + React</span>"]
@@ -94,6 +101,119 @@
         </div>
       </section>
 
+      <!-- ── 1a. Core Internal Layering (NEW) ── -->
+      <section id="core-layers" class="space-y-6">
+        <div class="space-y-1">
+          <h2 class="text-xl font-serif font-semibold text-slate-800">
+            Core Internal Layering
+          </h2>
+          <p class="text-sm text-stone-500 leading-relaxed">
+            <code class="text-xs bg-stone-100 px-1 rounded"
+              >packages/core/src</code
+            >
+            is sliced by responsibility, not by runtime target. Every layer
+            below
+            <code class="text-xs bg-stone-100 px-1 rounded">orchestrate/</code>
+            depends only on
+            <code class="text-xs bg-stone-100 px-1 rounded">shared/</code> — no
+            module outside
+            <code class="text-xs bg-stone-100 px-1 rounded">shared/</code>
+            does disk or network I/O for free; that's an enforced boundary, not
+            a convention.
+          </p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <pre class="mermaid">
+            flowchart TD
+              Batch["batch/<br/><span style='font-size:0.8rem'>Matrix expansion · naming · manifest</span>"]
+              Orchestrate["orchestrate/<br/><span style='font-size:0.8rem'>orchestrateRender() · orchestrateMeasure()</span>"]
+              Assets["assets/<br/><span style='font-size:0.8rem'>Locale merge · font/lang resolution</span>"]
+              Engine["engine/<br/><span style='font-size:0.8rem'>compileTemplate · renderToPixels · measureTemplate · Takumi shim</span>"]
+              Cache["cache/<br/><span style='font-size:0.8rem'>RenderCache · openCache() · six sub-modules</span>"]
+              Project["project/<br/><span style='font-size:0.8rem'>resolveProjectPaths()</span>"]
+              Shared["shared/<br/><span style='font-size:0.8rem'>config-schema · error-codes · logger · types · validation — no I/O</span>"]
+
+              Batch --> Orchestrate
+              Orchestrate --> Assets
+              Orchestrate --> Engine
+              Orchestrate --> Cache
+              Assets --> Shared
+              Engine --> Shared
+              Cache --> Shared
+              Project --> Shared
+              Orchestrate -.->|resolves paths via| Project
+              Batch -.->|resolves paths via| Project
+
+              classDef batch fill:#fffbeb,stroke:#d97706,stroke-width:1px;
+              classDef orch fill:#eef2ff,stroke:#4f46e5,stroke-width:2px;
+              classDef assets fill:#f0fdfa,stroke:#0d9488,stroke-width:1px;
+              classDef engine fill:#ecfdf5,stroke:#059669,stroke-width:1px;
+              classDef cache fill:#ecfeff,stroke:#0891b2,stroke-width:1px;
+              classDef project fill:#f5f3ff,stroke:#7c3aed,stroke-width:1px;
+              classDef shared fill:#fafaf9,stroke:#a8a29e,stroke-width:1px;
+              class Batch batch;
+              class Orchestrate orch;
+              class Assets assets;
+              class Engine engine;
+              class Cache cache;
+              class Project project;
+              class Shared shared;
+          </pre>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
+          <div class="border-l-4 border-indigo-500 pl-3">
+            <span class="font-semibold text-indigo-700">orchestrate/</span>
+            <p class="mt-1">
+              The only module that imports from
+              <code class="text-[10px]">assets/</code>,
+              <code class="text-[10px]">engine/</code>, and
+              <code class="text-[10px]">cache/</code> together. Owns the one
+              correct sequence: resolve locale → merge props → resolve fonts →
+              <strong>re-validate merged props</strong> → derive cache key →
+              check cache → compile → render.
+            </p>
+          </div>
+          <div class="border-l-4 border-teal-500 pl-3">
+            <span class="font-semibold text-teal-700">assets/</span>
+            <p class="mt-1">
+              Single implementation of locale merge and font/lang resolution,
+              replacing what used to be two divergent copies (dev-server's
+              <code class="text-[10px]">applyLocale</code> and core's
+              <code class="text-[10px]">mergeLocale</code> /
+              <code class="text-[10px]">resolveArabicFonts</code>). Memoized per
+              locale id. See
+              <a href="#assets-subsystem" class="text-teal-700 underline"
+                >Asset Resolution Sub-System</a
+              >.
+            </p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
+          <div class="border-l-4 border-violet-500 pl-3">
+            <span class="font-semibold text-violet-700">project/</span>
+            <p class="mt-1">
+              Single source of truth for studio-project conventions —
+              <code class="text-[10px]">configPath</code>,
+              <code class="text-[10px]">templatesDir</code>,
+              <code class="text-[10px]">localesDir</code>,
+              <code class="text-[10px]">defaultCacheDir</code>. Replaces five
+              independently hardcoded path literals across core and dev-server.
+            </p>
+          </div>
+          <div class="border-l-4 border-stone-400 pl-3">
+            <span class="font-semibold text-stone-600">shared/</span>
+            <p class="mt-1">
+              Config schema, error codes, logger, types, validation. Zero
+              filesystem or network access, enforced as a layering rule — a
+              future PR adding I/O here is a visible violation, not a judgment
+              call.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <!-- ── 2. Data Flow — Studio Dev ── -->
       <section id="studio-dev" class="space-y-6">
         <div class="space-y-1">
@@ -101,10 +221,15 @@
             Data Flow — Studio Dev
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
-            Browser sends props over HTTP. The dev server validates, checks the
-            two-stage cache, compiles if needed, renders through Takumi, and
-            returns raw PNG bytes. File-watch reloads push over SSE —
-            one-directional, no WebSocket overhead.
+            Browser sends props over HTTP. The dev server validates the raw
+            shape, then hands off to the same
+            <code class="text-xs bg-stone-100 px-1 rounded"
+              >orchestrateRender()</code
+            >
+            that CLI batch calls — locale merge, font resolution, and post-merge
+            re-validation all happen inside core, once, not inside the Hono
+            handler. File-watch reloads push over SSE, now including locale file
+            changes.
           </p>
         </div>
 
@@ -113,31 +238,55 @@
             sequenceDiagram
               participant B as Browser (web-ui)
               participant S as Dev Server (Hono)
-              participant C as Core Library
+              participant O as Orchestrator (core)
+              participant A as Assets (core)
+              participant E as Engine + Cache (core)
 
-              B->>S: POST /render {templateId, props}
-              Note over S: Validate props (zod)
+              B->>S: POST /render {templateId, props, locale}
+              Note over S: Validate raw props shape (zod)
+              S->>O: orchestrateRender(input)
+              O->>A: resolveAssetsForLocale(locale, props)
+              A-->>O: {props: merged, fonts, fontFamilies, lang}
+              Note over O: Re-validate merged props — never skipped
+              O->>E: derive cache key → getPixels()
 
               alt Pixel cache hit
+                E-->>O: cached bytes
+                O-->>S: RenderResult (cacheHit: true)
                 S-->>B: 200 image/png (X-Cache: hit)
               else Pixel miss
-                Note over S: Check Compile cache
+                Note over O,E: Check Compile cache
                 alt Compile miss
-                  S->>C: compileTemplate()  (fromJsx)
-                  C-->>S: {node, stylesheets}
+                  O->>E: compileTemplate() (fromJsx)
+                  E-->>O: {node, stylesheets}
                 end
-
-                S->>C: renderToPixels()  (Takumi)
-                C-->>S: PNG bytes
-                Note over S: Store Pixel
+                O->>E: renderToPixels(fonts, fontFamilies, lang)
+                E-->>O: PNG bytes
+                O->>E: setPixels()
+                O-->>S: RenderResult (cacheHit: false)
                 S-->>B: 200 image/png (X-Cache: miss)
               end
 
               Note over B,S: ─── SSE hot reload ───
-              Note over S: FileWatcher detects .tsx change
-              S-->>B: SSE /events ➔ {type: "reload", templateId}
+              Note over S: FileWatcher detects change under templates/, locales/, or studio.config.ts
+              S-->>B: SSE /events ➔ {type: "reload" | "template" | "full", templateId}
               Note over B: Re-requests current props
           </pre>
+        </div>
+
+        <div class="rounded-lg border-2 border-emerald-300 bg-emerald-50 p-3">
+          <p class="text-xs text-emerald-800">
+            <span class="font-semibold">/measure now takes the same input</span>
+            — <code class="text-[10px]">{templateId, props, locale}</code> — and
+            routes through
+            <code class="text-[10px]">orchestrateMeasure()</code>, sharing the
+            same locale/font resolution as
+            <code class="text-[10px]">/render</code>. Previously
+            <code class="text-[10px]">/measure</code> had no
+            <code class="text-[10px]">locale</code> field at all, so a
+            measure-then-render preview flow could get dimensions that didn't
+            match what was actually rendered.
+          </p>
         </div>
       </section>
 
@@ -155,8 +304,12 @@
             <code class="text-xs bg-stone-100 px-1 rounded">.tsx</code>
             templates at runtime. The
             <code class="text-xs bg-stone-100 px-1 rounded">FileWatcher</code>
-            invalidates the module cache on change and pushes reload events over
-            SSE.
+            watches every path returned by
+            <code class="text-xs bg-stone-100 px-1 rounded"
+              >resolveProjectPaths()</code
+            >
+            — templates, locales, and config — and invalidates the module cache
+            accordingly.
           </p>
         </div>
 
@@ -172,20 +325,20 @@
               Note over Dev,Vite: ─── Startup ───
               Dev->>TL: start()
               TL->>Vite: create Vite dev server + ViteNodeRunner
-              TL->>Vite: loadConfig() → executeFile()
+              TL->>Vite: loadConfig() → parseStudioConfig() (shared) → executeFile()
               TL->>Vite: for each template: loadOne() → executeFile()
               Vite-->>TL: TemplateModule[]
               TL-->>Dev: ready
 
               Note over Dev,Vite: ─── Render Request ───
-              B->>Dev: POST /render {templateId, props}
+              B->>Dev: POST /render {templateId, props, locale}
               Dev->>TL: getTemplateModule(id)
               TL-->>Dev: cached TemplateModule
-              Dev->>Dev: compileTemplate() → renderToPixels()
+              Dev->>Dev: orchestrateRender() (see previous diagram)
               Dev-->>B: 200 image/png
 
               Note over FW,B: ─── File Change → Hot Reload ───
-              FW->>FW: chokidar detects .tsx change
+              FW->>FW: chokidar detects change under templates/, locales/, or config
               FW->>FW: scheduleChange() per-path debounce
               FW->>FW: handleChange()
 
@@ -196,7 +349,11 @@
                 Vite-->>TL: fresh TemplateModule
                 TL-->>FW: ok
                 FW-->>B: SSE "reload" {type: "template", templateId}
-              else studio.config.ts or unknown file
+              else locale JSON changed
+                FW->>TL: invalidateDataModule(path)
+                TL-->>FW: ok
+                FW-->>B: SSE "reload" {type: "template", templateId: undefined}
+              else studio.config.ts or unrecognized file
                 FW->>TL: reloadAll()
                 TL->>Vite: invalidate config + all templates
                 Vite-->>TL: fresh config + templates
@@ -212,13 +369,13 @@
           <div class="border-l-4 border-sky-500 pl-3">
             <span class="font-semibold text-sky-700">TemplateLoader</span>
             <p class="mt-1">
-              Boots a Vite dev server in middleware mode (no HMR). Creates a
-              <code class="text-[10px]">ViteNodeServer</code> for module
-              transformation and a
-              <code class="text-[10px]">ViteNodeRunner</code> for execution.
-              <code class="text-[10px]">importFresh()</code> calls
-              <code class="text-[10px]">runner.executeFile()</code> — full React
-              JSX + TS pipeline.
+              Boots a Vite dev server in middleware mode (no HMR). Config
+              parsing now goes through the shared
+              <code class="text-[10px]">parseStudioConfig()</code> (used by CLI
+              too), wrapped in
+              <code class="text-[10px]">TemplateConfigError</code> here versus
+              <code class="text-[10px]">AppError</code> in core — same
+              validation output, different error type per consumer.
             </p>
           </div>
           <div class="border-l-4 border-sky-500 pl-3">
@@ -228,9 +385,11 @@
             <p class="mt-1">
               Deletes module from
               <code class="text-[10px]">ViteNodeRunner.moduleCache</code> by
-              both file URL pathname and raw path. Replaced the old
-              <code class="text-[10px]">?t=Date.now()</code> approach which
-              caused memory leaks.
+              both file URL pathname and raw path. Now also invoked for locale
+              JSON files on change — previously this path existed (<code
+                class="text-[10px]"
+                >invalidateDataModule</code
+              >) but was never called, so locale edits didn't hot-reload.
             </p>
           </div>
         </div>
@@ -238,14 +397,10 @@
           <div class="border-l-4 border-amber-400 pl-3">
             <span class="font-semibold text-amber-700">FileWatcher</span>
             <p class="mt-1">
-              Uses chokidar to watch
-              <code class="text-[10px]">templates/</code> +
-              <code class="text-[10px]">studio.config.ts</code>. Per-path
-              debounce (200ms) — change to file B never cancels a pending reload
-              for file A. Three event types:
-              <code class="text-[10px]">"template"</code>,
-              <code class="text-[10px]">"full"</code>,
-              <code class="text-[10px]">"template-error"</code>.
+              Watches every directory from
+              <code class="text-[10px]">resolveProjectPaths()</code> — no longer
+              a hardcoded pair of paths that can silently miss a directory.
+              Per-path debounce (200ms) unchanged.
             </p>
           </div>
           <div class="border-l-4 border-amber-400 pl-3">
@@ -254,16 +409,24 @@
               Hono <code class="text-[10px]">streamSSE</code> at
               <code class="text-[10px]">GET /events</code>. Browser connects via
               native <code class="text-[10px]">EventSource</code> (useSSE hook).
-              15s keepalive. Exponential backoff retry (1s → 15s, max 10
-              attempts).
+              15s keepalive. Unchanged.
             </p>
           </div>
         </div>
 
-        <!-- Two paths callout -->
+        <!-- One render path, two loaders -->
         <div class="rounded-lg border-2 border-sky-300 bg-sky-50 p-4">
           <p class="text-xs font-semibold text-sky-800 mb-2">
-            Two template loading paths
+            One render path, two loading mechanisms
+          </p>
+          <p class="text-xs text-sky-700 mb-3">
+            CLI batch and dev-server no longer diverge in what happens once a
+            template is loaded — both call
+            <code class="text-[10px]">orchestrateRender()</code> /
+            <code class="text-[10px]">orchestrateMeasure()</code>. The only
+            remaining difference is how the template module itself gets into
+            memory, which is a deliberate, kept difference: dev-server needs
+            live invalidation for hot reload, CLI does not.
           </p>
           <div class="grid grid-cols-2 gap-4 text-xs text-sky-700">
             <div class="bg-white rounded p-3 border border-sky-200">
@@ -272,13 +435,8 @@
                 <li>
                   <code class="text-[10px]">ViteNodeRunner.executeFile()</code>
                 </li>
-                <li>
-                  React JSX transform via
-                  <code class="text-[10px]">@vitejs/plugin-react</code>
-                </li>
                 <li>Explicit per-file cache invalidation</li>
                 <li>Hot reload via FileWatcher + SSE</li>
-                <li>Two-stage cache (Compile + Pixel)</li>
               </ul>
             </div>
             <div class="bg-white rounded p-3 border border-sky-200">
@@ -286,15 +444,20 @@
               <ul class="mt-1 space-y-0.5 list-disc list-inside text-sky-600">
                 <li>
                   Raw
-                  <code class="text-[10px]">import(pathToFileURL(...))</code>
+                  <code class="text-[10px]">import(pathToFileURL(...))</code>,
+                  memoized per resolved path within one invocation
                 </li>
-                <li>Relies on Bun's native TSX support</li>
-                <li>No cache invalidation (process exits)</li>
                 <li>No hot reload — one-shot execution</li>
-                <li>No caching (each render is fresh)</li>
               </ul>
             </div>
           </div>
+          <p class="text-xs text-sky-700 mt-3">
+            Both feed the same
+            <code class="text-[10px]">orchestrateRender()</code>, the same
+            two-stage cache, and the same asset resolver — including caching.
+            CLI batch was never actually uncached; it always went through
+            <code class="text-[10px]">RenderCache</code>.
+          </p>
         </div>
       </section>
 
@@ -307,35 +470,41 @@
           <p class="text-sm text-stone-500 leading-relaxed">
             <code class="text-xs bg-stone-100 px-1 rounded">studio render</code>
             loads the config, template, and data; expands the matrix (rows ×
-            locales × presets); renders each cell with bounded concurrency; and
-            writes deterministically-named files plus a partial-failure
-            manifest.
+            locales × presets); renders each cell through the same orchestrator
+            dev-server uses, with bounded concurrency; and writes
+            deterministically-named files plus a partial-failure manifest.
           </p>
         </div>
 
         <div class="rounded-lg border border-slate-200 bg-white p-4">
           <pre class="mermaid">
             flowchart LR
-              CLI["studio render"] --> Config["loadConfig<br/>studio.config.ts"]
-              CLI --> Template["importTemplateForBatch<br/>TSX component"]
+              CLI["studio render"] --> Config["loadConfig<br/>parseStudioConfig (shared)"]
+              CLI --> Template["loadTemplate<br/>memoized per invocation"]
               CLI --> Data["parseDataFile<br/>CSV or JSON"]
               Config --> Matrix["expandMatrix<br/>rows × locales × presets"]
               Template --> Matrix
               Data --> Matrix
-              Matrix --> Render["renderOne × N<br/>concurrency-limited<br/>p-limit"]
-              Render --> Manifest["writeManifest<br/>partial-failure OK"]
-              Render --> Files["Output PNGs<br/>deterministic naming"]
+              Matrix --> Orchestrate["orchestrateRender() × N<br/>concurrency-limited · p-limit<br/>locale + fonts resolved per cell"]
+              Orchestrate --> Manifest["writeManifest<br/>partial-failure OK"]
+              Orchestrate --> Files["Output PNGs<br/>deterministic naming"]
 
               classDef cliFill fill:#fffbeb,stroke:#d97706,stroke-width:1px;
               classDef coreFill fill:#ecfdf5,stroke:#059669,stroke-width:1px;
+              classDef orchFill fill:#eef2ff,stroke:#4f46e5,stroke-width:2px;
               class CLI cliFill;
-              class Config,Template,Data,Matrix,Render,Manifest,Files coreFill;
+              class Config,Template,Data,Matrix,Manifest,Files coreFill;
+              class Orchestrate orchFill;
           </pre>
         </div>
         <p class="text-xs text-stone-400">
           Every node except the CLI entry point is from
-          <code class="text-emerald-700">@stdout-design/core</code>. The CLI is
-          a thin coordinator.
+          <code class="text-emerald-700">@stdout-design/core</code>. Font and
+          locale resolution now happen per cell inside
+          <code class="text-[10px]">orchestrateRender()</code>, fixing a prior
+          bug where one batch-wide font set (resolved from whichever locale
+          appeared first) was applied to every cell regardless of that cell's
+          own locale.
         </p>
       </section>
 
@@ -346,8 +515,10 @@
             Cross-Section — Studio Dev Call Layers
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
-            A render request passes through these layers. The only thick band is
-            core — the rest are thin routing, transport, and loading.
+            A render request now passes through one additional layer versus
+            before — Orchestration + Assets — sitting between template loading
+            and the Engine. It's a thin coordinating layer, not a second thick
+            one: Engine and Cache remain where the real depth is.
           </p>
         </div>
 
@@ -356,7 +527,7 @@
         >
           <!-- Layer 1 -->
           <div class="flex border-l-4 border-sky-400 py-3 px-5 bg-white">
-            <div class="w-36 shrink-0">
+            <div class="w-40 shrink-0">
               <span
                 class="text-[10px] uppercase tracking-wider font-semibold text-sky-600"
                 >Browser</span
@@ -370,15 +541,15 @@
           </div>
           <!-- Layer 2 -->
           <div class="flex border-l-4 border-sky-500 py-3 px-5 bg-sky-50/30">
-            <div class="w-36 shrink-0">
+            <div class="w-40 shrink-0">
               <span
                 class="text-[10px] uppercase tracking-wider font-semibold text-sky-700"
                 >Dev Server</span
               >
             </div>
             <div class="text-xs text-slate-600">
-              Hono router &middot; CORS &middot; request validation (zod)
-              &middot;
+              Hono router &middot; CORS &middot; raw-shape request validation
+              (zod) &middot;
               <code class="text-sky-700 text-[10px]">/render</code>
               <code class="text-sky-700 text-[10px]">/measure</code>
               <code class="text-sky-700 text-[10px]">/events</code>
@@ -386,25 +557,45 @@
           </div>
           <!-- Layer 3 -->
           <div class="flex border-l-4 border-sky-500 py-3 px-5 bg-white">
-            <div class="w-36 shrink-0">
+            <div class="w-40 shrink-0">
               <span
                 class="text-[10px] uppercase tracking-wider font-semibold text-sky-700"
                 >Template Loader</span
               >
             </div>
             <div class="text-xs text-slate-600">
-              vite-node SSR &middot; loads .tsx + locale JSON &middot; module
-              cache invalidation
+              vite-node SSR &middot; loads .tsx &middot; module cache
+              invalidation &middot; paths from
+              <code class="text-[10px]">project/</code>
             </div>
           </div>
-          <!-- Layer 4 (thick — core) -->
+          <!-- Layer 4 (new — orchestration + assets) -->
+          <div
+            class="flex border-l-4 border-indigo-500 py-3 px-5 bg-indigo-50/40"
+          >
+            <div class="w-40 shrink-0">
+              <span
+                class="text-[10px] uppercase tracking-wider font-semibold text-indigo-700"
+                >Orchestration + Assets</span
+              >
+            </div>
+            <div class="text-xs text-slate-600">
+              <code class="text-[10px]">orchestrateRender()</code> &middot;
+              locale merge &middot; font/lang resolution &middot;
+              <span class="font-medium text-indigo-700"
+                >re-validation after merge</span
+              >
+              &middot; cache-key derivation
+            </div>
+          </div>
+          <!-- Layer 5 (thick — engine) -->
           <div
             class="flex border-l-4 border-emerald-600 py-4 px-5 bg-emerald-50/60"
           >
-            <div class="w-36 shrink-0">
+            <div class="w-40 shrink-0">
               <span
                 class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800"
-                >Core Pipeline</span
+                >Engine</span
               >
             </div>
             <div class="text-xs text-slate-700 space-y-1">
@@ -420,16 +611,17 @@
               </div>
             </div>
           </div>
-          <!-- Layer 5 -->
-          <div class="flex border-l-4 border-stone-400 py-3 px-5 bg-white">
-            <div class="w-36 shrink-0">
+          <!-- Layer 6 -->
+          <div class="flex border-l-4 border-cyan-500 py-3 px-5 bg-white">
+            <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-stone-600"
-                >Cache + Takumi</span
+                class="text-[10px] uppercase tracking-wider font-semibold text-cyan-700"
+                >Cache</span
               >
             </div>
             <div class="text-xs text-slate-600">
-              <code class="text-[10px]">.studio-cache/</code> &middot;
+              <code class="text-[10px]">.studio-cache/</code> via
+              <code class="text-[10px]">openCache()</code> &middot;
               content-addressed &middot; two-stage LRU &middot; lock file
             </div>
           </div>
@@ -437,14 +629,17 @@
 
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
           <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700">Deep:</span> Core
-            compresses the expensive work into one thick layer — fromJsx +
-            Takumi rendering + two-stage cache.
+            <span class="font-semibold text-emerald-700">Deep:</span> Engine and
+            Cache still compress the expensive work into thick layers — fromJsx
+            + Takumi rendering + two-stage cache. Nothing about orchestration
+            duplicates that depth.
           </div>
-          <div class="border-l-4 border-amber-400 pl-3">
-            <span class="font-semibold text-amber-700">Shallow:</span>
-            Everything above core is transport and routing. That's correct —
-            moving rendering logic into any of them would create drift.
+          <div class="border-l-4 border-indigo-500 pl-3">
+            <span class="font-semibold text-indigo-700">Coordinating:</span>
+            Orchestration + Assets is intentionally thin on interface (two
+            functions) but real on behavior — it's the one place the
+            merge-then-validate ordering bug and the font cross-contamination
+            bug lived, and the one place they're now fixed for every caller.
           </div>
         </div>
       </section>
@@ -457,8 +652,8 @@
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
             Interface versus implementation size. Core is deep — its interface
-            is small relative to what it does. CLI is shallow — it mostly
-            delegates.
+            is small relative to what it does, now organized by the layers above
+            instead of one flat list. CLI stays shallow — it mostly delegates.
           </p>
         </div>
 
@@ -479,7 +674,7 @@
             <!-- Interface -->
             <div
               class="w-56 rounded-lg border-2 border-emerald-500 bg-white p-3"
-              style="min-height: 160px"
+              style="min-height: 200px"
             >
               <p
                 class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
@@ -489,49 +684,65 @@
               <ul
                 class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed"
               >
-                <li><code>compileTemplate()</code></li>
-                <li><code>renderToPixels()</code></li>
-                <li><code>measureTemplate()</code></li>
-                <li><code>validateProps()</code></li>
+                <li><code>orchestrateRender()</code></li>
+                <li><code>orchestrateMeasure()</code></li>
+                <li><code>resolveAssetsForLocale()</code></li>
+                <li><code>resolveProjectPaths()</code></li>
+                <li><code>openCache()</code></li>
+                <li><code>parseStudioConfig()</code></li>
                 <li><code>runBatch()</code></li>
-                <li><code>loadConfig()</code></li>
-                <li><code>importTemplateForBatch()</code></li>
+                <li><code>loadTemplate()</code> (memoized)</li>
                 <li><code>expandMatrix()</code></li>
                 <li><code>defineSchema()</code></li>
                 <li><code>RenderCache</code></li>
               </ul>
             </div>
-            <!-- Implementation -->
+            <!-- Implementation, grouped by layer -->
             <div
               class="flex-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 p-3"
-              style="min-height: 380px"
+              style="min-height: 420px"
             >
               <p
                 class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2"
               >
-                Implementation
+                Implementation, by layer
               </p>
-              <div
-                class="grid grid-cols-2 gap-x-5 gap-y-0.5 text-[11px] text-slate-700 leading-relaxed"
-              >
-                <div>fromJsx wrapper</div>
-                <div>Renderer lifecycle (get/reset)</div>
-                <div>Two-stage cache hashing</div>
-                <div>Content-addressed storage</div>
-                <div>LRU eviction (configurable budget)</div>
-                <div>Cache manifest + lock file</div>
-                <div>Matrix expansion (rows × loc × presets)</div>
-                <div>Concurrency limiting (p-limit)</div>
-                <div>Font registration</div>
-                <div>Error codes + AppError</div>
-                <div>Deterministic output naming</div>
-                <div>Manifest writing</div>
-                <div>Locale / i18n resolution</div>
-                <div>CSV + JSON data parsing</div>
-                <div>Prop validation (zod → JSON schema)</div>
-                <div>Studio config loading</div>
-                <div>Logging (debug/info/warn/error)</div>
-                <div>File I/O operations</div>
+              <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
+                <div>
+                  <span class="font-medium text-indigo-700">orchestrate/</span>
+                  — merge→validate→cache-key sequencing, per-cell asset
+                  resolution for batch, memoized single-template load
+                </div>
+                <div>
+                  <span class="font-medium text-teal-700">assets/</span> —
+                  locale merge, injectable-fetch font resolution, per-locale
+                  memoization, one locale-classification rule
+                </div>
+                <div>
+                  <span class="font-medium text-emerald-700">engine/</span> —
+                  fromJsx wrapper, Renderer lifecycle, font registration, Takumi
+                  type shim
+                </div>
+                <div>
+                  <span class="font-medium text-cyan-700">cache/</span> —
+                  two-stage hashing, content-addressed storage, LRU eviction,
+                  lock-coordinated sweep,
+                  <code class="text-[10px]">openCache()</code>
+                </div>
+                <div>
+                  <span class="font-medium text-amber-700">batch/</span> —
+                  matrix expansion (rows × loc × presets), deterministic output
+                  naming, manifest writing
+                </div>
+                <div>
+                  <span class="font-medium text-violet-700">project/</span> —
+                  single studio-project path convention
+                </div>
+                <div>
+                  <span class="font-medium text-stone-600">shared/</span> —
+                  error codes + AppError, logging, prop validation (zod → JSON
+                  schema), config parsing — no I/O
+                </div>
               </div>
             </div>
           </div>
@@ -590,6 +801,10 @@
                   ></span>
                   <code class="text-[10px]">studio dev</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
+                  <code class="text-[10px] text-sky-600"
+                    >startStandaloneServer()</code
+                  >
+                  <span class="text-stone-400">in</span>
                   <code class="text-[10px] text-emerald-600"
                     >@stdout-design/dev-server</code
                   >
@@ -610,9 +825,7 @@
                   ></span>
                   <code class="text-[10px]">studio cache</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
-                  <code class="text-[10px] text-emerald-600"
-                    >@stdout-design/core</code
-                  >
+                  <code class="text-[10px] text-emerald-600">openCache()</code>
                 </div>
                 <div class="flex items-center gap-2">
                   <span
@@ -639,8 +852,8 @@
 
         <p class="text-xs text-stone-400">
           Interface rectangles are drawn to approximate scale. Core's
-          implementation is 2&times; the height of its interface. CLI's is
-          nearly 1:1.
+          implementation still dwarfs its interface — the layer split changes
+          how it's organized, not the ratio.
         </p>
       </section>
 
@@ -651,17 +864,22 @@
             RenderCache Sub-System
           </h2>
           <p class="text-sm text-stone-500 leading-relaxed">
-            The two-stage cache was decomposed from one monolithic class (~400
-            lines) into six specialized sub-modules. The
-            <code class="text-xs bg-stone-100 px-1 rounded">RenderCache</code>
-            orchestrator preserves the exact public API — no downstream consumer
-            changed.
+            The two-stage cache remains decomposed into six specialized
+            sub-modules, now living under
+            <code class="text-xs bg-stone-100 px-1 rounded">cache/</code>. A new
+            thin helper,
+            <code class="text-xs bg-stone-100 px-1 rounded"
+              >openCache(rootDir, overrides)</code
+            >, wraps default-path resolution + construction +
+            <code class="text-xs bg-stone-100 px-1 rounded">init()</code> — it
+            does not change anything below it.
           </p>
         </div>
 
         <div class="rounded-lg border border-slate-200 bg-white p-4">
           <pre class="mermaid">
             flowchart LR
+              OC["openCache()<br/><span style='font-size:0.8rem'>Resolves path via project/ · constructs + inits</span>"]
               RC["RenderCache<br/><span style='font-size:0.8rem'>Coordinator · Wires sub-components</span>"]
               SA["CompileCache<br/><span style='font-size:0.8rem'>In-memory LRU · Content-hash index</span>"]
               MS["MetadataStore<br/><span style='font-size:0.8rem'>SQLite (Kysely) · Trigger counters</span>"]
@@ -670,6 +888,7 @@
               CL["ConcurrencyLimiter<br/><span style='font-size:0.8rem'>wraps p-limit · Bounded I/O</span>"]
               CK["cache-keys<br/><span style='font-size:0.8rem'>SHA-256 truncated · Null-byte delimiters</span>"]
 
+              OC --> RC
               RC --> SA
               RC --> MS
               RC --> FS
@@ -681,9 +900,11 @@
               EC -->|lock| FS
               MS -->|read/write| FS
 
+              classDef helper fill:#f5f3ff,stroke:#7c3aed,stroke-width:1px;
               classDef core fill:#ecfdf5,stroke:#059669,stroke-width:1px;
               classDef io fill:#f0f9ff,stroke:#0284c7,stroke-width:1px;
               classDef util fill:#fffbeb,stroke:#d97706,stroke-width:1px;
+              class OC helper;
               class RC,SA,MS core;
               class FS,CL io;
               class EC,CK util;
@@ -703,6 +924,7 @@
               Interface
             </p>
             <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
+              <li><code>openCache(rootDir, overrides?)</code></li>
               <li><code>getCompiled(key)</code></li>
               <li><code>setCompiled(key, value)</code></li>
               <li><code>setCompiledWithContentHash(...)</code></li>
@@ -712,7 +934,7 @@
               <li><code>setPixels(key, bytes, w, h)</code></li>
               <li><code>stats()</code></li>
               <li><code>clean()</code></li>
-              <li><code>init()</code> / <code>close()</code></li>
+              <li><code>close()</code></li>
             </ul>
           </div>
           <!-- Implementation -->
@@ -727,121 +949,149 @@
             </p>
             <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
               <div>
+                <span class="font-medium text-violet-700">openCache</span> —
+                resolves <code class="text-[10px]">defaultCacheDir</code> via
+                <code class="text-[10px]">resolveProjectPaths()</code>,
+                replacing three previously independent (and inconsistent —
+                <code class="text-[10px]">path.resolve</code> vs
+                <code class="text-[10px]">path.join</code>) path constructions
+                in CLI, batch, and dev-server.
+              </div>
+              <div>
                 <span class="font-medium text-emerald-700">CompileCache</span> —
-                in-memory LRU, configurable max entries (default 100). Tracks
-                content-hash → key index for invalidation. No TTL, no size
-                tracking — cheap enough to recompute.
+                in-memory LRU, configurable max entries (default 100).
+                Unchanged.
               </div>
               <div>
                 <span class="font-medium text-emerald-700">MetadataStore</span>
-                — SQLite via Kysely ORM. Two tables:
-                <code class="text-[10px]">pixel_cache_entries</code> (hash,
-                file_name, size, dimensions, content_hash, access times) +
-                <code class="text-[10px]">cache_totals</code> (single-row
-                counter maintained by SQLite triggers). WAL mode for
-                multi-process safety.
+                — SQLite via Kysely, WAL mode, trigger-maintained totals.
+                Unchanged.
               </div>
               <div>
                 <span class="font-medium text-emerald-700">FsStore</span> —
-                atomic file writes via
-                <code class="text-[10px]">write-file-atomic</code> (safe across
-                devices). On read: checks
-                <code class="text-[10px]">stat().size</code> +
-                <code class="text-[10px]">Bun.hash()</code> against stored
-                values. Returns <code class="text-[10px]">null</code> on
-                corruption — self-healing, never throws.
+                atomic writes, size + content-hash verification on read,
+                self-healing on corruption. Unchanged.
               </div>
               <div>
                 <span class="font-medium text-emerald-700"
                   >EvictionCoordinator</span
                 >
                 — debounced (250ms), lock-coordinated via
-                <code class="text-[10px]">proper-lockfile</code>. Partial sweep
-                evicts LRU entries until under budget; full sweep wipes
-                everything. Lock stale timeout: 10s.
+                <code class="text-[10px]">proper-lockfile</code>. Unchanged.
               </div>
               <div>
                 <span class="font-medium text-emerald-700"
                   >ConcurrencyLimiter</span
                 >
-                — wraps <code class="text-[10px]">p-limit</code> to cap
-                simultaneous FsStore I/O ops. Prevents RSS spikes from N
-                concurrent large-buffer renders. Unbounded by default (matches
-                pre-split behavior).
+                — wraps <code class="text-[10px]">p-limit</code>. Unchanged.
               </div>
               <div>
                 <span class="font-medium text-emerald-700">cache-keys</span> —
-                SHA-256 truncated: 64 bits (16 hex) for Compile, 128 bits (32
-                hex) for Pixel. Null-byte delimiters prevent ambiguous
-                concatenation. Single source of truth for key derivation.
+                SHA-256 truncated, null-byte delimiters. Unchanged.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 7a. Asset Resolution Sub-System (NEW) ── -->
+      <section id="assets-subsystem" class="space-y-6">
+        <div class="space-y-1">
+          <h2 class="text-xl font-serif font-semibold text-slate-800">
+            Asset Resolution Sub-System
+          </h2>
+          <p class="text-sm text-stone-500 leading-relaxed">
+            New in this design. Replaces two independent, drifted
+            implementations — core's
+            <code class="text-xs bg-stone-100 px-1 rounded">mergeLocale</code> /
+            <code class="text-xs bg-stone-100 px-1 rounded"
+              >resolveArabicFonts</code
+            >
+            and dev-server's
+            <code class="text-xs bg-stone-100 px-1 rounded">applyLocale</code>
+            — with one module, called by
+            <code class="text-xs bg-stone-100 px-1 rounded">orchestrate/</code>
+            for every render, from every front door.
+          </p>
+        </div>
+
+        <div class="flex gap-5">
+          <!-- Interface -->
+          <div
+            class="w-56 rounded-lg border-2 border-teal-500 bg-white p-3"
+            style="min-height: 140px"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider font-semibold text-teal-600 mb-2"
+            >
+              Interface
+            </p>
+            <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
+              <li><code>resolveAssetsForLocale(localeId, props)</code></li>
+              <li>&rarr; <code>{ props, fonts, fontFamilies, lang }</code></li>
+            </ul>
+          </div>
+          <!-- Implementation -->
+          <div
+            class="flex-1 rounded-lg border-2 border-teal-600 bg-teal-50 p-3"
+            style="min-height: 260px"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider font-semibold text-teal-800 mb-2"
+            >
+              Implementation
+            </p>
+            <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
+              <div>
+                <span class="font-medium text-teal-700">Locale merge</span> —
+                one algorithm: override a prop with the locale value only when
+                the value's type matches the existing prop's type. Output is
+                what gets validated downstream — never the pre-merge props.
+              </div>
+              <div>
+                <span class="font-medium text-teal-700"
+                  >Font/lang resolution</span
+                >
+                — one locale-classification rule (replaces two independent
+                <code class="text-[10px]">startsWith("ar")</code> checks),
+                injectable fetch function for testability, memoized per locale
+                id so batch cells don't re-fetch Google Fonts per row.
+              </div>
+              <div>
+                <span class="font-medium text-teal-700">Fallback behavior</span>
+                — explicit, documented: on fetch failure, returns an empty font
+                set (logged) rather than a zero-byte placeholder font
+                descriptor, so the renderer's own default handling takes over
+                instead of being handed unusable bytes.
               </div>
             </div>
           </div>
         </div>
 
-        <div class="flex gap-6 text-xs text-stone-500">
-          <span class="text-stone-400">
-            Interface is ~10 methods. Implementation spans 6 files totaling ~750
-            lines — depth ratio ~75:1.
-          </span>
-        </div>
-
-        <!-- Key design decisions -->
         <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
-          <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700"
-              >SQLite triggers for running totals</span
+          <div class="border-l-4 border-teal-500 pl-3">
+            <span class="font-semibold text-teal-700"
+              >Bug fixed — ordering</span
             >
             <p class="mt-1">
-              Three triggers (<code class="text-[10px]"
-                >trg_pixel_cache_insert</code
-              >, <code class="text-[10px]">trg_pixel_cache_delete</code>,
-              <code class="text-[10px]">trg_pixel_cache_update_size</code>)
-              maintain <code class="text-[10px]">cache_totals</code> atomically
-              within the same transaction as row changes. No
-              <code class="text-[10px]">SELECT SUM()</code> on every write.
+              Dev-server previously validated props, then merged locale data in
+              afterward with no re-validation — a malformed locale file could
+              reach the renderer instead of a 400. Validation now happens once,
+              after merge, inside the orchestrator.
             </p>
           </div>
-          <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700"
-              >Lock-coordinated eviction</span
+          <div class="border-l-4 border-teal-500 pl-3">
+            <span class="font-semibold text-teal-700"
+              >Bug fixed — cross-contamination</span
             >
             <p class="mt-1">
-              Advisory file lock (<code class="text-[10px]"
-                >proper-lockfile</code
-              >) ensures only one process runs a sweep at a time.
-              <code class="text-[10px]">retries: 0</code> — if another process
-              holds the lock, the current pass is skipped; next write retries.
-              Eliminates TOCTOU race in cross-process file deletion.
-            </p>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-6 text-xs text-stone-500">
-          <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700"
-              >Self-healing on corruption</span
-            >
-            <p class="mt-1">
-              On init: <code class="text-[10px]">PRAGMA integrity_check</code> —
-              if it fails, the DB file is deleted and recreated fresh. On read:
-              if
-              <code class="text-[10px]">MetadataStore.getEntry()</code> throws,
-              the metadata store is closed and re-initialized. If
-              <code class="text-[10px]">FsStore.readVerified()</code> returns
-              null, the stale metadata row is deleted.
-            </p>
-          </div>
-          <div class="border-l-4 border-emerald-500 pl-3">
-            <span class="font-semibold text-emerald-700"
-              >Content-addressed with content hash</span
-            >
-            <p class="mt-1">
-              Each Pixel entry stores a
-              <code class="text-[10px]">Bun.hash()</code> of the file content
-              alongside the bytes. On read, both
-              <code class="text-[10px]">stat().size</code> and the content hash
-              are verified — catches same-size bit flips that size-only checks
-              would miss.
+              Batch previously resolved fonts once per run and applied them to
+              every cell. Per-locale memoization means an
+              <code class="text-[10px]">en</code> cell in a mixed
+              <code class="text-[10px]">en</code>/<code class="text-[10px]"
+                >ar</code
+              >
+              batch no longer receives Arabic font data.
             </p>
           </div>
         </div>
@@ -858,7 +1108,11 @@
             <code class="text-emerald-700 text-xs bg-emerald-50 px-1 rounded"
               >runBatch()</code
             >
-            — core owns everything below.
+            — core owns everything below, and the per-cell step is now the same
+            <code class="text-emerald-700 text-xs bg-emerald-50 px-1 rounded"
+              >orchestrateRender()</code
+            >
+            dev-server calls too.
           </p>
         </div>
 
@@ -882,6 +1136,10 @@
                 <span
                   class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
                   >importTemplateForBatch</span
+                >
+                <span
+                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  >importTemplateForBatch <em>(again, in render.ts)</em></span
                 >
                 <span
                   class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
@@ -935,7 +1193,7 @@
                   >
                   <span
                     class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
-                    >importTemplateForBatch</span
+                    >loadTemplate (memoized, one call)</span
                   >
                   <span
                     class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
@@ -946,16 +1204,8 @@
                     >expandMatrix</span
                   >
                   <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
-                    >renderOne ×N</span
-                  >
-                  <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
-                    >compileTemplate</span
-                  >
-                  <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
-                    >renderToPixels</span
+                    class="border border-indigo-300 rounded px-2 py-1 text-[10px] text-indigo-600 bg-indigo-50"
+                    >orchestrateRender ×N</span
                   >
                   <span
                     class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
@@ -972,19 +1222,109 @@
             <span
               class="inline-block w-3 h-3 rounded bg-red-50 border border-red-300"
             ></span>
-            CLI owns everything
+            CLI owns everything, template loaded twice
           </div>
           <div class="flex items-center gap-2">
             <span
               class="inline-block w-3 h-3 rounded bg-emerald-50 border border-emerald-500"
             ></span>
             CLI calls <code class="text-[10px]">runBatch()</code>; core owns the
-            rest
+            rest, template loaded once
           </div>
         </div>
       </section>
 
-      <!-- ── 9. Top Recommendation ── -->
+      <!-- ── 9. What Changed (NEW) ── -->
+      <section id="what-changed" class="space-y-6">
+        <div class="space-y-1">
+          <h2 class="text-xl font-serif font-semibold text-slate-800">
+            What Changed — Bugs Closed by This Design
+          </h2>
+          <p class="text-sm text-stone-500 leading-relaxed">
+            Each ADR below corresponds to a specific, previously-observed
+            defect, not a stylistic preference. Filenames match
+            <code class="text-xs bg-stone-100 px-1 rounded">docs/adr/</code>.
+          </p>
+        </div>
+
+        <div
+          class="rounded-lg border border-slate-200 bg-white divide-y divide-stone-100"
+        >
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-indigo-600">0005</span>
+            <span class="text-slate-600"
+              >Four divergent render call sites (CLI single, CLI batch,
+              dev-server render, dev-server measure) collapsed into one
+              orchestrator — closes the dev-server font gap and the
+              measure/render dimension mismatch.</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-teal-600">0006</span>
+            <span class="text-slate-600"
+              >Locale merge and font resolution unified — closes the
+              validate-before-merge bug and the batch font cross-contamination
+              bug.</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-violet-600">0007</span>
+            <span class="text-slate-600"
+              >Project path conventions centralized — closes the locale
+              hot-reload gap (FileWatcher was never told to watch
+              <code class="text-[10px]">locales/</code>).</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-emerald-600">0008</span>
+            <span class="text-slate-600"
+              >Core re-sliced from runtime-target folders (<code
+                class="text-[10px]"
+                >node/</code
+              >, <code class="text-[10px]">batch/</code>,
+              <code class="text-[10px]">shared/</code>) to responsibility layers
+              — makes the I/O-free guarantee for
+              <code class="text-[10px]">shared/</code> enforceable.</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-cyan-600">0009</span>
+            <span class="text-slate-600"
+              ><code class="text-[10px]">openCache()</code> replaces three
+              independently-written (and mismatched —
+              <code class="text-[10px]">resolve</code> vs
+              <code class="text-[10px]">join</code>) cache-directory path
+              resolutions.</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-sky-600">0010</span>
+            <span class="text-slate-600"
+              >Dev-server bootstrap (Bun.serve, signal handling, shutdown)
+              deduplicated between <code class="text-[10px]">serve.ts</code> and
+              the CLI's <code class="text-[10px]">dev.ts</code>.</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-amber-600">0011</span>
+            <span class="text-slate-600"
+              ><code class="text-[10px]">studio render</code> no longer imports
+              and re-hashes the same template file twice per invocation.</span
+            >
+          </div>
+          <div class="flex gap-4 p-4 text-xs">
+            <span class="w-14 shrink-0 font-mono text-stone-600">0012</span>
+            <span class="text-slate-600"
+              >Config validation logic shared between CLI and dev-server — same
+              issue-message content regardless of which command surfaced the
+              error, even though the wrapping error type stays intentionally
+              different.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 10. Top Recommendation ── -->
       <section
         id="top-recommendation"
         class="rounded-xl border-2 border-emerald-500 bg-emerald-50 p-6"
@@ -1004,23 +1344,78 @@
             through
             <code class="text-xs bg-white px-1 rounded"
               >@stdout-design/core</code
-            >. Preview == export by construction — there is no second renderer
-            to drift. This is the single most important structural decision in
-            the repo, and it's the same principle that keeps react-email's
-            monorepo coherent.
+            >'s orchestrator. Preview == export by construction — there is no
+            second renderer, no second locale-merge algorithm, and no second
+            font resolver to drift. This is the single most important structural
+            decision in the repo, and the ADRs above exist specifically to make
+            it true in practice, not just in the diagram.
           </p>
 
           <div class="flex flex-wrap gap-3 pt-2">
             <a
               href="adr/0001.md"
               class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              >0001</a
             >
-              &rarr; See ADR 0001 for the full decision record
-            </a>
-            <span class="text-xs text-emerald-500 self-center">
-              One interface, one place to test.
-            </span>
+            <a
+              href="adr/0002.md"
+              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              >0002</a
+            >
+            <a
+              href="adr/0003-version-resolution-and-scaffold-metadata.md"
+              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              >0003</a
+            >
+            <a
+              href="adr/0004-cli-dependency-boundary.md"
+              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              >0004</a
+            >
+            <a
+              href="adr/0005-render-orchestration-entry-point.md"
+              class="text-xs bg-white border border-indigo-300 rounded px-3 py-1.5 text-indigo-700 hover:bg-indigo-100 transition-colors no-underline"
+              >0005</a
+            >
+            <a
+              href="adr/0006-asset-resolution-module.md"
+              class="text-xs bg-white border border-teal-300 rounded px-3 py-1.5 text-teal-700 hover:bg-teal-100 transition-colors no-underline"
+              >0006</a
+            >
+            <a
+              href="adr/0007-project-convention-resolution-module.md"
+              class="text-xs bg-white border border-violet-300 rounded px-3 py-1.5 text-violet-700 hover:bg-violet-100 transition-colors no-underline"
+              >0007</a
+            >
+            <a
+              href="adr/0008-reslice-core-by-layer.md"
+              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              >0008</a
+            >
+            <a
+              href="adr/0009-open-cache-helper.md"
+              class="text-xs bg-white border border-cyan-300 rounded px-3 py-1.5 text-cyan-700 hover:bg-cyan-100 transition-colors no-underline"
+              >0009</a
+            >
+            <a
+              href="adr/0010-dev-server-standalone-bootstrap.md"
+              class="text-xs bg-white border border-sky-300 rounded px-3 py-1.5 text-sky-700 hover:bg-sky-100 transition-colors no-underline"
+              >0010</a
+            >
+            <a
+              href="adr/0011-stop-double-importing-template-module.md"
+              class="text-xs bg-white border border-amber-300 rounded px-3 py-1.5 text-amber-700 hover:bg-amber-100 transition-colors no-underline"
+              >0011</a
+            >
+            <a
+              href="adr/0012-unify-config-loading.md"
+              class="text-xs bg-white border border-stone-300 rounded px-3 py-1.5 text-stone-700 hover:bg-stone-100 transition-colors no-underline"
+              >0012</a
+            >
           </div>
+          <p class="text-xs text-emerald-500">
+            One interface, one place to test.
+          </p>
         </div>
       </section>
     </main>

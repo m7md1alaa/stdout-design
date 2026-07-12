@@ -43,7 +43,7 @@
 }
 
 @utility field-input {
-  @apply w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-mono text-xs text-content transition-colors focus:border-accent focus:outline-none;
+  @apply w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-sans text-xs text-content transition-colors focus:border-accent focus:outline-none;
 }
 
 @utility range-slider {

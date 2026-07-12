@@ -4,12 +4,12 @@
     "label": "والعدد في ازدياد"
   },
   "bento-features": {
-    "feature_one_title": "Deep Work",
-    "feature_one_subtitle": "Uninterrupted focus sessions.",
-    "feature_two_title": "App Shield",
-    "feature_two_subtitle": "Automatically block distracting apps when a focus session begins.",
-    "feature_three_title": "Consistency",
-    "feature_three_subtitle": "7-day perfect streak."
+    "feature_one_title": "العمل العميق",
+    "feature_one_subtitle": "جلسات تركيز بدون أي مقاطعات.",
+    "feature_two_title": "درع التطبيقات",
+    "feature_two_subtitle": "حظر تلقائي للتطبيقات المشتتة عند بدء جلسة التركيز.",
+    "feature_three_title": "الاستمرارية",
+    "feature_three_subtitle": "سلسلة نجاح مثالية لمدة ٧ أيام."
   },
   "quote-card": {
     "role": "مؤسس ورئيس تنفيذي"
