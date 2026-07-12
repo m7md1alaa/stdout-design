@@ -3,10 +3,13 @@
     "title": "إنجاز",
     "label": "والعدد في ازدياد"
   },
-  "bento-feature": {
-    "headline": "إطار الصور المُضمَّن المفتوح المصدر",
-    "description": "مُصمَّم لطريقة عملك. توليد صور احترافي لمشروعك.",
-    "tags": ["مفتوح المصدر", "توليد الصور"]
+  "bento-features": {
+    "feature_one_title": "Deep Work",
+    "feature_one_subtitle": "Uninterrupted focus sessions.",
+    "feature_two_title": "App Shield",
+    "feature_two_subtitle": "Automatically block distracting apps when a focus session begins.",
+    "feature_three_title": "Consistency",
+    "feature_three_subtitle": "7-day perfect streak."
   },
   "quote-card": {
     "role": "مؤسس ورئيس تنفيذي"

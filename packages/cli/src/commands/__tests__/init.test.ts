@@ -11,20 +11,27 @@ const inTempDir = (): string => {
   return dir;
 };
 
+const defaultOptions = (
+  overrides?: Partial<ScaffoldOptions>
+): ScaffoldOptions => ({
+  git: false,
+  install: false,
+  locales: [],
+  projectName: "test-project",
+  templates: [],
+  ...overrides,
+});
+
 describe("scaffold", () => {
   test("creates studio.config.ts with default options", async () => {
     const dir = inTempDir();
 
-    const options: ScaffoldOptions = {
-      install: false,
-      locales: [],
-      templates: [],
-    };
-    await scaffold(dir, options);
+    await scaffold(dir, defaultOptions());
 
     expect(existsSync(path.join(dir, "studio.config.ts"))).toBe(true);
     const content = readFileSync(path.join(dir, "studio.config.ts"), "utf-8");
     expect(content).toContain("StudioConfig");
+    expect(content).toContain("scaffoldVersion");
 
     rmSync(dir, { force: true, recursive: true });
   });
@@ -32,11 +39,12 @@ describe("scaffold", () => {
   test("scaffolds requested template files", async () => {
     const dir = inTempDir();
 
-    await scaffold(dir, {
-      install: false,
-      locales: [],
-      templates: ["bento-feature"],
-    });
+    await scaffold(
+      dir,
+      defaultOptions({
+        templates: ["bento-feature"],
+      })
+    );
 
     expect(existsSync(path.join(dir, "templates", "bento-feature.tsx"))).toBe(
       true
@@ -46,7 +54,7 @@ describe("scaffold", () => {
       "utf-8"
     );
     expect(content).toContain("defineSchema");
-    expect(content).toContain("TakumiNode");
+    expect(content).toContain("function BentoFeature");
 
     rmSync(dir, { force: true, recursive: true });
   });
@@ -54,7 +62,7 @@ describe("scaffold", () => {
   test("does not create templates dir when no templates selected", async () => {
     const dir = inTempDir();
 
-    await scaffold(dir, { install: false, locales: [], templates: [] });
+    await scaffold(dir, defaultOptions());
 
     expect(existsSync(path.join(dir, "templates"))).toBe(false);
 
@@ -64,11 +72,12 @@ describe("scaffold", () => {
   test("scaffolds requested locale files", async () => {
     const dir = inTempDir();
 
-    await scaffold(dir, {
-      install: false,
-      locales: ["en", "ar"],
-      templates: [],
-    });
+    await scaffold(
+      dir,
+      defaultOptions({
+        locales: ["en", "ar"],
+      })
+    );
 
     expect(existsSync(path.join(dir, "locales", "en.json"))).toBe(true);
     expect(existsSync(path.join(dir, "locales", "ar.json"))).toBe(true);
@@ -82,24 +91,46 @@ describe("scaffold", () => {
   test("does not create locales dir when no locales selected", async () => {
     const dir = inTempDir();
 
-    await scaffold(dir, { install: false, locales: [], templates: [] });
+    await scaffold(dir, defaultOptions());
 
     expect(existsSync(path.join(dir, "locales"))).toBe(false);
 
     rmSync(dir, { force: true, recursive: true });
   });
 
-  test("scaffolds without crash when install is true", async () => {
+  test("copies static assets like tsconfig.json", async () => {
     const dir = inTempDir();
 
-    await scaffold(dir, {
-      install: true,
-      locales: [],
-      templates: [],
-    });
+    await scaffold(dir, defaultOptions());
 
+    expect(existsSync(path.join(dir, "tsconfig.json"))).toBe(true);
+    expect(existsSync(path.join(dir, ".gitignore"))).toBe(true);
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("generates package.json with project name", async () => {
+    const dir = inTempDir();
+
+    await scaffold(dir, defaultOptions({ projectName: "my-design" }));
+
+    const pkg = JSON.parse(
+      readFileSync(path.join(dir, "package.json"), "utf-8")
+    );
+    expect(pkg.name).toBe("my-design");
+    expect(pkg.dependencies["@stdout-design/cli"]).toBeDefined();
+    expect(pkg.dependencies["takumi-js"]).toBeDefined();
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("creates directory if it does not exist", async () => {
+    const dir = path.join(tmpdir(), "studio-scaffold-new-dir-test");
+
+    await scaffold(dir, defaultOptions());
+
+    expect(existsSync(dir)).toBe(true);
     expect(existsSync(path.join(dir, "studio.config.ts"))).toBe(true);
-    expect(existsSync(path.join(dir, "package.json"))).toBe(true);
 
     rmSync(dir, { force: true, recursive: true });
   });
@@ -124,11 +155,26 @@ describe("init", () => {
   test("with --yes does not prompt even when no tty", async () => {
     const dir = inTempDir();
 
-    // Should not throw about prompts in non-TTY since --yes skips them
     await init(dir, { yes: true });
 
     expect(existsSync(path.join(dir, "studio.config.ts"))).toBe(true);
 
     rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("with projectDir creates project with that name", async () => {
+    const parentDir = inTempDir();
+    const projectDir = "my-project";
+    const fullPath = path.join(parentDir, projectDir);
+
+    await init(fullPath, { yes: true });
+
+    expect(existsSync(path.join(fullPath, "studio.config.ts"))).toBe(true);
+    const pkg = JSON.parse(
+      readFileSync(path.join(fullPath, "package.json"), "utf-8")
+    );
+    expect(pkg.name).toBe("my-project");
+
+    rmSync(parentDir, { force: true, recursive: true });
   });
 });

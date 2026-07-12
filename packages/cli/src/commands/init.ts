@@ -1,268 +1,264 @@
+import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const getConfigTemplate =
-  () => `import type { StudioConfig } from "@stdout-design/cli";
+import { isInsideGitRepo, tryGitInit } from "./init/git.js";
+import type { ScaffoldOptions } from "./init/scaffold.js";
+import { scaffold } from "./init/scaffold.js";
+import { validateProjectName } from "./init/validate.js";
 
-const config: StudioConfig = {
-  defaultPreset: "instagram-square",
-  locales: ["en", "ar"],
-  outDir: "./out",
-  presets: [
-    { height: 1080, id: "instagram-square", platform: "instagram", width: 1080 },
-    { height: 1200, id: "x-card", platform: "x", width: 1200 },
-  ],
-  templates: {
-    "bento-feature": {
-      componentPath: "./templates/bento-feature",
-      description: "Apple-style bento feature card.",
-    },
-  },
+const detectPackageManager = (): "bun" | "npm" | "pnpm" | "yarn" => {
+  const userAgent = process.env.npm_config_user_agent ?? "";
+  if (userAgent.includes("bun")) {
+    return "bun";
+  }
+  if (userAgent.includes("pnpm")) {
+    return "pnpm";
+  }
+  if (userAgent.includes("yarn")) {
+    return "yarn";
+  }
+  if (existsSync(path.join(process.cwd(), "bun.lock"))) {
+    return "bun";
+  }
+  if (existsSync(path.join(process.cwd(), "pnpm-lock.yaml"))) {
+    return "pnpm";
+  }
+  if (existsSync(path.join(process.cwd(), "yarn.lock"))) {
+    return "yarn";
+  }
+  if (existsSync(path.join(process.cwd(), "package-lock.json"))) {
+    return "npm";
+  }
+  return "npm";
 };
 
-export default config;
-`;
-
-const getBentoFeatureTemplate =
-  () => `import { defineSchema } from "@stdout-design/cli/schema";
-import { createElement, css, text } from "takumi-js";
-import type { TakumiNode } from "takumi-js";
-
-interface Props {
-  title?: string;
-  description?: string;
-  accent?: string;
-}
-
-export const propsSchema = defineSchema({
-  title: { type: "string", default: "Featured App", description: "Headline text" },
-  description: { type: "string", default: "A beautiful description goes here.", description: "Subtitle text" },
-  accent: { type: "string", default: "#6366f1", description: "Accent color" },
-});
-
-export default (props: Props): TakumiNode => {
-  const { title = "Featured App", description = "", accent = "#6366f1" } = props;
-
-  return createElement("div", {
-    style: css({
-      alignItems: "center",
-      background: "#0a0a0b",
-      borderRadius: 24,
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
-      justifyContent: "center",
-      padding: 48,
-      width: "100%",
-    }),
-    children: [
-      createElement("div", {
-        style: css({
-          background: accent,
-          borderRadius: 12,
-          height: 64,
-          marginBottom: 24,
-          width: 64,
-        }),
-      }),
-      createElement("h1", {
-        style: css({
-          color: "#ffffff",
-          fontFamily: "Inter",
-          fontSize: 42,
-          fontWeight: 700,
-          margin: 0,
-          textAlign: "center",
-        }),
-        children: [text(title)],
-      }),
-      description ? createElement("p", {
-        style: css({
-          color: "#a1a1aa",
-          fontFamily: "Inter",
-          fontSize: 18,
-          marginTop: 16,
-          textAlign: "center",
-        }),
-        children: [text(description)],
-      }) : null,
-    ],
-  });
-};
-`;
-
-export interface ScaffoldOptions {
-  install: boolean;
-  locales: string[];
-  templates: string[];
-}
-
-export const scaffold = async (
-  dir: string,
-  options: ScaffoldOptions
-): Promise<void> => {
-  if (!existsSync(dir)) {
-    await mkdir(dir, { recursive: true });
-  }
-
-  const configPath = path.resolve(dir, "studio.config.ts");
-  if (existsSync(configPath)) {
-    console.log("studio.config.ts already exists — skipping scaffold.");
-    return;
-  }
-
-  const hasTemplates = options.templates.length > 0;
-
-  if (hasTemplates) {
-    const templatesDir = path.resolve(dir, "templates");
-    await mkdir(templatesDir, { recursive: true });
-  }
-
-  if (options.locales.length > 0) {
-    const localesDir = path.resolve(dir, "locales");
-    await mkdir(localesDir, { recursive: true });
-  }
-
-  await writeFile(configPath, getConfigTemplate());
-
-  const pkgJson = {
-    name: path.basename(dir),
-    private: true,
-    type: "module",
-    dependencies: {
-      "takumi-js": "^2.0.2",
-    },
+const getInstallCommand = (
+  pm: "bun" | "npm" | "pnpm" | "yarn"
+): [string, string[]] => {
+  const commands: Record<string, [string, string[]]> = {
+    bun: ["bun", ["install"]],
+    npm: ["npm", ["install"]],
+    pnpm: ["pnpm", ["install"]],
+    yarn: ["yarn", ["install"]],
   };
-  await writeFile(
-    path.resolve(dir, "package.json"),
-    JSON.stringify(pkgJson, null, 2)
-  );
-
-  const writes: Promise<void>[] = [];
-
-  for (const template of options.templates) {
-    if (template === "bento-feature") {
-      const templatesDir = path.resolve(dir, "templates");
-      writes.push(
-        writeFile(
-          path.resolve(templatesDir, "bento-feature.tsx"),
-          getBentoFeatureTemplate()
-        )
-      );
-    }
-  }
-
-  for (const locale of options.locales) {
-    const localesDir = path.resolve(dir, "locales");
-    if (locale === "en") {
-      writes.push(
-        writeFile(
-          path.resolve(localesDir, "en.json"),
-          JSON.stringify({ title: "Featured App" }, null, 2)
-        )
-      );
-    }
-    if (locale === "ar") {
-      writes.push(
-        writeFile(
-          path.resolve(localesDir, "ar.json"),
-          JSON.stringify({ title: "التطبيق المميز" }, null, 2)
-        )
-      );
-    }
-  }
-
-  await Promise.all(writes);
-
-  console.log(`Scaffolded studio project in ${dir}`);
-  console.log("");
-  console.log("Next steps:");
-  console.log(`  cd ${dir}`);
-  console.log("  studio dev");
-
-  if (options.install) {
-    console.log("");
-    console.log("Installing dependencies...");
-    const { spawnSync } = await import("node:child_process");
-    spawnSync("bun", ["install"], { cwd: dir, stdio: "inherit" });
-  }
+  return commands[pm];
 };
+
+const runInstall = (dir: string, pm: "bun" | "npm" | "pnpm" | "yarn"): void => {
+  const [cmd, args] = getInstallCommand(pm);
+  spawnSync(cmd, args, { cwd: dir, stdio: "inherit" });
+};
+
+const isCI = (): boolean =>
+  process.env.CI === "true" ||
+  process.env.CI === "1" ||
+  process.env.CIRCLECI === "true" ||
+  Boolean(process.env.GITHUB_ACTIONS) ||
+  Boolean(process.env.GITLAB_CI);
+
+const ciOrYes = (options?: { yes?: boolean }): boolean =>
+  options?.yes === true || isCI();
+
+interface ClackModule {
+  text: (opts: Record<string, unknown>) => Promise<string | symbol>;
+  confirm: (opts: {
+    initialValue: boolean;
+    message: string;
+  }) => Promise<boolean | symbol>;
+  multiselect: (opts: {
+    message: string;
+    options: { label: string; value: string; hint?: string }[];
+  }) => Promise<string[] | symbol>;
+}
+
+const promptOrSkip = async <T>(
+  fn: (p: ClackModule) => Promise<T | symbol>,
+  isCancel: (v: unknown) => boolean,
+  cancel: (msg: string) => void
+): Promise<T> => {
+  const clack = await import("@clack/prompts");
+  const result = await fn(clack as ClackModule);
+  if (isCancel(result)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
+  return result as T;
+};
+
+export { scaffold } from "./init/scaffold.js";
+export type { ScaffoldOptions } from "./init/scaffold.js";
 
 export const init = async (
   projectDir: string | undefined,
   options?: { yes?: boolean }
 ): Promise<void> => {
-  const dir = path.resolve(projectDir ?? process.cwd());
-
-  if (options?.yes) {
-    await scaffold(dir, {
-      install: true,
-      locales: ["en", "ar"],
-      templates: ["bento-feature"],
-    });
-    return;
-  }
-
-  const { intro, confirm, multiselect, outro, cancel, isCancel } =
+  const { intro, outro, cancel, isCancel, spinner } =
     await import("@clack/prompts");
 
-  intro("Studio Init");
+  intro("studio init");
 
-  if (existsSync(path.resolve(dir, "studio.config.ts"))) {
+  const cwd = process.cwd();
+
+  if (existsSync(path.resolve(cwd, projectDir ?? ".", "studio.config.ts"))) {
     console.log("studio.config.ts already exists — skipping scaffold.");
     outro("Done");
     return;
   }
 
-  const selectedTemplates = await multiselect({
-    message: "Which templates would you like to scaffold?",
-    options: [
-      {
-        hint: "Apple-style feature card",
-        label: "Bento Feature",
-        value: "bento-feature",
-      },
-    ],
-  });
+  let resolvedDir: string;
+  let projectName: string;
 
-  if (isCancel(selectedTemplates)) {
-    cancel("Cancelled.");
-    process.exit(0);
+  if (projectDir) {
+    resolvedDir = path.resolve(cwd, projectDir);
+    projectName = path.basename(resolvedDir);
+  } else if (ciOrYes(options)) {
+    projectName = "studio-project";
+    resolvedDir = path.resolve(cwd, projectName);
+  } else {
+    const name = await promptOrSkip(
+      (p) =>
+        p.text({
+          defaultValue: "studio-project",
+          message: "What's your project name?",
+          validate: (value: string) => {
+            const trimmed = value.trim();
+            if (trimmed.length === 0) {
+              return "Please enter a project name.";
+            }
+            return validateProjectName(trimmed);
+          },
+        }),
+      isCancel,
+      cancel
+    );
+
+    projectName = (name as string).trim();
+    resolvedDir = path.resolve(cwd, projectName);
   }
 
-  const templates = selectedTemplates as string[];
-
-  const selectedLocales = await multiselect({
-    message: "Which locales would you like to include?",
-    options: [
-      { label: "English", value: "en" },
-      { label: "Arabic", value: "ar" },
-    ],
-  });
-
-  if (isCancel(selectedLocales)) {
-    cancel("Cancelled.");
-    process.exit(0);
+  if (!ciOrYes(options) && existsSync(resolvedDir)) {
+    const shouldOverwrite = await promptOrSkip(
+      (p) =>
+        p.confirm({
+          initialValue: false,
+          message: `Directory "${projectName}" already exists. Overwrite?`,
+        }),
+      isCancel,
+      cancel
+    );
+    if (!shouldOverwrite) {
+      cancel("Cancelled.");
+      process.exit(0);
+    }
   }
 
-  const locales = selectedLocales as string[];
+  const templates = ciOrYes(options)
+    ? ["bento-feature"]
+    : await promptOrSkip(
+        (p) =>
+          p.multiselect({
+            message: "Which templates would you like to scaffold?",
+            options: [
+              {
+                hint: "Apple-style feature card",
+                label: "Bento Feature",
+                value: "bento-feature",
+              },
+            ],
+          }),
+        isCancel,
+        cancel
+      );
 
-  const shouldInstall = await confirm({
-    initialValue: true,
-    message: "Install dependencies?",
-  });
+  const locales = ciOrYes(options)
+    ? ["en", "ar"]
+    : await promptOrSkip(
+        (p) =>
+          p.multiselect({
+            message: "Which locales would you like to include?",
+            options: [
+              { label: "English", value: "en" },
+              { label: "Arabic", value: "ar" },
+            ],
+          }),
+        isCancel,
+        cancel
+      );
 
-  if (isCancel(shouldInstall)) {
-    cancel("Cancelled.");
-    process.exit(0);
-  }
+  const parentDir = path.dirname(resolvedDir);
+  const alreadyInGitRepo = isInsideGitRepo(parentDir);
 
-  await scaffold(dir, {
+  const wantsGit = (() => {
+    if (alreadyInGitRepo) {
+      return false;
+    }
+    if (ciOrYes(options)) {
+      return true;
+    }
+    return promptOrSkip(
+      (p) =>
+        p.confirm({
+          initialValue: true,
+          message: "Initialize a git repository?",
+        }),
+      isCancel,
+      cancel,
+    );
+  })();
+
+  const shouldInstall = ciOrYes(options)
+    ? true
+    : await promptOrSkip(
+        (p) =>
+          p.confirm({
+            initialValue: true,
+            message: "Install dependencies?",
+          }),
+        isCancel,
+        cancel
+      );
+
+  const scaffoldOpts: ScaffoldOptions = {
+    git: wantsGit as boolean,
     install: shouldInstall as boolean,
     locales,
+    projectName,
     templates,
-  });
+  };
+
+  const s = spinner();
+  s.start("Creating project...");
+  await scaffold(resolvedDir, scaffoldOpts);
+  s.stop("Project created");
+
+  if (scaffoldOpts.git) {
+    const gitSpinner = spinner();
+    gitSpinner.start("Initializing git...");
+    const initialized = tryGitInit(resolvedDir);
+    gitSpinner.stop(
+      initialized
+        ? "Git initialized"
+        : "Git repo already exists or git is not available"
+    );
+  }
+
+  const pm = detectPackageManager();
+
+  if (scaffoldOpts.install) {
+    const installSpinner = spinner();
+    installSpinner.start("Installing dependencies...");
+    runInstall(resolvedDir, pm);
+    installSpinner.stop("Dependencies installed");
+  }
+
+  console.log("");
+  console.log(`  Created project at ${resolvedDir}`);
+  console.log("");
+  console.log("  Next steps:");
+  console.log(`    cd ${path.relative(cwd, resolvedDir) || "."}`);
+  console.log(`    ${pm} run dev`);
+  console.log("");
 
   outro("Done");
 };

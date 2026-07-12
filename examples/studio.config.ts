@@ -22,15 +22,15 @@ const config: StudioConfig = {
       description:
         "Apple-style bento feature card with image, headline, and tag badges.",
     },
+    "bento-features": {
+      componentPath: "./templates/bento-features",
+      description:
+        "A quote card with attribution, avatar, and customizable background.",
+    },
     "features-showcase": {
       componentPath: "./templates/features-showcase",
       description:
         "Full-bleed feature showcase card with step indicator, image overlay, and theme variants.",
-    },
-    "quote-card": {
-      componentPath: "./templates/quote-card",
-      description:
-        "A quote card with attribution, avatar, and customizable background.",
     },
     "stat-card": {
       componentPath: "./templates/stat-card",
