@@ -4,6 +4,7 @@ import { googleFonts } from "@takumi-rs/helpers";
 import type { ComponentType } from "react";
 import { createElement } from "react";
 
+import { classifyLocale } from "../assets/classify-locale.js";
 import { openCache } from "../cache/open-cache.js";
 import type { Font, FontDescriptor } from "../node/takumi-types-shim.js";
 import { logDebug } from "../shared/logger.js";
@@ -23,40 +24,54 @@ import type { Manifest } from "./types.js";
 const isFontDescriptor = (f: Font): f is FontDescriptor =>
   typeof f === "object" && !(f instanceof Uint8Array);
 
-const resolveArabicFonts = async (
-  _locales: { id: string }[]
-): Promise<{ fonts: Font[]; fontFamilies: string[] }> => {
-  let fonts: Font[] = [];
-  let fontFamilies: string[] = [];
+const fontCache = new Map<
+  string,
+  Promise<{ fonts: Font[]; fontFamilies: string[] } | null>
+>();
 
-  try {
-    fonts = await googleFonts([
-      { name: "Noto Sans Arabic", weight: [400, 700] },
-    ]);
-    fontFamilies = fonts
-      .filter(isFontDescriptor)
-      .map((f) => String(f.name ?? ""))
-      .filter(Boolean);
-    logDebug("googleFonts resolved", {
-      count: fonts.length,
-      hasData: fonts.filter(isFontDescriptor).map((f) => typeof f.data),
-      names: fonts.filter(isFontDescriptor).map((f) => f.name),
-    });
-  } catch (error) {
-    logDebug("googleFonts failed, using direct URL fallback", {
-      error: String(error),
-    });
-    fonts = [
-      {
-        data: new Uint8Array(0),
-        name: "Noto Sans Arabic",
-        weight: 400,
-      } as unknown as Font,
-    ];
-    fontFamilies = ["Noto Sans Arabic"];
+const resolveFontsForLocale = async (
+  localeId: string
+): Promise<{ fonts: Font[]; fontFamilies: string[] } | null> => {
+  const { needsArabic } = classifyLocale(localeId);
+  if (!needsArabic) {
+    return null;
   }
 
-  return { fontFamilies, fonts };
+  const cached = fontCache.get(localeId);
+  if (cached) {
+    return await cached;
+  }
+
+  const doFetch = async (): Promise<{
+    fonts: Font[];
+    fontFamilies: string[];
+  } | null> => {
+    try {
+      const fonts = await googleFonts([
+        { name: "Noto Sans Arabic", weight: [400, 700] },
+      ]);
+      const fontFamilies = fonts
+        .filter(isFontDescriptor)
+        .map((f) => String(f.name ?? ""))
+        .filter(Boolean);
+      logDebug("googleFonts resolved per locale", {
+        count: fonts.length,
+        localeId,
+        names: fonts.filter(isFontDescriptor).map((f) => f.name),
+      });
+      return { fontFamilies, fonts };
+    } catch (error) {
+      logDebug("googleFonts failed for locale", {
+        error: String(error),
+        localeId,
+      });
+      return null;
+    }
+  };
+
+  const promise = doFetch();
+  fontCache.set(localeId, promise);
+  return promise;
 };
 
 export interface BatchInput {
@@ -134,30 +149,8 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
 
   const cache = await openCache(rootDir, { cacheDir: cacheDirOverride });
 
-  const arabicLocales = locales.filter((l) => l.id.startsWith("ar"));
-  logDebug("Arabic locale detection", {
-    arabicCount: arabicLocales.length,
-    localeIds: locales.map((l) => l.id),
-  });
-
-  let fonts: Font[] = [];
-  let fontFamilies: string[] | undefined;
-  if (arabicLocales.length > 0) {
-    const { fonts: resolvedFonts, fontFamilies: resolvedFamilies } =
-      await resolveArabicFonts(locales);
-    fonts = resolvedFonts;
-    fontFamilies = resolvedFamilies;
-  }
-
   const succeeded: Manifest["succeeded"] = [];
   const failed: Manifest["failed"] = [];
-
-  const renderOptions = fonts.length > 0 ? { fontFamilies, fonts } : undefined;
-  logDebug("renderOptions before loop", {
-    fontFamilies,
-    fontsCount: fonts.length,
-    hasOptions: renderOptions !== undefined,
-  });
 
   try {
     // oxlint-disable eslint/no-await-in-loop
@@ -168,6 +161,14 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
           cell.props as Record<string, unknown>
         );
         const compiled = await compileTemplate(element);
+
+        const resolvedFonts = await resolveFontsForLocale(cell.locale);
+        const localeRenderOptions = resolvedFonts?.fonts.length
+          ? {
+              fontFamilies: resolvedFonts.fontFamilies,
+              fonts: resolvedFonts.fonts,
+            }
+          : undefined;
 
         const filename = generateOutputFilename({
           locale: cell.locale,
@@ -185,7 +186,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
           locale: cell.locale,
           outDir,
           props: cell.props,
-          renderOptions,
+          renderOptions: localeRenderOptions,
           templateId,
           width: cell.preset.width,
         });

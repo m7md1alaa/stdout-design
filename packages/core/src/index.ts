@@ -71,6 +71,18 @@ export type { ProjectPaths } from "./project/project-paths.js";
 export { openCache } from "./cache/open-cache.js";
 export type { OpenCacheOptions } from "./cache/open-cache.js";
 
+export { resolveAssetsForLocale } from "./assets/assets-resolver.js";
+export type {
+  AssetsForLocale,
+  AssetsResolverOptions,
+  FontResolutionResult,
+} from "./assets/assets-resolver.js";
+
+export { mergeLocaleProps } from "./assets/merge-locale-props.js";
+
+export { classifyLocale } from "./assets/classify-locale.js";
+export type { LocaleClassification } from "./assets/classify-locale.js";
+
 export {
   importTemplateForBatch,
   loadConfig,

@@ -6,6 +6,7 @@ import {
   measureTemplate,
   RenderCache,
   logWarn,
+  mergeLocaleProps,
   openCache,
   resolveProjectPaths,
 } from "@stdout-design/core";
@@ -48,15 +49,7 @@ const applyLocale = async (
     localePath
   )) as Record<string, unknown>;
 
-  const merged: Record<string, unknown> = { ...props, locale };
-  for (const [key, value] of Object.entries(translations)) {
-    if (Array.isArray(value) && Array.isArray(merged[key])) {
-      merged[key] = value;
-    } else if (typeof value === "string" && typeof merged[key] === "string") {
-      merged[key] = value;
-    }
-  }
-  return merged;
+  return mergeLocaleProps({ ...props, locale }, translations);
 };
 
 export interface DevServerOptions {

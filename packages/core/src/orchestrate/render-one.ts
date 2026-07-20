@@ -1,3 +1,4 @@
+import { classifyLocale } from "../assets/classify-locale.js";
 import { RenderCache } from "../node/render-cache.js";
 import { renderToPixels } from "../node/renderer.js";
 import { logDebug } from "../shared/logger.js";
@@ -47,7 +48,7 @@ export const renderOne = async (
     };
   }
 
-  const lang = locale?.startsWith("ar") ? "ar" : undefined;
+  const { lang } = classifyLocale(locale ?? "default");
 
   logDebug("renderOne -> renderToPixels", {
     fontFamilies: renderOptions?.fontFamilies,
