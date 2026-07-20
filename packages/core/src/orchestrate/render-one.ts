@@ -1,6 +1,6 @@
 import { classifyLocale } from "../assets/classify-locale.js";
-import { RenderCache } from "../node/render-cache.js";
-import { renderToPixels } from "../node/renderer.js";
+import { RenderCache } from "../cache/render-cache.js";
+import { renderToPixels } from "../engine/renderer.js";
 import { logDebug } from "../shared/logger.js";
 import type { RenderOneInput, RenderOneOutput } from "./types.js";
 import { ensureDir, tryWriteFile } from "./utils.js";

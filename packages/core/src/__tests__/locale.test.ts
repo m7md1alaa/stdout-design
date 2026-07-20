@@ -43,11 +43,11 @@ mock.module("@takumi-rs/helpers", () => ({
   ),
 }));
 
-const { __resetRendererForTesting } = await import("../node/renderer.js");
+const { __resetRendererForTesting } = await import("../engine/renderer.js");
 __resetRendererForTesting();
 
 const { expandMatrix } = await import("../batch/matrix.js");
-const { renderOne } = await import("../batch/render-one.js");
+const { renderOne } = await import("../orchestrate/render-one.js");
 
 describe("expandMatrix locale injection", () => {
   it("injects locale into cell props for each locale", () => {
@@ -121,7 +121,7 @@ describe("renderOne with locale", () => {
 
   it("produces output for ar locale with renderOptions", async () => {
     tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-locale-"));
-    const { RenderCache } = await import("../node/render-cache.js");
+    const { RenderCache } = await import("../cache/render-cache.js");
     const cache = new RenderCache({ cacheDir: tmpDir });
     await cache.init();
 
@@ -150,7 +150,7 @@ describe("renderOne with locale", () => {
 
   it("produces output for en locale without renderOptions", async () => {
     tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-locale-en-"));
-    const { RenderCache } = await import("../node/render-cache.js");
+    const { RenderCache } = await import("../cache/render-cache.js");
     const cache = new RenderCache({ cacheDir: tmpDir });
     await cache.init();
 
@@ -174,7 +174,7 @@ describe("renderOne with locale", () => {
 
   it("caches a second render of the same props", async () => {
     tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-cache-hit-"));
-    const { RenderCache } = await import("../node/render-cache.js");
+    const { RenderCache } = await import("../cache/render-cache.js");
     const cache = new RenderCache({ cacheDir: tmpDir });
     await cache.init();
 

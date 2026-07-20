@@ -38,7 +38,7 @@ class MockRenderer {
 
 mock.module("takumi-js/node", () => ({ Renderer: MockRenderer }));
 
-const { renderComponent } = await import("../batch/single.js");
+const { renderComponent } = await import("../orchestrate/single.js");
 
 const SimpleComponent = (props: { name: string }) =>
   createElement("div", null, props.name);

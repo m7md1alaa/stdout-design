@@ -6,9 +6,10 @@ import { createElement } from "react";
 
 import { classifyLocale } from "../assets/classify-locale.js";
 import { openCache } from "../cache/open-cache.js";
-import type { Font, FontDescriptor } from "../node/takumi-types-shim.js";
+import { compileTemplate } from "../engine/render.js";
+import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
+import { renderOne } from "../orchestrate/render-one.js";
 import { logDebug } from "../shared/logger.js";
-import { compileTemplate } from "../shared/render.js";
 import {
   importTemplateForBatch,
   loadConfig,
@@ -18,7 +19,6 @@ import {
 import { writeManifest } from "./manifest.js";
 import { expandMatrix } from "./matrix.js";
 import { generateOutputFilename } from "./naming.js";
-import { renderOne } from "./render-one.js";
 import type { Manifest } from "./types.js";
 
 const isFontDescriptor = (f: Font): f is FontDescriptor =>

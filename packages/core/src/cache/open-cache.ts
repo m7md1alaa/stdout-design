@@ -1,5 +1,5 @@
-import { RenderCache } from "../node/render-cache.js";
 import { resolveProjectPaths } from "../project/project-paths.js";
+import { RenderCache } from "./render-cache.js";
 
 export interface OpenCacheOptions {
   cacheDir?: string;

@@ -1,11 +1,11 @@
 import type { ComponentType } from "react";
 import { createElement } from "react";
 
-import { renderToPixels } from "../node/renderer.js";
-import { compileTemplate } from "../shared/render.js";
+import { generateOutputFilename } from "../batch/naming.js";
+import { compileTemplate } from "../engine/render.js";
+import { renderToPixels } from "../engine/renderer.js";
 import type { PropSchema } from "../shared/validation.js";
 import { validateProps } from "../shared/validation.js";
-import { generateOutputFilename } from "./naming.js";
 import { ensureDir } from "./utils.js";
 
 export interface SingleInput {

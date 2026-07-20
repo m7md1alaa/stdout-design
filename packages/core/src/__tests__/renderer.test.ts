@@ -27,7 +27,7 @@ const {
   renderToPixels,
   measureTemplate,
   renderAutoSized,
-} = await import("../node/renderer.js");
+} = await import("../engine/renderer.js");
 
 describe("__getRendererForTesting", () => {
   it("returns a renderer with render and measure methods", () => {

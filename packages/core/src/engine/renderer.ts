@@ -1,5 +1,5 @@
 import { logDebug } from "../shared/logger.js";
-import type { CompiledTemplate } from "../shared/render.js";
+import type { CompiledTemplate } from "./render.js";
 import type {
   Font,
   MeasuredNode,

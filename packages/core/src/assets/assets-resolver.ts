@@ -1,4 +1,4 @@
-import type { Font } from "../node/takumi-types-shim.js";
+import type { Font } from "../engine/takumi-types-shim.js";
 import { classifyLocale } from "./classify-locale.js";
 import { mergeLocaleProps } from "./merge-locale-props.js";
 

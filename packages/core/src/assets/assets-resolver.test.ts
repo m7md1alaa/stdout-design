@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 
-import type { Font } from "../node/takumi-types-shim.js";
+import type { Font } from "../engine/takumi-types-shim.js";
 import { resolveAssetsForLocale } from "./assets-resolver.js";
 
 const stubFont: Font = { name: "test-font", weight: 400 } as Font;
