@@ -4,9 +4,8 @@ import { googleFonts } from "@takumi-rs/helpers";
 import type { ComponentType } from "react";
 import { createElement } from "react";
 
-import { RenderCache } from "../node/render-cache.js";
+import { openCache } from "../cache/open-cache.js";
 import type { Font, FontDescriptor } from "../node/takumi-types-shim.js";
-import { resolveProjectPaths } from "../project/project-paths.js";
 import { logDebug } from "../shared/logger.js";
 import { compileTemplate } from "../shared/render.js";
 import {
@@ -133,10 +132,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
     outDirOverride ?? config.outDir ?? "./out"
   );
 
-  const cacheDir =
-    cacheDirOverride ?? resolveProjectPaths(rootDir).defaultCacheDir;
-  const cache = new RenderCache({ cacheDir });
-  await cache.init();
+  const cache = await openCache(rootDir, { cacheDir: cacheDirOverride });
 
   const arabicLocales = locales.filter((l) => l.id.startsWith("ar"));
   logDebug("Arabic locale detection", {

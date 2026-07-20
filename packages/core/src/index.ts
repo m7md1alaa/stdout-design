@@ -68,6 +68,9 @@ export type { BatchInput, BatchOutput } from "./batch/batch.js";
 export { resolveProjectPaths } from "./project/project-paths.js";
 export type { ProjectPaths } from "./project/project-paths.js";
 
+export { openCache } from "./cache/open-cache.js";
+export type { OpenCacheOptions } from "./cache/open-cache.js";
+
 export {
   importTemplateForBatch,
   loadConfig,

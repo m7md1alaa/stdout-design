@@ -6,6 +6,7 @@ import {
   measureTemplate,
   RenderCache,
   logWarn,
+  openCache,
   resolveProjectPaths,
 } from "@stdout-design/core";
 import { Hono } from "hono";
@@ -114,11 +115,7 @@ export const createDevServer = async (options: DevServerOptions) => {
 
   const templateLoader = new TemplateLoader(rootDir);
   const fileWatcher = new FileWatcher(rootDir, templateLoader);
-  const renderCache = new RenderCache({
-    cacheDir: cacheDir ?? resolveProjectPaths(rootDir).defaultCacheDir,
-  });
-
-  await renderCache.init();
+  const renderCache = await openCache(rootDir, { cacheDir });
   // start() boots the vite-node SSR pipeline that loadAll/loadDataModule
   // depend on -- must happen before any template or locale file is loaded.
   await templateLoader.start();
