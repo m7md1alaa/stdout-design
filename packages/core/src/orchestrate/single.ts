@@ -1,16 +1,13 @@
 import type { ComponentType } from "react";
-import { createElement } from "react";
 
 import { generateOutputFilename } from "../batch/naming.js";
-import { compileTemplate } from "../engine/render.js";
-import { renderToPixels } from "../engine/renderer.js";
+import type { RenderCache } from "../cache/render-cache.js";
 import type { PropSchema } from "../shared/validation.js";
-import { validateProps } from "../shared/validation.js";
+import { orchestrateRender } from "./orchestrate.js";
 import { ensureDir } from "./utils.js";
 
 export interface SingleInput {
-  // eslint-disable-next-line typescript/no-explicit-any
-  component: ComponentType<any>;
+  component: ComponentType<Record<string, unknown>>;
   propsSchema: PropSchema;
   props: Record<string, unknown>;
   preset: { id: string; width: number; height: number };
@@ -21,6 +18,16 @@ export interface SingleInput {
 export interface SingleOutput {
   outputPath: string;
 }
+
+// eslint-disable-next-line no-empty-function
+const noop = (): void => {};
+
+const noopCache = {
+  getCompiled: () => null,
+  getPixels: () => null,
+  setCompiledWithContentHash: noop,
+  setPixels: noop,
+} as unknown as RenderCache;
 
 export const renderComponent = async (
   input: SingleInput
@@ -34,18 +41,17 @@ export const renderComponent = async (
     propsSchema,
   } = input;
 
-  const validated = validateProps(propsSchema, props);
-  const element = createElement(
+  const result = await orchestrateRender({
+    cache: noopCache,
     component,
-    validated as Record<string, unknown>
-  );
-  const compiled = await compileTemplate(element);
-
-  const { bytes } = await renderToPixels(
-    compiled,
-    { height: preset.height, width: preset.width },
-    { format }
-  );
+    format,
+    height: preset.height,
+    props,
+    propsSchema,
+    templateContentHash: "single",
+    templateId: "single",
+    width: preset.width,
+  });
 
   const filename = generateOutputFilename({
     locale: "default",
@@ -56,7 +62,7 @@ export const renderComponent = async (
 
   const outputPath = `${outDir}/${filename}`;
   await ensureDir(outDir);
-  await Bun.write(outputPath, bytes as unknown as Uint8Array);
+  await Bun.write(outputPath, result.bytes as unknown as Uint8Array);
 
   return { outputPath };
 };

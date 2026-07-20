@@ -1,56 +1,36 @@
 import path from "node:path";
 
 import {
-  compileTemplate,
-  renderToPixels,
-  measureTemplate,
-  RenderCache,
   logWarn,
-  mergeLocaleProps,
   openCache,
+  orchestrateRender,
+  orchestrateMeasure,
+  PropValidationError,
   resolveProjectPaths,
 } from "@stdout-design/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { streamSSE } from "hono/streaming";
-import { createElement } from "react";
-import type React from "react";
+import type { ComponentType } from "react";
 
 import { errorHandler } from "./error-middleware.js";
 import { FileWatcher } from "./file-watcher.js";
 import { TemplateLoader } from "./template-loader.js";
 import { renderRequestSchema, measureRequestSchema } from "./types";
 
-/**
- * Merges locale translations into already-validated props. Loads the
- * locale JSON through TemplateLoader's vite-node pipeline (the same
- * leak-free, explicitly-invalidated module cache used for templates)
- * rather than a raw `import(...)?t=Date.now()`, which would reproduce the
- * exact unbounded module-registry leak that was fixed for template
- * loading.
- *
- * Unlike the original, failures are NOT swallowed: a missing or malformed
- * locale file is a real error the caller should see, not a silent
- * fallback to default-language props (silently shipping the wrong
- * language is a worse outcome than a clear 400).
- */
-const applyLocale = async (
-  templateLoader: TemplateLoader,
-  rootDir: string,
-  locale: string,
-  props: Record<string, unknown>
-): Promise<Record<string, unknown>> => {
-  const localePath = path.resolve(
-    resolveProjectPaths(rootDir).localesDir,
-    `${locale}.json`
-  );
-  const translations = (await templateLoader.loadDataModule(
-    localePath
-  )) as Record<string, unknown>;
-
-  return mergeLocaleProps({ ...props, locale }, translations);
-};
+const loadLocaleDataForLoader =
+  (templateLoader: TemplateLoader, rootDir: string) =>
+  async (locale: string): Promise<Record<string, unknown>> => {
+    const localePath = path.resolve(
+      resolveProjectPaths(rootDir).localesDir,
+      `${locale}.json`
+    );
+    const translations = (await templateLoader.loadDataModule(
+      localePath
+    )) as Record<string, unknown>;
+    return translations;
+  };
 
 export interface DevServerOptions {
   rootDir: string;
@@ -234,100 +214,39 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
-    const parsed = templateModule.propsSchema.safeParse(props);
-    if (!parsed.success) {
-      logWarn("Invalid render props", {
-        issues: parsed.error.issues,
+    try {
+      const result = await orchestrateRender({
+        cache: renderCache,
+        component: templateModule.default as ComponentType<
+          Record<string, unknown>
+        >,
+        height: preset.height,
+        loadLocaleData: locale
+          ? loadLocaleDataForLoader(templateLoader, rootDir)
+          : undefined,
+        locale,
+        props: props as Record<string, unknown>,
+        propsSchema: templateModule.propsSchema,
+        templateContentHash: templateInfo.contentHash,
         templateId,
+        width: preset.width,
       });
-      return c.json(
-        { error: "Invalid props", issues: parsed.error.issues },
-        400
-      );
-    }
-    const validatedProps = parsed.data;
 
-    let resolvedProps: Record<string, unknown>;
-    if (locale) {
-      try {
-        resolvedProps = await applyLocale(
-          templateLoader,
-          rootDir,
-          locale,
-          validatedProps
-        );
-      } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : "Failed to load locale";
-        logWarn("Render locale load failed", { locale, message });
-        return c.json({ error: `Locale "${locale}": ${message}` }, 400);
-      }
-    } else {
-      resolvedProps = validatedProps;
-    }
-
-    const propsJSON = JSON.stringify(resolvedProps);
-
-    const pixelKey = RenderCache.createPixelCacheKey({
-      height: preset.height,
-      propsJSON,
-      templateContentHash: templateInfo.contentHash,
-      width: preset.width,
-    });
-
-    const cached = await renderCache.getPixels(pixelKey);
-    if (cached) {
-      return new Response(new Uint8Array(cached), {
+      return new Response(new Uint8Array(result.bytes), {
         headers: {
           "Cache-Control": "public, max-age=31536000, immutable",
           "Content-Type": "image/png",
-          "X-Cache": "hit",
+          "X-Cache": result.cacheHit ? "hit" : "miss",
         },
       });
+    } catch (error: unknown) {
+      if (error instanceof PropValidationError) {
+        return c.json({ error: "Invalid props", issues: error.issues }, 400);
+      }
+      const message = error instanceof Error ? error.message : "Render failed";
+      logWarn("Render failed", { message, templateId });
+      return c.json({ error: message }, 400);
     }
-
-    const compileKey = RenderCache.createCompileCacheKey({
-      propsJSON,
-      templateContentHash: templateInfo.contentHash,
-      templateId,
-    });
-
-    let compiled = renderCache.getCompiled(compileKey) as Awaited<
-      ReturnType<typeof compileTemplate>
-    > | null;
-
-    if (!compiled) {
-      const Component = templateModule.default as React.FunctionComponent<
-        Record<string, unknown>
-      >;
-      const element = createElement(Component, resolvedProps);
-      compiled = await compileTemplate(element);
-      renderCache.setCompiledWithContentHash(
-        compileKey,
-        templateInfo.contentHash,
-        compiled
-      );
-    }
-
-    const output = await renderToPixels(compiled, {
-      height: preset.height,
-      width: preset.width,
-    });
-
-    await renderCache.setPixels(
-      pixelKey,
-      output.bytes,
-      preset.width,
-      preset.height
-    );
-
-    return new Response(new Uint8Array(output.bytes), {
-      headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Content-Type": "image/png",
-        "X-Cache": "miss",
-      },
-    });
   });
 
   // Measure endpoint — returns dimensions without full render
@@ -342,7 +261,7 @@ export const createDevServer = async (options: DevServerOptions) => {
         400
       );
     }
-    const { templateId, props } = parsedBody.data;
+    const { templateId, props, locale } = parsedBody.data;
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
@@ -370,50 +289,34 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
-    const parsed = templateModule.propsSchema.safeParse(props);
-    if (!parsed.success) {
-      logWarn("Invalid measure props", {
-        issues: parsed.error.issues,
+    try {
+      const result = await orchestrateMeasure({
+        cache: renderCache,
+        component: templateModule.default as ComponentType<
+          Record<string, unknown>
+        >,
+        loadLocaleData: locale
+          ? loadLocaleDataForLoader(templateLoader, rootDir)
+          : undefined,
+        locale,
+        props: props as Record<string, unknown>,
+        propsSchema: templateModule.propsSchema,
+        templateContentHash: templateInfo.contentHash,
         templateId,
       });
-      return c.json(
-        { error: "Invalid props", issues: parsed.error.issues },
-        400
-      );
+
+      return c.json({
+        height: result.height,
+        width: result.width,
+      });
+    } catch (error: unknown) {
+      if (error instanceof PropValidationError) {
+        return c.json({ error: "Invalid props", issues: error.issues }, 400);
+      }
+      const message = error instanceof Error ? error.message : "Measure failed";
+      logWarn("Measure failed", { message, templateId });
+      return c.json({ error: message }, 400);
     }
-    const validatedProps = parsed.data;
-
-    const propsJSON = JSON.stringify(validatedProps);
-
-    const compileKey = RenderCache.createCompileCacheKey({
-      propsJSON,
-      templateContentHash: templateInfo.contentHash,
-      templateId,
-    });
-
-    let compiled = renderCache.getCompiled(compileKey) as Awaited<
-      ReturnType<typeof compileTemplate>
-    > | null;
-
-    if (!compiled) {
-      const Component = templateModule.default as React.FunctionComponent<
-        Record<string, unknown>
-      >;
-      const element = createElement(Component, validatedProps);
-      compiled = await compileTemplate(element);
-      renderCache.setCompiledWithContentHash(
-        compileKey,
-        templateInfo.contentHash,
-        compiled
-      );
-    }
-
-    const measured = await measureTemplate(compiled);
-
-    return c.json({
-      height: measured.height,
-      width: measured.width,
-    });
   });
 
   // Cache management

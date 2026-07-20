@@ -64,7 +64,7 @@ export const formatManifestSummary = (manifest: Manifest): string => {
   return lines.join("\n");
 };
 
-export const formatError = (error: unknown): string => {
+export const formatError = (error?: unknown): string => {
   if (error instanceof Error) {
     return `Error: ${error.message}`;
   }

@@ -185,7 +185,10 @@ describe("formatManifestSummary", () => {
       completedCount: 2,
       failed: [failedEntry],
       status: "aborted",
-      succeeded: [succeededEntry, { ...succeededEntry, rowIndex: 2 }],
+      succeeded: [
+        { ...succeededEntry, cacheHit: false },
+        { ...succeededEntry, cacheHit: false, rowIndex: 2 },
+      ],
       totalCount: 10,
     };
     const result = formatManifestSummary(manifest);
@@ -232,7 +235,7 @@ describe("formatError", () => {
   });
 
   test("formats undefined", () => {
-    const result = formatError(null);
+    const result = formatError();
     expect(result).toBe("Error: undefined");
   });
 

@@ -203,7 +203,6 @@ it("POST /measure returns width and height for a valid request", async () => {
   expect(body).toHaveProperty("height");
   expect(typeof body.width).toBe("number");
   expect(typeof body.height).toBe("number");
-  // Auto-sized render should have natural dimensions from the text content
   expect(body.width).toBeGreaterThan(0);
   expect(body.height).toBeGreaterThan(0);
 });

@@ -21,6 +21,10 @@ export interface AssetsResolverOptions {
 
 const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
 
+export const clearFontCache = (): void => {
+  fontCache.clear();
+};
+
 export const resolveAssetsForLocale = async (
   localeId: string,
   props: Record<string, unknown>,

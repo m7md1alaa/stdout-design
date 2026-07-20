@@ -15,7 +15,7 @@ describe("suggestClosest", () => {
 
   test("returns undefined when input is empty and candidates are non-empty", () => {
     const result = suggestClosest("", ["hello"]);
-    expect(result).toBe("hello");
+    expect(result).toBeUndefined();
   });
 
   test("returns candidate within max distance", () => {

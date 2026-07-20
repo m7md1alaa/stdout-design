@@ -62,6 +62,17 @@ export type { MatrixCell } from "./batch/types.js";
 export { renderComponent } from "./orchestrate/single.js";
 export type { SingleInput, SingleOutput } from "./orchestrate/single.js";
 
+export {
+  orchestrateRender,
+  orchestrateMeasure,
+} from "./orchestrate/orchestrate.js";
+export type {
+  OrchestrateRenderInput,
+  OrchestrateRenderResult,
+  OrchestrateMeasureInput,
+  OrchestrateMeasureResult,
+} from "./orchestrate/types.js";
+
 export { runBatch } from "./batch/batch.js";
 export type { BatchInput, BatchOutput } from "./batch/batch.js";
 

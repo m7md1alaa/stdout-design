@@ -8,6 +8,7 @@ export const renderRequestSchema = z.object({
 });
 
 export const measureRequestSchema = z.object({
+  locale: z.string().optional(),
   props: z.unknown(),
   templateId: z.string().min(1),
 });

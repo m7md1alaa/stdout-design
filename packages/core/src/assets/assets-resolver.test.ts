@@ -1,11 +1,14 @@
-import { describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { Font } from "../engine/takumi-types-shim.js";
-import { resolveAssetsForLocale } from "./assets-resolver.js";
+import { clearFontCache, resolveAssetsForLocale } from "./assets-resolver.js";
 
 const stubFont: Font = { name: "test-font", weight: 400 } as Font;
 
 describe("resolveAssetsForLocale", () => {
+  beforeEach(() => {
+    clearFontCache();
+  });
   it("merges locale props and classifies the locale", async () => {
     const props = { count: 1, title: "Hello" };
     const localeData = { title: "Bonjour" };

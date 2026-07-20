@@ -1,9 +1,9 @@
+import type { ComponentType } from "react";
+import { createElement } from "react";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-
-import { createElement } from "react";
 import { z } from "zod";
 
 mock.module("takumi-js/helpers/jsx", () => ({
@@ -13,6 +13,10 @@ mock.module("takumi-js/helpers/jsx", () => ({
       stylesheets: [] as string[],
     })
   ),
+}));
+
+mock.module("@takumi-rs/helpers", () => ({
+  googleFonts: mock(() => Promise.resolve([])),
 }));
 
 class MockRenderer {
@@ -40,8 +44,10 @@ mock.module("takumi-js/node", () => ({ Renderer: MockRenderer }));
 
 const { renderComponent } = await import("../orchestrate/single.js");
 
-const SimpleComponent = (props: { name: string }) =>
-  createElement("div", null, props.name);
+const SimpleComponent = ((props: Record<string, unknown>) =>
+  createElement("div", null, String(props.name))) as ComponentType<
+  Record<string, unknown>
+>;
 
 const propsSchema = z.object({ name: z.string() });
 

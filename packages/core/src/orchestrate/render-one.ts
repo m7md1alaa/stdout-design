@@ -1,15 +1,11 @@
-import { classifyLocale } from "../assets/classify-locale.js";
-import { RenderCache } from "../cache/render-cache.js";
-import { renderToPixels } from "../engine/renderer.js";
 import { logDebug } from "../shared/logger.js";
+import { orchestrateRender } from "./orchestrate.js";
 import type { RenderOneInput, RenderOneOutput } from "./types.js";
 import { ensureDir, tryWriteFile } from "./utils.js";
 
 export const renderOne = async (
   input: RenderOneInput
 ): Promise<RenderOneOutput> => {
-  const start = performance.now();
-
   const {
     compiledTemplate,
     contentHash,
@@ -23,34 +19,10 @@ export const renderOne = async (
     filename,
     signal,
     renderOptions,
+    templateId,
   } = input;
 
-  const propsJSON = JSON.stringify(props);
-
-  const pixelKey = RenderCache.createPixelCacheKey({
-    format,
-    height,
-    propsJSON,
-    templateContentHash: contentHash,
-    width,
-  });
-
-  const cached = await cache.getPixels(pixelKey);
-  if (cached) {
-    const outputPath = `${outDir}/${filename}`;
-    await ensureDir(outDir);
-    await tryWriteFile(outputPath, cached);
-
-    return {
-      cacheHit: true,
-      durationMs: performance.now() - start,
-      outputPath,
-    };
-  }
-
-  const { lang } = classifyLocale(locale ?? "default");
-
-  logDebug("renderOne -> renderToPixels", {
+  logDebug("renderOne -> orchestrateRender", {
     fontFamilies: renderOptions?.fontFamilies,
     fontNames: renderOptions?.fonts?.map((f) =>
       typeof f === "object" && "name" in f
@@ -58,31 +30,31 @@ export const renderOne = async (
         : "raw"
     ),
     fontsCount: renderOptions?.fonts?.length ?? 0,
-    lang,
     locale,
   });
 
-  const output = await renderToPixels(
+  const result = await orchestrateRender({
+    cache,
     compiledTemplate,
-    { height, width },
-    {
-      fontFamilies: renderOptions?.fontFamilies,
-      fonts: renderOptions?.fonts,
-      format,
-      lang,
-    },
-    signal
-  );
-
-  await cache.setPixels(pixelKey, output.bytes, width, height, format);
+    fontFamilies: renderOptions?.fontFamilies,
+    fonts: renderOptions?.fonts,
+    format,
+    height,
+    locale,
+    props,
+    signal,
+    templateContentHash: contentHash,
+    templateId,
+    width,
+  });
 
   const outputPath = `${outDir}/${filename}`;
   await ensureDir(outDir);
-  await tryWriteFile(outputPath, output.bytes);
+  await tryWriteFile(outputPath, result.bytes);
 
   return {
-    cacheHit: false,
-    durationMs: performance.now() - start,
+    cacheHit: result.cacheHit,
+    durationMs: result.durationMs,
     outputPath,
   };
 };
