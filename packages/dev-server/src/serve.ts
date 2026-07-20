@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { ErrorCode, logError } from "@stdout-design/core";
+import { ErrorCode, logError, resolveProjectPaths } from "@stdout-design/core";
 
 import { createDevServer } from "./index.js";
 
@@ -12,10 +12,12 @@ export const resolveStudioRoot = (cwd: string, givenArg?: string): string => {
 
   let dir = cwd;
   while (true) {
-    if (existsSync(path.join(dir, "studio.config.ts"))) {
+    if (existsSync(resolveProjectPaths(dir).configPath)) {
       return dir;
     }
-    if (existsSync(path.join(dir, "examples", "studio.config.ts"))) {
+    if (
+      existsSync(resolveProjectPaths(path.join(dir, "examples")).configPath)
+    ) {
       return path.join(dir, "examples");
     }
     const parent = path.dirname(dir);

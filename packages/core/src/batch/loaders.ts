@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { resolveProjectPaths } from "../project/project-paths.js";
 import { studioConfigSchema } from "../shared/config-schema.js";
 import { AppError, ErrorCode } from "../shared/error-codes.js";
 import { logDebug } from "../shared/logger.js";
@@ -15,7 +16,7 @@ export interface LoadedTemplate {
 }
 
 export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
-  const configPath = path.resolve(rootDir, "studio.config.ts");
+  const { configPath } = resolveProjectPaths(rootDir);
 
   try {
     await readFile(configPath, "utf-8");
@@ -137,9 +138,11 @@ export const resolveLocales = async (
     return [{ id: "default" }];
   }
 
+  const { localesDir } = resolveProjectPaths(rootDir);
+
   const entries = await Promise.all(
     localeCodes.map(async (code) => {
-      const localePath = path.resolve(rootDir, `locales/${code}.json`);
+      const localePath = path.resolve(localesDir, `${code}.json`);
       try {
         const content = await readFile(localePath, "utf-8");
         const parsed = JSON.parse(content) as Record<

@@ -1,4 +1,4 @@
-import { ErrorCode, logError } from "@stdout-design/core";
+import { ErrorCode, logError, resolveProjectPaths } from "@stdout-design/core";
 import { watch } from "chokidar";
 import type { FSWatcher } from "chokidar";
 
@@ -46,10 +46,10 @@ export class FileWatcher {
       return;
     }
 
-    const watchPaths = [
-      `${this.rootDir}/templates`,
-      `${this.rootDir}/studio.config.ts`,
-    ];
+    const { configPath, localesDir, templatesDir } = resolveProjectPaths(
+      this.rootDir
+    );
+    const watchPaths = [configPath, localesDir, templatesDir];
 
     this.watcher = watch(watchPaths, {
       awaitWriteFinish: {

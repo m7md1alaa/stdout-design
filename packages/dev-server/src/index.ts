@@ -6,6 +6,7 @@ import {
   measureTemplate,
   RenderCache,
   logWarn,
+  resolveProjectPaths,
 } from "@stdout-design/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -38,7 +39,10 @@ const applyLocale = async (
   locale: string,
   props: Record<string, unknown>
 ): Promise<Record<string, unknown>> => {
-  const localePath = `${rootDir}/locales/${locale}.json`;
+  const localePath = path.resolve(
+    resolveProjectPaths(rootDir).localesDir,
+    `${locale}.json`
+  );
   const translations = (await templateLoader.loadDataModule(
     localePath
   )) as Record<string, unknown>;
@@ -111,7 +115,7 @@ export const createDevServer = async (options: DevServerOptions) => {
   const templateLoader = new TemplateLoader(rootDir);
   const fileWatcher = new FileWatcher(rootDir, templateLoader);
   const renderCache = new RenderCache({
-    cacheDir: cacheDir ?? path.join(rootDir, ".studio-cache"),
+    cacheDir: cacheDir ?? resolveProjectPaths(rootDir).defaultCacheDir,
   });
 
   await renderCache.init();

@@ -1,6 +1,4 @@
-import path from "node:path";
-
-import { RenderCache } from "@stdout-design/core";
+import { RenderCache, resolveProjectPaths } from "@stdout-design/core";
 
 import { formatCacheStats, formatCacheCleanResult } from "../lib/display.js";
 
@@ -8,7 +6,7 @@ export const cacheStats = async (
   rootDir: string | undefined,
   options: { json?: boolean }
 ): Promise<void> => {
-  const dir = path.resolve(rootDir ?? process.cwd(), ".studio-cache");
+  const dir = resolveProjectPaths(rootDir ?? process.cwd()).defaultCacheDir;
   const cache = new RenderCache({ cacheDir: dir });
   await cache.init();
 
@@ -26,7 +24,7 @@ export const cacheClean = async (
   rootDir: string | undefined,
   options: { json?: boolean }
 ): Promise<void> => {
-  const dir = path.resolve(rootDir ?? process.cwd(), ".studio-cache");
+  const dir = resolveProjectPaths(rootDir ?? process.cwd()).defaultCacheDir;
   const cache = new RenderCache({ cacheDir: dir });
   await cache.init();
 

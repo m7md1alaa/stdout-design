@@ -3,7 +3,11 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { studioConfigSchema, zodToJsonSchemaShape } from "@stdout-design/core";
+import {
+  resolveProjectPaths,
+  studioConfigSchema,
+  zodToJsonSchemaShape,
+} from "@stdout-design/core";
 import type { StudioConfig, TemplateModule } from "@stdout-design/core";
 import react from "@vitejs/plugin-react";
 import { createServer } from "vite";
@@ -56,7 +60,7 @@ export class TemplateLoader {
 
   constructor(rootDir: string) {
     this.rootDir = rootDir;
-    this.configPath = resolve(rootDir, "studio.config.ts");
+    this.configPath = resolveProjectPaths(rootDir).configPath;
   }
 
   /**
