@@ -1,9 +1,4 @@
-export type {
-  StudioConfig,
-  TemplateEntry,
-  Preset,
-  TemplateModule,
-} from "./shared/types.js";
+export type { StudioConfig, TemplateModule } from "./shared/types.js";
 
 export {
   parseStudioConfig,
@@ -20,12 +15,7 @@ export { logDebug, logInfo, logWarn, logError } from "./shared/logger.js";
 export type { LogLevel } from "./shared/logger.js";
 
 export { RenderCache } from "./cache/render-cache.js";
-export type {
-  CompileCacheKeyInput,
-  PixelCacheKeyInput,
-  CacheStats,
-  RenderCacheOptions,
-} from "./cache/render-cache.js";
+export type { CacheStats, RenderCacheOptions } from "./cache/render-cache.js";
 
 export {
   validateProps,
@@ -33,7 +23,6 @@ export {
   isZodObject,
   zodToJsonSchemaShape,
 } from "./shared/validation.js";
-export type { PropValidationIssue } from "./shared/validation.js";
 
 export {
   registerFont,
@@ -42,21 +31,22 @@ export {
   renderAutoSized,
 } from "./engine/renderer.js";
 export type { RenderOutput } from "./engine/renderer.js";
-export type { Font, RenderOptions } from "./engine/takumi-types-shim.js";
 
-export { expandMatrix } from "./batch/matrix.js";
-export type { MatrixInput, DataRow } from "./batch/matrix.js";
+export { resolveProjectPaths } from "./project/project-paths.js";
 
-export { renderOne } from "./orchestrate/render-one.js";
-export type { RenderOneInput, RenderOneOutput } from "./orchestrate/types.js";
+export { openCache } from "./cache/open-cache.js";
+export type { OpenCacheOptions } from "./cache/open-cache.js";
 
-export { generateOutputFilename } from "./batch/naming.js";
-export type { NamingOptions } from "./batch/naming.js";
+export { resolveAssetsForLocale } from "./assets/assets-resolver.js";
+export type {
+  AssetsForLocale,
+  AssetsResolverOptions,
+  FontResolutionResult,
+} from "./assets/assets-resolver.js";
 
-export { writeManifest } from "./batch/manifest.js";
+export { importTemplateForBatch, loadConfig } from "./batch/loaders.js";
+
 export type { Manifest, ManifestEntry } from "./batch/types.js";
-
-export type { MatrixCell } from "./batch/types.js";
 
 export { renderComponent } from "./orchestrate/single.js";
 export type { SingleInput, SingleOutput } from "./orchestrate/single.js";
@@ -74,31 +64,3 @@ export type {
 
 export { runBatch } from "./batch/batch.js";
 export type { BatchInput, BatchOutput } from "./batch/batch.js";
-
-export { resolveProjectPaths } from "./project/project-paths.js";
-export type { ProjectPaths } from "./project/project-paths.js";
-
-export { openCache } from "./cache/open-cache.js";
-export type { OpenCacheOptions } from "./cache/open-cache.js";
-
-export { resolveAssetsForLocale } from "./assets/assets-resolver.js";
-export type {
-  AssetsForLocale,
-  AssetsResolverOptions,
-  FontResolutionResult,
-} from "./assets/assets-resolver.js";
-
-export { mergeLocaleProps } from "./assets/merge-locale-props.js";
-
-export { defaultFetchFonts } from "./assets/default-fonts.js";
-
-export { classifyLocale } from "./assets/classify-locale.js";
-export type { LocaleClassification } from "./assets/classify-locale.js";
-
-export {
-  importTemplateForBatch,
-  loadConfig,
-  parseDataFile,
-  resolveLocales,
-} from "./batch/loaders.js";
-export type { LoadedTemplate } from "./batch/loaders.js";
