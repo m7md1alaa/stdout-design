@@ -20,20 +20,20 @@ import { TemplateLoader } from "./template-loader.js";
 import { renderRequestSchema, measureRequestSchema } from "./types";
 
 const loadLocaleDataForLoader =
-  (
-    templateLoader: TemplateLoader,
-    rootDir: string,
-    templateId: string
-  ) =>
+  (templateLoader: TemplateLoader, rootDir: string, templateId: string) =>
   async (locale: string): Promise<Record<string, unknown>> => {
     const localePath = path.resolve(
       resolveProjectPaths(rootDir).localesDir,
       `${locale}.json`
     );
-    const translations = (await templateLoader.loadDataModule(
-      localePath
-    )) as Record<string, Record<string, unknown>>;
-    return translations[templateId] ?? {};
+    try {
+      const translations = (await templateLoader.loadDataModule(
+        localePath
+      )) as Record<string, Record<string, unknown>>;
+      return translations[templateId] ?? {};
+    } catch {
+      return {};
+    }
   };
 
 export interface DevServerOptions {

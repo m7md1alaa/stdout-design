@@ -45,10 +45,6 @@ export const propsSchema = defineSchema(
       .string()
       .default("⚡")
       .describe("Icon emoji for the main feature box"),
-    locale: z
-      .string()
-      .optional()
-      .describe("Current locale code for RTL support"),
     streakCount: z
       .number()
       .default(7)
@@ -69,20 +65,12 @@ export default function BentoFeatures({
   feature_three_title,
   feature_three_subtitle,
   streakCount,
-  locale,
 }: Props) {
-  const isRtl = locale?.startsWith("ar") ?? false;
-
   return (
     <div
-      lang={isRtl ? "ar" : undefined}
-      dir={isRtl ? "rtl" : "ltr"}
       tw="flex w-full h-full p-16"
       style={{
         backgroundColor: bgColor,
-        fontFamily: isRtl
-          ? "'Noto Sans Arabic arabic', 'Noto Sans Arabic latin', sans-serif"
-          : "sans-serif",
       }}
     >
       {/* Outer Bento Grid Container (Flex based for compatibility) */}

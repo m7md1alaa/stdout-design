@@ -85,9 +85,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
   const localeDataMap = new Map(
     resolvedLocales.map((l) => [l.id, l.data ?? {}])
   );
-  const loadLocaleData = (
-    code: string
-  ): Promise<Record<string, unknown>> =>
+  const loadLocaleData = (code: string): Promise<Record<string, unknown>> =>
     Promise.resolve(localeDataMap.get(code) ?? {});
 
   const rows = dataFile

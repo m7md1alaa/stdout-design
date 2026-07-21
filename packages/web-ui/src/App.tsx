@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 
 import { Canvas } from "./components/canvas";
 import { ErrorBoundary } from "./components/error-boundary";
+import { LocaleBar } from "./components/locale-bar";
 import { PropPanel } from "./components/prop-panel";
 import { TemplateSelector } from "./components/template-selector";
 import { API_BASE } from "./constants";
@@ -11,7 +12,7 @@ import { useTemplates } from "./hooks/use-templates";
 import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
 import type { RenderAdapter, ValidationIssue } from "./lib/renderer";
-import { setNestedValue } from "./lib/utils";
+import { hasArabicChars, setNestedValue } from "./lib/utils";
 
 interface PropDef {
   type?: string;
@@ -69,6 +70,7 @@ const App = () => {
   const {
     templates,
     presets,
+    locales,
     defaultPreset,
     initialLoading,
     reloading,
@@ -78,6 +80,7 @@ const App = () => {
 
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [selectedLocale, setSelectedLocale] = useState<string | null>(null);
   const [propStore, setPropStore] = useState<
     Record<string, Record<string, unknown>>
   >({});
@@ -97,6 +100,12 @@ const App = () => {
   const propValues = effectiveTemplateId
     ? (propStore[effectiveTemplateId] ?? computeDefaultProps(currentTemplate))
     : {};
+
+  const effectiveLocale =
+    selectedLocale ??
+    (hasArabicChars(propValues)
+      ? (locales.find((l) => l.startsWith("ar")) ?? "ar")
+      : null);
 
   useSSE(
     useCallback(
@@ -174,6 +183,7 @@ const App = () => {
     setExportError(null);
 
     const result = await renderAdapter.render(effectiveTemplateId, propValues, {
+      locale: effectiveLocale ?? undefined,
       preset: effectivePresetId,
     });
 
@@ -276,6 +286,11 @@ const App = () => {
         </aside>
 
         <main className="flex flex-1 flex-col overflow-hidden">
+          <LocaleBar
+            locales={locales}
+            selected={effectiveLocale}
+            onChange={setSelectedLocale}
+          />
           <div className="flex overflow-x-auto border-b border-border bg-surface-secondary">
             {presets.map((preset) => (
               <button
@@ -298,6 +313,7 @@ const App = () => {
             templateId={effectiveTemplateId}
             props={propValues}
             preset={currentPreset}
+            locale={effectiveLocale}
             reloadToken={reloadToken}
             renderAdapter={renderAdapter}
             onRenderIssues={handleRenderIssues}

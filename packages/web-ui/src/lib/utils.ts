@@ -22,3 +22,20 @@ export const setNestedValue = <T extends Record<string, unknown>>(
   );
   return { ...obj, [head]: nestedValue };
 };
+
+const ARABIC_RANGE = /[\u0600-\u06FF]/u;
+
+export const hasArabicChars = (
+  value: unknown
+): boolean => {
+  if (typeof value === "string") {
+    return ARABIC_RANGE.test(value);
+  }
+  if (Array.isArray(value)) {
+    return value.some((item) => hasArabicChars(item));
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).some((item) => hasArabicChars(item));
+  }
+  return false;
+};

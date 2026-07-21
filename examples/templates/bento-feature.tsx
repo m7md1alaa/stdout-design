@@ -21,10 +21,6 @@ export const propsSchema = defineSchema(
         "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=400&fit=crop"
       )
       .describe("URL to the feature image"),
-    locale: z
-      .string()
-      .optional()
-      .describe("Current locale code for RTL support"),
     tags: z
       .array(z.string())
       .default(["open-source", "image-gen"])
@@ -40,29 +36,19 @@ export default function BentoFeature({
   image,
   tags,
   background,
-  locale,
 }: Props) {
-  const isRtl = locale?.startsWith("ar") ?? false;
-
   return (
     <div
-      lang={isRtl ? "ar" : undefined}
-      dir={isRtl ? "rtl" : "ltr"}
       tw="flex w-full h-full p-8"
       style={{
         backgroundColor: background,
         color: "#ffffff",
-        fontFamily: isRtl
-          ? "'Noto Sans Arabic arabic', 'Noto Sans Arabic latin', system-ui, sans-serif"
-          : "system-ui, sans-serif",
+        fontFamily: "system-ui, sans-serif",
       }}
     >
       <div
         tw="flex flex-col justify-between flex-1"
-        style={{
-          paddingLeft: isRtl ? "2rem" : 0,
-          paddingRight: isRtl ? 0 : "2rem",
-        }}
+        style={{ paddingRight: "2rem" }}
       >
         {tags.length > 0 ? (
           <div tw="flex flex-wrap gap-2">
