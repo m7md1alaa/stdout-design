@@ -1,15 +1,13 @@
 import path from "node:path";
 
-import { googleFonts } from "@takumi-rs/helpers";
 import type { ComponentType } from "react";
 import { createElement } from "react";
 
-import { classifyLocale } from "../assets/classify-locale.js";
+import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
+import { defaultFetchFonts } from "../assets/default-fonts.js";
 import { openCache } from "../cache/open-cache.js";
 import { compileTemplate } from "../engine/render.js";
-import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
 import { renderOne } from "../orchestrate/render-one.js";
-import { logDebug } from "../shared/logger.js";
 import {
   importTemplateForBatch,
   loadConfig,
@@ -20,59 +18,6 @@ import { writeManifest } from "./manifest.js";
 import { expandMatrix } from "./matrix.js";
 import { generateOutputFilename } from "./naming.js";
 import type { Manifest } from "./types.js";
-
-const isFontDescriptor = (f: Font): f is FontDescriptor =>
-  typeof f === "object" && !(f instanceof Uint8Array);
-
-const fontCache = new Map<
-  string,
-  Promise<{ fonts: Font[]; fontFamilies: string[] } | null>
->();
-
-const resolveFontsForLocale = async (
-  localeId: string
-): Promise<{ fonts: Font[]; fontFamilies: string[] } | null> => {
-  const { needsArabic } = classifyLocale(localeId);
-  if (!needsArabic) {
-    return null;
-  }
-
-  const cached = fontCache.get(localeId);
-  if (cached) {
-    return await cached;
-  }
-
-  const doFetch = async (): Promise<{
-    fonts: Font[];
-    fontFamilies: string[];
-  } | null> => {
-    try {
-      const fonts = await googleFonts([
-        { name: "Noto Sans Arabic", weight: [400, 700] },
-      ]);
-      const fontFamilies = fonts
-        .filter(isFontDescriptor)
-        .map((f) => String(f.name ?? ""))
-        .filter(Boolean);
-      logDebug("googleFonts resolved per locale", {
-        count: fonts.length,
-        localeId,
-        names: fonts.filter(isFontDescriptor).map((f) => f.name),
-      });
-      return { fontFamilies, fonts };
-    } catch (error) {
-      logDebug("googleFonts failed for locale", {
-        error: String(error),
-        localeId,
-      });
-      return null;
-    }
-  };
-
-  const promise = doFetch();
-  fontCache.set(localeId, promise);
-  return promise;
-};
 
 export interface BatchInput {
   rootDir: string;
@@ -162,11 +107,15 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
         );
         const compiled = await compileTemplate(element);
 
-        const resolvedFonts = await resolveFontsForLocale(cell.locale);
-        const localeRenderOptions = resolvedFonts?.fonts.length
+        const assets = await resolveAssetsForLocale(
+          cell.locale,
+          cell.props as Record<string, unknown>,
+          { fetchFonts: defaultFetchFonts }
+        );
+        const localeRenderOptions = assets.fonts.length
           ? {
-              fontFamilies: resolvedFonts.fontFamilies,
-              fonts: resolvedFonts.fonts,
+              fontFamilies: assets.fontFamilies,
+              fonts: assets.fonts,
             }
           : undefined;
 

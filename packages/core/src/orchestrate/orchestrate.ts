@@ -1,13 +1,13 @@
-import { googleFonts } from "@takumi-rs/helpers";
 import { createElement } from "react";
 
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
+import { defaultFetchFonts } from "../assets/default-fonts.js";
 import { mergeLocaleProps } from "../assets/merge-locale-props.js";
 import { RenderCache } from "../cache/render-cache.js";
 import { compileTemplate } from "../engine/render.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import { measureTemplate, renderToPixels } from "../engine/renderer.js";
-import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
+import type { Font } from "../engine/takumi-types-shim.js";
 import type { PropSchema } from "../shared/validation.js";
 import { validateProps } from "../shared/validation.js";
 import type {
@@ -16,26 +16,6 @@ import type {
   OrchestrateRenderInput,
   OrchestrateRenderResult,
 } from "./types.js";
-
-const isFontDescriptor = (f: Font): f is FontDescriptor =>
-  typeof f === "object" && !(f instanceof Uint8Array);
-
-const defaultFetchFonts = async (
-  _localeId: string
-): Promise<{ fonts: Font[]; fontFamilies: string[] } | null> => {
-  try {
-    const fonts = await googleFonts([
-      { name: "Noto Sans Arabic", weight: [400, 700] },
-    ]);
-    const fontFamilies = fonts
-      .filter(isFontDescriptor)
-      .map((f) => String(f.name ?? ""))
-      .filter(Boolean);
-    return { fontFamilies, fonts };
-  } catch {
-    return null;
-  }
-};
 
 interface PrepResult {
   compiled: CompiledTemplate;

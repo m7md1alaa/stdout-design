@@ -94,6 +94,8 @@ export type {
 
 export { mergeLocaleProps } from "./assets/merge-locale-props.js";
 
+export { defaultFetchFonts } from "./assets/default-fonts.js";
+
 export { classifyLocale } from "./assets/classify-locale.js";
 export type { LocaleClassification } from "./assets/classify-locale.js";
 
