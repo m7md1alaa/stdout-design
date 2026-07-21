@@ -49,10 +49,10 @@ __resetRendererForTesting();
 const { expandMatrix } = await import("../batch/matrix.js");
 const { renderOne } = await import("../orchestrate/render-one.js");
 
-describe("expandMatrix locale injection", () => {
-  it("injects locale into cell props for each locale", () => {
+describe("expandMatrix locale propagation", () => {
+  it("creates a cell for each locale id and sets locale on cell and props", () => {
     const cells = expandMatrix({
-      locales: [{ id: "en" }, { data: { name: "مرحبا" }, id: "ar" }],
+      locales: ["en", "ar"],
       presets: [{ height: 100, id: "test", width: 100 }],
       rows: [{ key: "row-1", name: "hello" }],
     });
@@ -68,39 +68,39 @@ describe("expandMatrix locale injection", () => {
     expect(cells[1]!.props.locale).toBe("ar");
   });
 
-  it("merges locale data strings over base props", () => {
+  it("preserves original row props without locale data merge", () => {
     const cells = expandMatrix({
-      locales: [{ data: { name: "مرحبا" }, id: "ar" }],
+      locales: ["ar"],
       presets: [{ height: 100, id: "test", width: 100 }],
       rows: [{ key: "row-1", name: "hello" }],
     });
 
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[0]!.props.name).toBe("مرحبا");
+    expect(cells[0]!.props.name).toBe("hello");
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[0]!.props.locale).toBe("ar");
   });
 
-  it("merges locale data arrays over base props", () => {
+  it("includes locale id in every cell across multiple locales", () => {
     const cells = expandMatrix({
-      locales: [{ data: { items: ["مفتوح", "المصدر"] }, id: "ar" }],
+      locales: ["fr", "de", "ja"],
       presets: [{ height: 100, id: "test", width: 100 }],
-      rows: [{ items: ["open", "source"], key: "row-1" }],
+      rows: [{ key: "row-1" }],
     });
 
+    expect(cells).toHaveLength(3);
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[0]!.props.items).toEqual(["مفتوح", "المصدر"]);
-  });
-
-  it("does not clobber non-matching types during merge", () => {
-    const cells = expandMatrix({
-      locales: [{ data: { count: 42 }, id: "ar" }],
-      presets: [{ height: 100, id: "test", width: 100 }],
-      rows: [{ count: 1, key: "row-1" }],
-    });
-
+    expect(cells[0]!.locale).toBe("fr");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[0]!.props.count).toBe(1);
+    expect(cells[0]!.props.locale).toBe("fr");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[1]!.locale).toBe("de");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[1]!.props.locale).toBe("de");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[2]!.locale).toBe("ja");
+    // eslint-disable-next-line typescript/no-non-null-assertion
+    expect(cells[2]!.props.locale).toBe("ja");
   });
 });
 

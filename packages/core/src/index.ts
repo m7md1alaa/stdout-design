@@ -45,11 +45,7 @@ export type { RenderOutput } from "./engine/renderer.js";
 export type { Font, RenderOptions } from "./engine/takumi-types-shim.js";
 
 export { expandMatrix } from "./batch/matrix.js";
-export type {
-  MatrixInput,
-  MatrixLocaleInput,
-  DataRow,
-} from "./batch/matrix.js";
+export type { MatrixInput, DataRow } from "./batch/matrix.js";
 
 export { renderOne } from "./orchestrate/render-one.js";
 export type { RenderOneInput, RenderOneOutput } from "./orchestrate/types.js";

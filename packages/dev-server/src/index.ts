@@ -20,7 +20,11 @@ import { TemplateLoader } from "./template-loader.js";
 import { renderRequestSchema, measureRequestSchema } from "./types";
 
 const loadLocaleDataForLoader =
-  (templateLoader: TemplateLoader, rootDir: string) =>
+  (
+    templateLoader: TemplateLoader,
+    rootDir: string,
+    templateId: string
+  ) =>
   async (locale: string): Promise<Record<string, unknown>> => {
     const localePath = path.resolve(
       resolveProjectPaths(rootDir).localesDir,
@@ -28,8 +32,8 @@ const loadLocaleDataForLoader =
     );
     const translations = (await templateLoader.loadDataModule(
       localePath
-    )) as Record<string, unknown>;
-    return translations;
+    )) as Record<string, Record<string, unknown>>;
+    return translations[templateId] ?? {};
   };
 
 export interface DevServerOptions {
@@ -222,7 +226,7 @@ export const createDevServer = async (options: DevServerOptions) => {
         >,
         height: preset.height,
         loadLocaleData: locale
-          ? loadLocaleDataForLoader(templateLoader, rootDir)
+          ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
           : undefined,
         locale,
         props: props as Record<string, unknown>,
@@ -296,7 +300,7 @@ export const createDevServer = async (options: DevServerOptions) => {
           Record<string, unknown>
         >,
         loadLocaleData: locale
-          ? loadLocaleDataForLoader(templateLoader, rootDir)
+          ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
           : undefined,
         locale,
         props: props as Record<string, unknown>,

@@ -33,7 +33,7 @@ beforeAll(() => {
   );
   writeFileSync(
     join(testProjectDir, "locales", "ar.json"),
-    JSON.stringify({ title: "مرحبا" })
+    JSON.stringify({ "test-card": { title: "مرحبا" } })
   );
   writeFileSync(
     join(testProjectDir, "studio.config.ts"),

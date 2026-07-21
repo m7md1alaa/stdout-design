@@ -1,11 +1,5 @@
-import { mergeLocaleProps } from "../assets/merge-locale-props.js";
 import type { Preset } from "../shared/types.js";
 import type { MatrixCell } from "./types.js";
-
-export interface MatrixLocaleInput {
-  id: string;
-  data?: Record<string, unknown>;
-}
 
 export interface DataRow {
   key?: string;
@@ -16,16 +10,11 @@ export interface DataRow {
 
 export interface MatrixInput {
   rows: DataRow[];
-  locales: MatrixLocaleInput[];
+  locales: string[];
   presets: Pick<Preset, "id" | "width" | "height">[];
   baseProps?: Record<string, unknown>;
 }
 
-/**
- * Expands rows × locales × presets into a flat array of matrix cells.
- * Locale data is merged into props during expansion so each cell carries
- * fully resolved props.
- */
 export const expandMatrix = (input: MatrixInput): MatrixCell[] => {
   const { rows, locales, presets, baseProps = {} } = input;
 
@@ -42,14 +31,12 @@ export const expandMatrix = (input: MatrixInput): MatrixCell[] => {
     delete rowProps.id;
     delete rowProps.slug;
 
-    for (const locale of locales) {
-      const localeProps = mergeLocaleProps(rowProps, locale.data);
-
+    for (const localeId of locales) {
       for (const preset of presets) {
         cells.push({
-          locale: locale.id,
+          locale: localeId,
           preset: { height: preset.height, id: preset.id, width: preset.width },
-          props: { ...localeProps, locale: locale.id },
+          props: { ...rowProps, locale: localeId },
           rowIndex,
           rowKey,
         });

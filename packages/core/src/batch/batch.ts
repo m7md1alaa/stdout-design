@@ -1,13 +1,10 @@
 import path from "node:path";
 
 import type { ComponentType } from "react";
-import { createElement } from "react";
 
-import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
-import { defaultFetchFonts } from "../assets/default-fonts.js";
 import { openCache } from "../cache/open-cache.js";
-import { compileTemplate } from "../engine/render.js";
-import { renderOne } from "../orchestrate/render-one.js";
+import { orchestrateRender } from "../orchestrate/orchestrate.js";
+import { ensureDir, tryWriteFile } from "../orchestrate/utils.js";
 import {
   importTemplateForBatch,
   loadConfig,
@@ -79,13 +76,30 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
   });
 
   const localeCodes = filterLocales ?? config.locales ?? [];
-  const locales = await resolveLocales(rootDir, localeCodes, templateId);
+  const resolvedLocales = await resolveLocales(
+    rootDir,
+    localeCodes,
+    templateId
+  );
+
+  const localeDataMap = new Map(
+    resolvedLocales.map((l) => [l.id, l.data ?? {}])
+  );
+  const loadLocaleData = (
+    code: string
+  ): Promise<Record<string, unknown>> =>
+    Promise.resolve(localeDataMap.get(code) ?? {});
 
   const rows = dataFile
     ? await parseDataFile(path.resolve(rootDir, dataFile))
     : (inlineRows ?? []);
 
-  const cells = expandMatrix({ baseProps, locales, presets, rows });
+  const cells = expandMatrix({
+    baseProps,
+    locales: resolvedLocales.map((l) => l.id),
+    presets,
+    rows,
+  });
 
   const outDir = path.resolve(
     rootDir,
@@ -101,24 +115,6 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
     // oxlint-disable eslint/no-await-in-loop
     for (const cell of cells) {
       try {
-        const element = createElement(
-          Component,
-          cell.props as Record<string, unknown>
-        );
-        const compiled = await compileTemplate(element);
-
-        const assets = await resolveAssetsForLocale(
-          cell.locale,
-          cell.props as Record<string, unknown>,
-          { fetchFonts: defaultFetchFonts }
-        );
-        const localeRenderOptions = assets.fonts.length
-          ? {
-              fontFamilies: assets.fontFamilies,
-              fonts: assets.fonts,
-            }
-          : undefined;
-
         const filename = generateOutputFilename({
           locale: cell.locale,
           presetId: cell.preset.id,
@@ -126,24 +122,28 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
           templateId,
         });
 
-        const result = await renderOne({
+        const result = await orchestrateRender({
           cache,
-          compiledTemplate: compiled,
-          contentHash,
-          filename,
+          component: Component as ComponentType<Record<string, unknown>>,
+          format: "png",
           height: cell.preset.height,
+          loadLocaleData,
           locale: cell.locale,
-          outDir,
           props: cell.props,
-          renderOptions: localeRenderOptions,
+          propsSchema: module.propsSchema,
+          templateContentHash: contentHash,
           templateId,
           width: cell.preset.width,
         });
 
+        const outputPath = `${outDir}/${filename}`;
+        await ensureDir(outDir);
+        await tryWriteFile(outputPath, result.bytes);
+
         succeeded.push({
           cacheHit: result.cacheHit,
           locale: cell.locale,
-          outputPath: result.outputPath,
+          outputPath,
           preset: cell.preset.id,
           rowIndex: cell.rowIndex,
         });

@@ -35,6 +35,14 @@ class MockRenderer {
 
 mock.module("takumi-js/node", () => ({ Renderer: MockRenderer }));
 
+mock.module("@takumi-rs/helpers", () => ({
+  googleFonts: mock(() =>
+    Promise.resolve([
+      { data: new Uint8Array([0, 1, 2]), name: "Noto Sans Arabic" },
+    ])
+  ),
+}));
+
 const { runBatch } = await import("../batch/batch.js");
 
 const fixturesRoot = path.join(import.meta.dir, "fixtures");
@@ -120,6 +128,34 @@ describe("runBatch", () => {
 
     const locales = new Set(result.manifest.succeeded.map((e) => e.locale));
     expect(locales.has("en")).toBe(true);
+
+    for (const entry of result.manifest.succeeded) {
+      expect(entry.outputPath).toContain(".en.");
+      expect(entry.locale).toBe("en");
+    }
+  });
+
+  it("resolves Arabic fonts per-locale via orchestrator and produces output", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-batch-ar-"));
+
+    const result = await runBatch({
+      cacheDir: tmpDir,
+      dataFile: "./data/rows.json",
+      locales: ["ar"],
+      outDir: tmpDir,
+      presets: ["small"],
+      rootDir: fixturesRoot,
+      templateId: "test-card",
+    });
+
+    expect(result.manifest.status).toBe("completed");
+    expect(result.manifest.failed).toHaveLength(0);
+
+    for (const entry of result.manifest.succeeded) {
+      expect(entry.locale).toBe("ar");
+      expect(entry.outputPath).toContain(".ar.");
+      expect(existsSync(entry.outputPath)).toBe(true);
+    }
   });
 
   it("fails with a descriptive error for a missing templateId", async () => {
