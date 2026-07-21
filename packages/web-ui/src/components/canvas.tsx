@@ -12,6 +12,7 @@ interface CanvasProps {
     platform: string;
   } | null;
   locale: string | null;
+  autoDetected: boolean;
   reloadToken: number;
   renderAdapter: RenderAdapter;
   onRenderIssues: (issues: ValidationIssue[]) => void;
@@ -70,6 +71,7 @@ export const Canvas = ({
   props,
   preset,
   locale,
+  autoDetected,
   reloadToken,
   renderAdapter,
   onRenderIssues,
@@ -89,7 +91,7 @@ export const Canvas = ({
     }
 
     const controller = new AbortController();
-    const key = `${templateId}-${JSON.stringify(props)}-${preset.id}-${locale ?? "none"}-${reloadToken}`;
+    const key = `${templateId}-${JSON.stringify(props)}-${preset.id}-${locale ?? "none"}-${autoDetected}-${reloadToken}`;
 
     if (key === lastKeyRef.current) {
       return;
@@ -101,6 +103,7 @@ export const Canvas = ({
       onRenderIssuesRef.current([]);
 
       const result = await renderAdapter.render(templateId, props, {
+        autoDetected,
         locale: locale ?? undefined,
         preset: preset.id,
         signal: controller.signal,
@@ -136,7 +139,7 @@ export const Canvas = ({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [templateId, props, preset, locale, reloadToken, renderAdapter]);
+  }, [templateId, props, preset, locale, autoDetected, reloadToken, renderAdapter]);
 
   useEffect(
     () => () => {

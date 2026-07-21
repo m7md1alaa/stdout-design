@@ -12,7 +12,7 @@ import { useTemplates } from "./hooks/use-templates";
 import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
 import type { RenderAdapter, ValidationIssue } from "./lib/renderer";
-import { hasArabicChars, setNestedValue } from "./lib/utils";
+import { resolveLocale, setNestedValue } from "./lib/utils";
 
 interface PropDef {
   type?: string;
@@ -101,11 +101,11 @@ const App = () => {
     ? (propStore[effectiveTemplateId] ?? computeDefaultProps(currentTemplate))
     : {};
 
-  const effectiveLocale =
-    selectedLocale ??
-    (hasArabicChars(propValues)
-      ? (locales.find((l) => l.startsWith("ar")) ?? "ar")
-      : null);
+  const { locale: effectiveLocale, autoDetected } = resolveLocale(
+    selectedLocale,
+    propValues,
+    locales
+  );
 
   useSSE(
     useCallback(
@@ -183,6 +183,7 @@ const App = () => {
     setExportError(null);
 
     const result = await renderAdapter.render(effectiveTemplateId, propValues, {
+      autoDetected,
       locale: effectiveLocale ?? undefined,
       preset: effectivePresetId,
     });
@@ -314,6 +315,7 @@ const App = () => {
             props={propValues}
             preset={currentPreset}
             locale={effectiveLocale}
+            autoDetected={autoDetected}
             reloadToken={reloadToken}
             renderAdapter={renderAdapter}
             onRenderIssues={handleRenderIssues}

@@ -175,7 +175,13 @@ export const createDevServer = async (options: DevServerOptions) => {
         400
       );
     }
-    const { templateId, props, preset: presetId, locale } = parsedBody.data;
+    const {
+      templateId,
+      props,
+      preset: presetId,
+      locale,
+      autoDetected,
+    } = parsedBody.data;
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
@@ -225,9 +231,10 @@ export const createDevServer = async (options: DevServerOptions) => {
           Record<string, unknown>
         >,
         height: preset.height,
-        loadLocaleData: locale
-          ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
-          : undefined,
+        loadLocaleData:
+          locale && !autoDetected
+            ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
+            : undefined,
         locale,
         props: props as Record<string, unknown>,
         propsSchema: templateModule.propsSchema,
@@ -265,7 +272,7 @@ export const createDevServer = async (options: DevServerOptions) => {
         400
       );
     }
-    const { templateId, props, locale } = parsedBody.data;
+    const { templateId, props, locale, autoDetected } = parsedBody.data;
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
@@ -299,9 +306,10 @@ export const createDevServer = async (options: DevServerOptions) => {
         component: templateModule.default as ComponentType<
           Record<string, unknown>
         >,
-        loadLocaleData: locale
-          ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
-          : undefined,
+        loadLocaleData:
+          locale && !autoDetected
+            ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
+            : undefined,
         locale,
         props: props as Record<string, unknown>,
         propsSchema: templateModule.propsSchema,

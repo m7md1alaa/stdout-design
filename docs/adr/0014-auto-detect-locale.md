@@ -73,6 +73,29 @@ code should be inferred from what's on the card, not chosen by the operator.
    mirror-image design) can still add `dir="rtl"` themselves, but it's an
    intentional design choice, not a locale-workaround.
 
+5. **The `autoDetected` flag distinguishes content-inferred locale from
+   user-selected locale in the render request.** Auto-detection triggers font
+   resolution but does *not* merge locale JSON data — the user typed the
+   content directly. Explicit selection triggers both font resolution and
+   locale data merging. The contract is:
+
+   ```
+   autoDetected: true   → locale was inferred from content (Arabic chars in props)
+                       → resolve fonts for the locale
+                       → do NOT merge locale JSON data
+                       → user's typed text renders as-is
+
+   autoDetected: false  → locale was explicitly selected by user via locale bar
+   (or absent)          → resolve fonts for the locale
+                       → merge locale JSON data (translations override props)
+                       → JSON translations appear in the output
+   ```
+
+   This flag is sent from the webUI through the HTTP adapter to the dev-server,
+   which gates `loadLocaleData` on it (`locale && !autoDetected`). If the
+   flag is absent, the server defaults to merging locale data (preserving
+   existing behavior for callers that don't set the flag).
+
 ## Consequences
 
 **Positive**

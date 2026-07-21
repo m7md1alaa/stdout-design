@@ -13,6 +13,7 @@ export interface RenderAdapter {
     templateId: string,
     props: Record<string, unknown>,
     options?: {
+      autoDetected?: boolean;
       locale?: string;
       preset?: string;
       signal?: AbortSignal;

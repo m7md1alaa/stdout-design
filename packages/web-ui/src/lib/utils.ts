@@ -39,3 +39,20 @@ export const hasArabicChars = (
   }
   return false;
 };
+
+export const resolveLocale = (
+  selectedLocale: string | null,
+  propValues: Record<string, unknown>,
+  locales: string[]
+): { locale: string | null; autoDetected: boolean } => {
+  if (selectedLocale !== null) {
+    return { autoDetected: false, locale: selectedLocale };
+  }
+  if (hasArabicChars(propValues)) {
+    return {
+      autoDetected: true,
+      locale: locales.find((l) => l.startsWith("ar")) ?? "ar",
+    };
+  }
+  return { autoDetected: false, locale: null };
+};

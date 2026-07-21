@@ -34,6 +34,10 @@ export const createHttpRenderAdapter = (baseUrl: string): RenderAdapter => {
       body.locale = options.locale;
     }
 
+    if (options && "autoDetected" in options) {
+      body.autoDetected = options.autoDetected;
+    }
+
     try {
       const response = await fetch(`${baseUrl}/render`, {
         body: JSON.stringify(body),
