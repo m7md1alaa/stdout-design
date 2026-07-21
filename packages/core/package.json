@@ -49,6 +49,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "bun test",
+    "test:integration": "bun test ./src/__tests__/full-pipeline.integration.ts",
     "check-types": "tsc --noEmit",
     "check-types:tsgo": "tsgo --noEmit",
     "lint": "ultracite check"
