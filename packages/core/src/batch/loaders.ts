@@ -4,7 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { resolveProjectPaths } from "../project/project-paths.js";
-import { studioConfigSchema } from "../shared/config-schema.js";
+import { parseStudioConfig } from "../shared/config-schema.js";
 import { AppError, ErrorCode } from "../shared/error-codes.js";
 import { logDebug } from "../shared/logger.js";
 import type { StudioConfig, TemplateModule } from "../shared/types.js";
@@ -32,21 +32,15 @@ export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
   const mod = await import(pathToFileURL(configPath).href);
   const raw = mod.default ?? mod;
 
-  const parsed = studioConfigSchema.safeParse(raw);
-  if (!parsed.success) {
-    const issues = parsed.error.issues
-      .map(
-        (issue: { path: PropertyKey[]; message: string }) =>
-          `${issue.path.join(".") || "(root)"}: ${issue.message}`
-      )
-      .join("; ");
+  const result = parseStudioConfig(raw);
+  if ("issues" in result) {
     throw new AppError(
       ErrorCode.CONFIG_INVALID,
-      `studio.config.ts is invalid: ${issues}`
+      `studio.config.ts is invalid: ${result.issues}`
     );
   }
 
-  return parsed.data;
+  return result.config;
 };
 
 export const importTemplateForBatch = async (

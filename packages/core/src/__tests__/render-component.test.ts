@@ -1,9 +1,10 @@
-import type { ComponentType } from "react";
-import { createElement } from "react";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+
+import type { ComponentType } from "react";
+import { createElement } from "react";
 import { z } from "zod";
 
 mock.module("takumi-js/helpers/jsx", () => ({

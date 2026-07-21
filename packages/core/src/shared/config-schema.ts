@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { StudioConfig } from "./types.js";
+
 const templateEntrySchema = z.object({
   componentPath: z.string().min(1, "componentPath is required"),
   description: z.string().optional(),
@@ -19,3 +21,16 @@ export const studioConfigSchema = z.object({
   presets: z.array(presetSchema),
   templates: z.record(z.string(), templateEntrySchema),
 });
+
+export const parseStudioConfig = (
+  raw: unknown
+): { config: StudioConfig } | { issues: string } => {
+  const parsed = studioConfigSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
+      .join("; ");
+    return { issues };
+  }
+  return { config: parsed.data };
+};

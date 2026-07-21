@@ -1,6 +1,5 @@
 import { isZodObject } from "@stdout-design/core";
 import type { TemplateModule } from "@stdout-design/core";
-import type { z } from "zod";
 
 // eslint-disable-next-line func-style
 export function validateTemplateModule(
@@ -22,11 +21,4 @@ export function validateTemplateModule(
   }
 
   return candidate as TemplateModule;
-}
-
-// eslint-disable-next-line func-style
-export function summarizeZodIssues(issues: z.ZodIssue[]): string {
-  return issues
-    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
-    .join("; ");
 }

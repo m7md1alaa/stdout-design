@@ -4,8 +4,8 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  parseStudioConfig,
   resolveProjectPaths,
-  studioConfigSchema,
   zodToJsonSchemaShape,
 } from "@stdout-design/core";
 import type { StudioConfig, TemplateModule } from "@stdout-design/core";
@@ -16,10 +16,7 @@ import { ViteNodeServer } from "vite-node/server";
 import { installSourcemapsSupport } from "vite-node/source-map";
 
 import { TemplateConfigError } from "./template-config-error.js";
-import {
-  summarizeZodIssues,
-  validateTemplateModule,
-} from "./template-helpers.js";
+import { validateTemplateModule } from "./template-helpers.js";
 
 const { resolve } = path;
 
@@ -117,15 +114,14 @@ export class TemplateLoader {
     const raw = await this.importFresh(this.configPath);
     const candidate = (raw as { default?: unknown }).default ?? raw;
 
-    const parsed = studioConfigSchema.safeParse(candidate);
-    if (!parsed.success) {
+    const result = parseStudioConfig(candidate);
+    if ("issues" in result) {
       throw new TemplateConfigError(
-        `studio.config.ts is invalid: ${summarizeZodIssues(parsed.error.issues)}`,
-        parsed.error.issues
+        `studio.config.ts is invalid: ${result.issues}`
       );
     }
 
-    this.config = parsed.data;
+    this.config = result.config;
     return this.config;
   }
 

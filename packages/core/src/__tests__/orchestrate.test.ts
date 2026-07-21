@@ -1,9 +1,10 @@
-import type { ComponentType } from "react";
-import { createElement } from "react";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+
+import type { ComponentType } from "react";
+import { createElement } from "react";
 
 import type { CompiledTemplate } from "../engine/render.js";
 

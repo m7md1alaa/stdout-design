@@ -5,7 +5,10 @@ export type {
   TemplateModule,
 } from "./shared/types.js";
 
-export { studioConfigSchema } from "./shared/config-schema.js";
+export {
+  parseStudioConfig,
+  studioConfigSchema,
+} from "./shared/config-schema.js";
 
 export { compileTemplate } from "./engine/render.js";
 export type { CompiledTemplate } from "./engine/render.js";
