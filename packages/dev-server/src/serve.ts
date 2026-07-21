@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { ErrorCode, logError, resolveProjectPaths } from "@stdout-design/core";
 
-import { createDevServer } from "./index.js";
+import { startStandaloneServer } from "./index.js";
 
 export const resolveStudioRoot = (cwd: string, givenArg?: string): string => {
   if (givenArg) {
@@ -30,34 +30,11 @@ export const resolveStudioRoot = (cwd: string, givenArg?: string): string => {
   return cwd;
 };
 
-const startServer = async (): Promise<void> => {
+if (import.meta.main) {
   const rootDir = resolveStudioRoot(process.cwd(), process.argv[2]);
   const port = Math.trunc(Number(process.env.PORT ?? "3000"));
 
-  const server = await createDevServer({
-    port,
-    rootDir,
-  });
-
-  Bun.serve({
-    fetch: server.app.fetch,
-    port: server.port,
-  });
-
-  console.log(`Studio dev server running on http://localhost:${server.port}`);
-
-  const shutdown = async () => {
-    console.log("\nShutting down...");
-    await server.close();
-    process.exit(0);
-  };
-
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
-};
-
-if (import.meta.main) {
-  await startServer();
+  await startStandaloneServer({ port, rootDir });
 }
 
 process.on("unhandledRejection", (reason) => {

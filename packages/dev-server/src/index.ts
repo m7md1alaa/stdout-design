@@ -342,3 +342,31 @@ export const createDevServer = async (options: DevServerOptions) => {
 };
 
 export type DevServer = Awaited<ReturnType<typeof createDevServer>>;
+
+export const startStandaloneServer = async (
+  options: DevServerOptions
+): Promise<{ close: () => Promise<void> }> => {
+  const server = await createDevServer(options);
+
+  Bun.serve({
+    fetch: server.app.fetch,
+    port: server.port,
+  });
+
+  console.log(`Studio dev server running on http://localhost:${server.port}`);
+
+  const shutdown = async () => {
+    console.log("\nShutting down...");
+    await server.close();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+
+  return {
+    close: async () => {
+      await server.close();
+    },
+  };
+};
