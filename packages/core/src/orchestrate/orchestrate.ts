@@ -1,9 +1,6 @@
 import { createElement } from "react";
 
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
-import { classifyLocale } from "../assets/classify-locale.js";
-import { defaultFetchFonts } from "../assets/default-fonts.js";
-import { mergeLocaleProps } from "../assets/merge-locale-props.js";
 import { RenderCache } from "../cache/render-cache.js";
 import { compileTemplate } from "../engine/render.js";
 import type { CompiledTemplate } from "../engine/render.js";
@@ -61,25 +58,20 @@ const prepPipeline = async (input: {
     ? validateProps(propsSchema, props)
     : { ...props };
 
-  let merged = validated as Record<string, unknown>;
-  if (loadLocaleData) {
-    const localeData = await loadLocaleData(locale);
-    merged = mergeLocaleProps(merged, localeData);
-  }
-
   const {
     fonts: resolvedFonts,
     fontFamilies: resolvedFontFamilies,
     lang: resolvedLang,
-  } = preResolvedFonts
-    ? {
-        fontFamilies: preResolvedFontFamilies,
-        fonts: preResolvedFonts,
-        lang: classifyLocale(locale).lang,
-      }
-    : await resolveAssetsForLocale(locale, merged, {
-        fetchFonts: defaultFetchFonts,
-      });
+    props: merged,
+  } = await resolveAssetsForLocale(
+    locale,
+    validated as Record<string, unknown>,
+    {
+      loadLocaleData,
+      preResolvedFontFamilies,
+      preResolvedFonts,
+    }
+  );
 
   const propsJSON = JSON.stringify(merged);
   const compileKey = RenderCache.createCompileCacheKey({
