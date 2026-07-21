@@ -15,41 +15,12 @@ export interface LoadedTemplate {
   contentHash: string;
 }
 
-export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
-  const { configPath } = resolveProjectPaths(rootDir);
+const templateCache = new Map<string, Promise<LoadedTemplate>>();
 
-  try {
-    await readFile(configPath, "utf-8");
-  } catch {
-    throw new AppError(
-      ErrorCode.CONFIG_NOT_FOUND,
-      `No studio.config.ts found in ${rootDir}.`
-    );
-  }
-
-  logDebug("Loading studio.config.ts", { path: configPath });
-
-  const mod = await import(pathToFileURL(configPath).href);
-  const raw = mod.default ?? mod;
-
-  const result = parseStudioConfig(raw);
-  if ("issues" in result) {
-    throw new AppError(
-      ErrorCode.CONFIG_INVALID,
-      `studio.config.ts is invalid: ${result.issues}`
-    );
-  }
-
-  return result.config;
-};
-
-export const importTemplateForBatch = async (
-  rootDir: string,
-  componentPath: string,
+const loadTemplateForBatch = async (
+  fullPath: string,
   templateId: string
 ): Promise<LoadedTemplate> => {
-  const fullPath = path.resolve(rootDir, `${componentPath}.tsx`);
-
   let content: string;
   try {
     content = await readFile(fullPath, "utf-8");
@@ -57,7 +28,7 @@ export const importTemplateForBatch = async (
     throw new AppError(
       ErrorCode.TEMPLATE_LOAD_FAILED,
       `Template file not found: ${fullPath}`,
-      { componentPath, templateId }
+      { componentPath: fullPath, templateId }
     );
   }
 
@@ -91,6 +62,57 @@ export const importTemplateForBatch = async (
     contentHash,
     module: mod as TemplateModule,
   };
+};
+
+export const importTemplateForBatch = async (
+  rootDir: string,
+  componentPath: string,
+  templateId: string
+): Promise<LoadedTemplate> => {
+  const fullPath = path.resolve(rootDir, `${componentPath}.tsx`);
+
+  const cached = templateCache.get(fullPath);
+  if (cached) {
+    return cached;
+  }
+
+  const promise = loadTemplateForBatch(fullPath, templateId);
+  templateCache.set(fullPath, promise);
+
+  try {
+    return await promise;
+  } catch {
+    templateCache.delete(fullPath);
+    throw await promise.catch((error: unknown) => error);
+  }
+};
+
+export const loadConfig = async (rootDir: string): Promise<StudioConfig> => {
+  const { configPath } = resolveProjectPaths(rootDir);
+
+  try {
+    await readFile(configPath, "utf-8");
+  } catch {
+    throw new AppError(
+      ErrorCode.CONFIG_NOT_FOUND,
+      `No studio.config.ts found in ${rootDir}.`
+    );
+  }
+
+  logDebug("Loading studio.config.ts", { path: configPath });
+
+  const mod = await import(pathToFileURL(configPath).href);
+  const raw = mod.default ?? mod;
+
+  const result = parseStudioConfig(raw);
+  if ("issues" in result) {
+    throw new AppError(
+      ErrorCode.CONFIG_INVALID,
+      `studio.config.ts is invalid: ${result.issues}`
+    );
+  }
+
+  return result.config;
 };
 
 export const parseDataFile = async (
