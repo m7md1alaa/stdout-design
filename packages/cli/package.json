@@ -54,7 +54,8 @@
   "dependencies": {
     "@clack/prompts": "^1.7.0",
     "@stdout-design/core": "^0.1.1",
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "package-manager-detector": "^1.8.0"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",

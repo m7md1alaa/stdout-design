@@ -2,52 +2,41 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import type { AgentName } from "package-manager-detector";
+import { resolveCommand } from "package-manager-detector/commands";
+import {
+  detect as detectPM,
+  getUserAgent,
+} from "package-manager-detector/detect";
+
 import { tryGitInit } from "./init/git.js";
 import type { ClackModule } from "./init/prompts.js";
 import { collectPrompts } from "./init/prompts.js";
 import { scaffold } from "./init/scaffold.js";
 
-type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
+type PackageManager = AgentName;
 
-const detectPackageManager = (): PackageManager => {
-  const userAgent = process.env.npm_config_user_agent ?? "";
-  if (userAgent.includes("bun")) {
-    return "bun";
+const detectPackageManager = async (): Promise<PackageManager> => {
+  const userAgent = getUserAgent();
+  if (userAgent) {
+    return userAgent;
   }
-  if (userAgent.includes("pnpm")) {
-    return "pnpm";
+
+  const detected = await detectPM();
+  if (detected) {
+    return detected.name;
   }
-  if (userAgent.includes("yarn")) {
-    return "yarn";
-  }
-  if (existsSync(path.join(process.cwd(), "bun.lock"))) {
-    return "bun";
-  }
-  if (existsSync(path.join(process.cwd(), "pnpm-lock.yaml"))) {
-    return "pnpm";
-  }
-  if (existsSync(path.join(process.cwd(), "yarn.lock"))) {
-    return "yarn";
-  }
-  if (existsSync(path.join(process.cwd(), "package-lock.json"))) {
-    return "npm";
-  }
+
   return "npm";
 };
 
-const getInstallCommand = (pm: PackageManager): [string, string[]] => {
-  const commands: Record<PackageManager, [string, string[]]> = {
-    bun: ["bun", ["install"]],
-    npm: ["npm", ["install"]],
-    pnpm: ["pnpm", ["install"]],
-    yarn: ["yarn", ["install"]],
-  };
-  return commands[pm];
-};
-
 const runInstall = (dir: string, pm: PackageManager): void => {
-  const [cmd, args] = getInstallCommand(pm);
-  spawnSync(cmd, args, { cwd: dir, stdio: "inherit" });
+  const resolved = resolveCommand(pm, "install", []);
+  if (!resolved) {
+    return;
+  }
+  const { command, args } = resolved;
+  spawnSync(command, args, { cwd: dir, stdio: "inherit" });
 };
 
 export { scaffold } from "./init/scaffold.js";
@@ -95,7 +84,7 @@ export const init = async (
     );
   }
 
-  const pm = detectPackageManager();
+  const pm = await detectPackageManager();
 
   if (collected.shouldInstall) {
     const installSpinner = spinner();
