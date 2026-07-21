@@ -1,6 +1,7 @@
 import { createElement } from "react";
 
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
+import { classifyLocale } from "../assets/classify-locale.js";
 import { defaultFetchFonts } from "../assets/default-fonts.js";
 import { mergeLocaleProps } from "../assets/merge-locale-props.js";
 import { RenderCache } from "../cache/render-cache.js";
@@ -74,7 +75,7 @@ const prepPipeline = async (input: {
     ? {
         fontFamilies: preResolvedFontFamilies,
         fonts: preResolvedFonts,
-        lang: undefined,
+        lang: classifyLocale(locale).lang,
       }
     : await resolveAssetsForLocale(locale, merged, {
         fetchFonts: defaultFetchFonts,
