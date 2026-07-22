@@ -62,7 +62,7 @@ const copyStaticAssets = async (dir: string): Promise<void> => {
     path.resolve(base, "tsconfig.json"),
     path.resolve(dir, "tsconfig.json")
   );
-  await cp(path.resolve(base, ".gitignore"), path.resolve(dir, ".gitignore"));
+  await cp(path.resolve(base, "gitignore"), path.resolve(dir, ".gitignore"));
 };
 
 const generateConfig = async (dir: string, version: string): Promise<void> => {
