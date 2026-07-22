@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/dev-server",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "Hono-based dev server for stdout-design — live preview, hot reload, and template rendering API",
   "keywords": [
     "design",

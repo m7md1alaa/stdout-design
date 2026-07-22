@@ -50,10 +50,10 @@ const getPkgJson = (name: string, version: string) => ({
 });
 
 const templateDir = () =>
-  path.resolve(import.meta.dirname, "../../../template");
+  path.resolve(import.meta.dirname, "../template");
 
 const templatesDir = () =>
-  path.resolve(import.meta.dirname, "../../../template/templates");
+  path.resolve(import.meta.dirname, "../template/templates");
 
 const copyStaticAssets = async (dir: string): Promise<void> => {
   const base = templateDir();
