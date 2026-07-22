@@ -1,58 +1,163 @@
 # stdout-design
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@stdout-design/cli">
+    <img src="https://img.shields.io/npm/v/@stdout-design/cli" alt="npm version">
+  </a>
+  <img src="https://img.shields.io/npm/l/@stdout-design/cli" alt="MIT license">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Bun-000?logo=bun&logoColor=white" alt="Bun">
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome">
+</p>
+
 > Storybook for images — in your repo and speaking to your agents.
 
-An open-source, local-first studio that renders your own TSX components into finished social/marketing images and GIFs — with a CLI for scripting, a live prop-editing UI for iteration, and an MCP server so any AI agent can generate assets on command.
+An open-source, local-first studio that renders your own TSX components into pixel-perfect social and marketing images. CLI for scripting, live UI for iteration, MCP server for AI agents.
 
 ## Quick start
 
 ```bash
+# Install
 bun add -d @stdout-design/cli
-npx studio render bento-feature --title "10k users" --stat "launched" --out post.png
+
+# Scaffold a project
+npx studio init
+
+# Render an image
+npx studio render bento-feature --title "Hello" --out hello.png
+
+# Or open the live studio
+npx studio dev
 ```
 
-## Why
+## Installation
 
-Founders and indie hackers build entire products through AI coding agents. When they need marketing assets App Store screenshots, Instagram cards, launch banners, Product Hunt graphics the existing workflow is: leave the codebase, redo UI by hand in Figma or canva, or buy a SaaS dashboard. stdout-design keeps everything in your repo, in TSX.
+```bash
+bun add -d @stdout-design/cli
+```
+
+**Prerequisites:** Node.js 18+, Bun 1.2+.
 
 ## Features
 
-- **Render from TSX** — Write plain React components with typed props. No custom DSL. Takumi under the hood.
-- **Batch & data-driven** — `studio render template --data posts.csv --out-dir ./out/` renders one asset per row.
-- **Live studio** — `studio dev` with hot-reload, auto-generated prop panel from TypeScript types, side-by-side preset preview.
-- **Agent-ready** — MCP server exposes `list_templates`, `render`, `render_batch`. Agents write template TSX and CSV data; you ship.
-- **Platform presets** — Instagram square/story, X card, App Store/Play Store screenshot, each with correct aspect ratio and safe-zone overlays.
-- **i18n first-class** — Locale-aware batch rendering (`--locales en,ar,es`), RTL support, tofu detection for missing font glyphs.
+- **Render from TSX** — plain React components. No custom DSL.
+- **Batch & data-driven** — `--data posts.csv` renders one asset per row.
+- **Live studio** — hot-reload, auto-generated prop panel, side-by-side preset preview.
+- **Agent-ready** — MCP server so agents can discover templates and render assets.
+- **Platform presets** — Instagram, X, LinkedIn, OG, App Store, Play Store.
+- **i18n** — `--locales en,ar,es`, RTL support, tofu detection for missing glyphs.
+- **Built-in cache** — fast re-renders without regenerating unchanged assets.
 
 ## CLI
 
+| Command | Description |
+|---------|-------------|
+| `studio init` | Scaffold a new studio project |
+| `studio dev` | Start the live preview studio |
+| `studio render <template>` | Render a single template or batch |
+| `studio cache stats` | Show cache statistics |
+| `studio cache clean` | Clear the render cache |
+| `studio lint` | Check templates for compatibility |
+
+### studio render
+
 ```bash
-studio render <template> [--prop value] [--data file] [--preset name] [--locale lang]
-studio dev
+studio render <template> [options]
 ```
 
-## Templates
+| Option | Description |
+|--------|-------------|
+| `--key value` | Pass props to the template |
+| `--data file.csv` | Batch render from CSV or JSON |
+| `--preset name` | Output preset (default: og) |
+| `--locale lang` | Locale for i18n |
+| `--out-dir path` | Output directory (default: ./out/) |
+| `--out file.png` | Single output file |
 
-A template is a plain TSX component. Drop one in `templates/` and it's immediately renderable.
+### studio dev
+
+Starts a dev server on `localhost:3000` with:
+- Hot-reload when templates change
+- Auto-generated prop panel
+- Side-by-side preview across presets
+- Export templates to PNG
+
+## Writing templates
+
+A template is a TSX component with typed props:
 
 ```tsx
-type Props = { title: string; stat: string; image?: string };
+type Props = {
+  title: string;
+  stat: string;
+};
 
 export default function MilestoneCard({ title, stat }: Props) {
-  return <div className="...">{/* your design */}</div>;
+  return (
+    <div className="bg-black text-white p-8 rounded-2xl">
+      <h1 className="text-4xl font-bold">{title}</h1>
+      <p className="text-lg mt-2">{stat}</p>
+    </div>
+  );
 }
 ```
+
+Drop it in `templates/` and it's immediately renderable.
+
+## AI agent integration
+
+Add to your agent's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "stdout-design": {
+      "command": "npx",
+      "args": ["-y", "@stdout-design/cli", "mcp"]
+    }
+  }
+}
+```
+
+**Available tools:** `list_templates`, `render`, `render_batch`, `list_presets`
 
 ## Project structure
 
 ```
-studio.config.ts      # template registry, output presets, locales
-templates/            # your TSX components
-data/                 # CSV/JSON for batch renders
-locales/              # translation files
-out/                  # rendered assets (gitignored)
+my-project/
+├── studio.config.ts      template registry, presets, locales
+├── templates/            your TSX components
+├── data/                 CSV/JSON for batch renders
+├── locales/              translation files
+└── out/                  rendered assets (gitignored)
 ```
+
+## Configuration
+
+```ts
+export default {
+  templates: "./templates",
+  presets: [
+    { name: "og", width: 1200, height: 630 },
+    { name: "instagram", width: 1080, height: 1080 },
+  ],
+  locales: ["en", "ar"],
+  outDir: "./out",
+};
+```
+
+## Platform presets
+
+| Preset | Size | Use |
+|--------|------|-----|
+| og | 1200×630 | Open Graph / social cards |
+| x-card | 1200×675 | X (Twitter) cards |
+| linkedin | 1200×627 | LinkedIn link previews |
+| instagram | 1080×1080 | Instagram feed posts |
+| instagram-story | 1080×1920 | Instagram stories |
+| appstore | 1290×2796 | App Store screenshots |
+| playstore | 1080×1920 | Play Store screenshots |
 
 ## License
 
-ISC
+MIT
