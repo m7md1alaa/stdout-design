@@ -1,4 +1,4 @@
-# stdout-design
+# @stdout-design/cli
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@stdout-design/cli">
@@ -12,7 +12,7 @@
 
 > Storybook for images — in your repo and speaking to your agents.
 
-An open-source, local-first studio that renders your own TSX components into pixel-perfect social and marketing images. CLI for scripting, live UI for iteration, MCP server for AI agents.
+A CLI for rendering your own TSX components into pixel-perfect social and marketing images. Live preview studio, batch rendering from data, and MCP server for AI agents.
 
 ## Quick start
 
@@ -36,19 +36,15 @@ npx @stdout-design/cli dev
 bun add -d @stdout-design/cli
 ```
 
+Or globally:
+
+```bash
+bun add -g @stdout-design/cli
+```
+
 **Prerequisites:** Node.js 18+, Bun 1.2+.
 
-## Features
-
-- **Render from TSX** — plain React components. No custom DSL.
-- **Batch & data-driven** — `--data posts.csv` renders one asset per row.
-- **Live studio** — hot-reload, auto-generated prop panel, side-by-side preset preview.
-- **Agent-ready** — MCP server so agents can discover templates and render assets.
-- **Platform presets** — Instagram, X, LinkedIn, OG, App Store, Play Store.
-- **i18n** — `--locales en,ar,es`, RTL support, tofu detection for missing glyphs.
-- **Built-in cache** — fast re-renders without regenerating unchanged assets.
-
-## CLI
+## Commands
 
 | Command | Description |
 |---------|-------------|
@@ -83,6 +79,14 @@ Starts a dev server on `localhost:3000` with:
 - Auto-generated prop panel
 - Side-by-side preview across presets
 - Export templates to PNG
+
+### studio init
+
+Scaffolds a new studio project with:
+- TypeScript configuration
+- Example templates to get started
+- Sample data files for batch rendering
+- Locale files for i18n
 
 ## Writing templates
 

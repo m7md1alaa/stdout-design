@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/cli",
-  "version": "0.1.2",
+  "version": "0.1.9",
   "description": "stdout-design CLI — shallow front door to @stdout-design/core and @stdout-design/dev-server",
   "keywords": [
     "cli",
@@ -15,6 +15,9 @@
     "url": "https://github.com/m7md1alaa/stdout-design/issues"
   },
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/m7md1alaa/stdout-design/studio.git"
@@ -53,7 +56,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@stdout-design/core": "^0.1.1",
+    "@stdout-design/core": "^0.1.2",
     "commander": "^15.0.0",
     "package-manager-detector": "^1.8.0"
   },
@@ -63,8 +66,8 @@
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "@stdout-design/dev-server": "^0.1.1",
-    "@stdout-design/web-ui": "^0.1.1"
+    "@stdout-design/dev-server": "^0.1.7",
+    "@stdout-design/web-ui": "^0.1.7"
   },
   "peerDependenciesMeta": {
     "@stdout-design/dev-server": {
