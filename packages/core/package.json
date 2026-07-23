@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/core",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Core rendering engine for stdout-design — compile TSX templates to pixel-perfect images via Takumi",
   "keywords": [
     "design",
