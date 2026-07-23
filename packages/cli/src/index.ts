@@ -14,7 +14,7 @@ const program = new Command().allowExcessArguments(true);
 program
   .name("studio")
   .description("Social media design tool — render, preview, batch")
-  .version(pkg.version, "-v, -V, --version");
+  .version(pkg.version, "-v, --version");
 
 // ── dev
 program

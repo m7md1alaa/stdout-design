@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/web-ui",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Vite + React preview UI for stdout-design — live template editing, prop panels, and canvas preview",
   "keywords": [
     "design",
