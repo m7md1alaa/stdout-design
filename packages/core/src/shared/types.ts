@@ -18,6 +18,7 @@ export interface StudioConfig {
   defaultPreset?: string;
   locales?: string[];
   outDir?: string;
+  scaffoldVersion?: string;
 }
 
 export interface TemplateModule {

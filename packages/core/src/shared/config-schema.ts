@@ -19,6 +19,7 @@ export const studioConfigSchema = z.object({
   locales: z.array(z.string()).optional(),
   outDir: z.string().optional(),
   presets: z.array(presetSchema),
+  scaffoldVersion: z.string().optional(),
   templates: z.record(z.string(), templateEntrySchema),
 });
 
