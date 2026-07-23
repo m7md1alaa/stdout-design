@@ -15,9 +15,6 @@
     "url": "https://github.com/m7md1alaa/stdout-design/issues"
   },
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/m7md1alaa/stdout-design/studio.git"
@@ -47,6 +44,9 @@
       "import": "./dist/schema.mjs",
       "types": "./dist/schema.d.mts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown",

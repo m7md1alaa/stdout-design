@@ -12,7 +12,7 @@ export default defineConfig({
       "takumi-js",
     ],
   },
-  dts: false,
+  dts: true,
   entry: ["./src/index.ts", "./src/schema.ts"],
   format: "esm",
 });

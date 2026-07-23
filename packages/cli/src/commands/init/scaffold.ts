@@ -37,7 +37,7 @@ export default config;
 const getPkgJson = (name: string, version: string) => ({
   dependencies: {
     "@stdout-design/cli": `^${version}`,
-    "takumi-js": "^2.0.2",
+    "@types/react": "^19.2.17",
   },
   name,
   private: true,
@@ -49,20 +49,25 @@ const getPkgJson = (name: string, version: string) => ({
   type: "module",
 });
 
-const templateDir = () =>
-  path.resolve(import.meta.dirname, "../template");
+const resolveTemplateDir = (): string => {
+  const fromDist = path.resolve(import.meta.dirname, "../template");
+  if (existsSync(path.resolve(fromDist, "tsconfig.json"))) {
+    return fromDist;
+  }
+  return path.resolve(import.meta.dirname, "../../../template");
+};
 
-const templatesDir = () =>
-  path.resolve(import.meta.dirname, "../template/templates");
+const resolveTemplatesDir = (): string =>
+  path.resolve(resolveTemplateDir(), "templates");
 
 const copyStaticAssets = async (dir: string): Promise<void> => {
-  const base = templateDir();
+  const base = resolveTemplateDir();
 
-  await cp(
-    path.resolve(base, "tsconfig.json"),
-    path.resolve(dir, "tsconfig.json")
-  );
-  await cp(path.resolve(base, "gitignore"), path.resolve(dir, ".gitignore"));
+  await Promise.all([
+    cp(path.resolve(base, "tsconfig.json"), path.resolve(dir, "tsconfig.json")),
+    cp(path.resolve(base, "gitignore"), path.resolve(dir, ".gitignore")),
+    cp(path.resolve(base, "types.d.ts"), path.resolve(dir, "types.d.ts")),
+  ]);
 };
 
 const generateConfig = async (dir: string, version: string): Promise<void> => {
@@ -94,7 +99,7 @@ const copyTemplateFiles = async (
   const dstTemplatesDir = path.resolve(dir, "templates");
   await mkdir(dstTemplatesDir, { recursive: true });
 
-  const srcTemplatesDir = templatesDir();
+  const srcTemplatesDir = resolveTemplatesDir();
 
   for (const template of templates) {
     const src = path.resolve(srcTemplatesDir, `${template}.tsx`);

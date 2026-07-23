@@ -104,18 +104,32 @@ describe("scaffold", () => {
     rmSync(dir, { force: true, recursive: true });
   });
 
-  test("copies static assets like tsconfig.json", async () => {
+  test("copies static assets like tsconfig.json, .gitignore, and types.d.ts", async () => {
     const dir = inTempDir();
 
     await scaffold(dir, defaultOptions());
 
     expect(existsSync(path.join(dir, "tsconfig.json"))).toBe(true);
     expect(existsSync(path.join(dir, ".gitignore"))).toBe(true);
+    expect(existsSync(path.join(dir, "types.d.ts"))).toBe(true);
 
     rmSync(dir, { force: true, recursive: true });
   });
 
-  test("generates package.json with project name", async () => {
+  test("copies types.d.ts with tw prop declaration for React JSX", async () => {
+    const dir = inTempDir();
+
+    await scaffold(dir, defaultOptions());
+
+    const content = readFileSync(path.join(dir, "types.d.ts"), "utf-8");
+    expect(content).toContain("declare module");
+    expect(content).toContain("DOMAttributes");
+    expect(content).toContain("tw?");
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("generates package.json with project name and runtime deps", async () => {
     const dir = inTempDir();
 
     await scaffold(dir, defaultOptions({ projectName: "my-design" }));
@@ -125,7 +139,8 @@ describe("scaffold", () => {
     );
     expect(pkg.name).toBe("my-design");
     expect(pkg.dependencies["@stdout-design/cli"]).toBeDefined();
-    expect(pkg.dependencies["takumi-js"]).toBeDefined();
+    expect(pkg.dependencies["@types/react"]).toBeDefined();
+    expect(pkg.dependencies["takumi-js"]).toBeUndefined();
 
     rmSync(dir, { force: true, recursive: true });
   });

@@ -4,10 +4,7 @@ import path from "node:path";
 
 import type { AgentName } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
-import {
-  detect as detectPM,
-  getUserAgent,
-} from "package-manager-detector/detect";
+import { detect as detectPM } from "package-manager-detector/detect";
 
 import { tryGitInit } from "./init/git.js";
 import type { ClackModule } from "./init/prompts.js";
@@ -16,13 +13,8 @@ import { scaffold } from "./init/scaffold.js";
 
 type PackageManager = AgentName;
 
-const detectPackageManager = async (): Promise<PackageManager> => {
-  const userAgent = getUserAgent();
-  if (userAgent) {
-    return userAgent;
-  }
-
-  const detected = await detectPM();
+const detectPackageManager = async (cwd?: string): Promise<PackageManager> => {
+  const detected = await detectPM({ cwd });
   if (detected) {
     return detected.name;
   }
@@ -84,7 +76,7 @@ export const init = async (
     );
   }
 
-  const pm = await detectPackageManager();
+  const pm = await detectPackageManager(cwd);
 
   if (collected.shouldInstall) {
     const installSpinner = spinner();
