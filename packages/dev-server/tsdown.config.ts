@@ -5,4 +5,8 @@ export default defineConfig({
   dts: true,
   entry: ["./src/index.ts", "./src/serve.ts"],
   format: "esm",
+  minify: {
+    compress: true,
+    mangle: false,
+  },
 });

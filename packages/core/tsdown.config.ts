@@ -8,4 +8,8 @@ export default defineConfig({
   dts: true,
   entry: ["./src/index.ts", "./src/schema.ts"],
   format: "esm",
+  minify: {
+    compress: true,
+    mangle: false,
+  },
 });
