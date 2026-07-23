@@ -1,4 +1,4 @@
-import { defineSchema } from "@stdout-design/core/schema";
+import { defineSchema } from "@stdout-design/cli/schema";
 import { z } from "zod";
 
 export const templateId = "bento-feature" as const;
