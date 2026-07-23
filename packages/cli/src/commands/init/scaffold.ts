@@ -34,19 +34,22 @@ const config: StudioConfig = {
 export default config;
 `;
 
+// oxlint-disable-next-line eslint/sort-keys
 const getPkgJson = (name: string, version: string) => ({
-  dependencies: {
-    "@stdout-design/cli": `^${version}`,
-    "@types/react": "^19.2.17",
-  },
   name,
   private: true,
+  type: "module",
   scripts: {
     build: "studio build",
     dev: "studio dev",
     export: "studio export",
   },
-  type: "module",
+  dependencies: {
+    "@stdout-design/cli": `^${version}`,
+    "@stdout-design/dev-server": "^0.2.0",
+    "@stdout-design/web-ui": "^0.2.0",
+    "@types/react": "^19.2.17",
+  },
 });
 
 const resolveTemplateDir = (): string => {

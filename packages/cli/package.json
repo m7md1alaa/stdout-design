@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/cli",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "stdout-design CLI — shallow front door to @stdout-design/core and @stdout-design/dev-server",
   "keywords": [
     "cli",

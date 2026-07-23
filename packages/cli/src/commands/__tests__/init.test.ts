@@ -139,8 +139,30 @@ describe("scaffold", () => {
     );
     expect(pkg.name).toBe("my-design");
     expect(pkg.dependencies["@stdout-design/cli"]).toBeDefined();
+    expect(pkg.dependencies["@stdout-design/dev-server"]).toBeDefined();
+    expect(pkg.dependencies["@stdout-design/web-ui"]).toBeDefined();
     expect(pkg.dependencies["@types/react"]).toBeDefined();
     expect(pkg.dependencies["takumi-js"]).toBeUndefined();
+
+    rmSync(dir, { force: true, recursive: true });
+  });
+
+  test("generates package.json with conventional key order", async () => {
+    const dir = inTempDir();
+
+    await scaffold(dir, defaultOptions({ projectName: "order-test" }));
+
+    const pkg = JSON.parse(
+      readFileSync(path.join(dir, "package.json"), "utf-8")
+    );
+    const keys = Object.keys(pkg);
+    expect(keys).toEqual([
+      "name",
+      "private",
+      "type",
+      "scripts",
+      "dependencies",
+    ]);
 
     rmSync(dir, { force: true, recursive: true });
   });
