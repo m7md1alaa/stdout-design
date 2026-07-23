@@ -14,7 +14,7 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 
 **Template directory** (`template/` in the CLI package): The source-of-truth files that get copied during scaffold. Not a separate publishable package. _Avoid_: starter, boilerplate, example
 
-**Scaffold version**: The CLI version that created a project. Stored in `studio.config.ts` as `scaffoldVersion`. Enables future `studio upgrade`. _Avoid_: version, created-version
+**Scaffold version**: The CLI version that created a project. Stored in `studio.config.ts` as `scaffoldVersion`. Used by `studio update` to compare against the current CLI version. _Avoid_: version, created-version
 
 **Bootstrap dependencies**: Dependencies the CLI needs to run itself: `commander`, `ora`, `picocolors`, `@clack/prompts`. Small, stable. _Avoid_: CLI deps, tool deps
 
@@ -27,3 +27,7 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 **Registry fallback**: When the npm registry is unreachable during scaffold, the CLI falls back to its local `package.json` version instead of failing. The local version is the "last known good" fallback. _Avoid_: offline mode, fallback version
 
 **Scaffold warnings**: Messages printed during scaffold when something is unexpected but not blocking: directory exists, offline mode active, TypeScript config exists. Not errors. _Avoid_: warnings, notices
+
+**Studio update**: The `studio update` command that upgrades an existing studio project's scaffolded files to match the current CLI version. Updates `scaffoldVersion`, static assets, `package.json` deps, and merges new default presets/templates into the config. _Avoid_: upgrade, migrate, refresh
+
+**Deprecated preset**: A preset (in `studio.config.ts`) that the CLI no longer recommends. Marked with `deprecated: true` during `studio update`. The rendering pipeline may emit warnings for deprecated presets. _Avoid_: removed, deleted, old

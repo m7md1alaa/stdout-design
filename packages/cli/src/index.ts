@@ -70,4 +70,12 @@ program
   .option("-y, --yes", "Skip prompts, use defaults")
   .action(run("init"));
 
+// ── update
+program
+  .command("update")
+  .description("Update an existing studio project to the latest CLI version")
+  .argument("[projectDir]", "Project directory (default: cwd)")
+  .option("-y, --yes", "Skip confirmation prompts")
+  .action(run("update"));
+
 program.parse();

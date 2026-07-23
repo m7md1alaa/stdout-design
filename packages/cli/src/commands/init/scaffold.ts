@@ -12,6 +12,25 @@ export interface ScaffoldOptions {
   git: boolean;
 }
 
+export const getDefaults = () => ({
+  defaultPreset: "instagram-square" as const,
+  presets: [
+    {
+      height: 1080,
+      id: "instagram-square",
+      platform: "instagram",
+      width: 1080,
+    },
+    { height: 1200, id: "x-card", platform: "x", width: 1200 },
+  ],
+  templates: {
+    "bento-feature": {
+      componentPath: "./templates/bento-feature",
+      description: "Apple-style bento feature card.",
+    },
+  },
+});
+
 const getConfigTemplate = (version: string) =>
   `import type { StudioConfig } from "@stdout-design/cli";
 
@@ -63,7 +82,7 @@ const resolveTemplateDir = (): string => {
 const resolveTemplatesDir = (): string =>
   path.resolve(resolveTemplateDir(), "templates");
 
-const copyStaticAssets = async (dir: string): Promise<void> => {
+export const copyStaticAssets = async (dir: string): Promise<void> => {
   const base = resolveTemplateDir();
 
   await Promise.all([

@@ -3,6 +3,7 @@ import { dev } from "../commands/dev.js";
 import { init } from "../commands/init.js";
 import { lint } from "../commands/lint.js";
 import { render } from "../commands/render.js";
+import { update } from "../commands/update.js";
 import { formatError } from "./display.js";
 
 const handlers: Record<string, (...args: never[]) => unknown> = {
@@ -13,6 +14,7 @@ const handlers: Record<string, (...args: never[]) => unknown> = {
   init,
   lint,
   render,
+  update,
 };
 
 export const run =

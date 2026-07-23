@@ -1,7 +1,8 @@
 import type { StudioConfig } from "@stdout-design/core";
+
 const config: StudioConfig = {
   locales: ["ar"],
-  presets: [{ id: "test", width: 100, height: 100, platform: "test" }],
+  presets: [{ height: 100, id: "test", platform: "test", width: 100 }],
   templates: {
     "test-card": { componentPath: "./templates/test-card" },
   },

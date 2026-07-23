@@ -50,14 +50,14 @@ bun add -d @stdout-design/cli
 
 ## CLI
 
-| Command | Description |
-|---------|-------------|
-| `studio init` | Scaffold a new studio project |
-| `studio dev` | Start the live preview studio |
+| Command                    | Description                       |
+| -------------------------- | --------------------------------- |
+| `studio init`              | Scaffold a new studio project     |
+| `studio dev`               | Start the live preview studio     |
 | `studio render <template>` | Render a single template or batch |
-| `studio cache stats` | Show cache statistics |
-| `studio cache clean` | Clear the render cache |
-| `studio lint` | Check templates for compatibility |
+| `studio cache stats`       | Show cache statistics             |
+| `studio cache clean`       | Clear the render cache            |
+| `studio lint`              | Check templates for compatibility |
 
 Run commands with `npx @stdout-design/cli <command>`, or install globally with `bun add -g @stdout-design/cli` to use `studio <command>` directly.
 
@@ -67,18 +67,19 @@ Run commands with `npx @stdout-design/cli <command>`, or install globally with `
 studio render <template> [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--key value` | Pass props to the template |
-| `--data file.csv` | Batch render from CSV or JSON |
-| `--preset name` | Output preset (default: og) |
-| `--locale lang` | Locale for i18n |
-| `--out-dir path` | Output directory (default: ./out/) |
-| `--out file.png` | Single output file |
+| Option            | Description                        |
+| ----------------- | ---------------------------------- |
+| `--key value`     | Pass props to the template         |
+| `--data file.csv` | Batch render from CSV or JSON      |
+| `--preset name`   | Output preset (default: og)        |
+| `--locale lang`   | Locale for i18n                    |
+| `--out-dir path`  | Output directory (default: ./out/) |
+| `--out file.png`  | Single output file                 |
 
 ### studio dev
 
 Starts a dev server on `localhost:3000` with:
+
 - Hot-reload when templates change
 - Auto-generated prop panel
 - Side-by-side preview across presets
@@ -150,15 +151,15 @@ export default {
 
 ## Platform presets
 
-| Preset | Size | Use |
-|--------|------|-----|
-| og | 1200×630 | Open Graph / social cards |
-| x-card | 1200×675 | X (Twitter) cards |
-| linkedin | 1200×627 | LinkedIn link previews |
-| instagram | 1080×1080 | Instagram feed posts |
-| instagram-story | 1080×1920 | Instagram stories |
-| appstore | 1290×2796 | App Store screenshots |
-| playstore | 1080×1920 | Play Store screenshots |
+| Preset          | Size      | Use                       |
+| --------------- | --------- | ------------------------- |
+| og              | 1200×630  | Open Graph / social cards |
+| x-card          | 1200×675  | X (Twitter) cards         |
+| linkedin        | 1200×627  | LinkedIn link previews    |
+| instagram       | 1080×1080 | Instagram feed posts      |
+| instagram-story | 1080×1920 | Instagram stories         |
+| appstore        | 1290×2796 | App Store screenshots     |
+| playstore       | 1080×1920 | Play Store screenshots    |
 
 ## License
 

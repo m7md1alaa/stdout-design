@@ -10,6 +10,7 @@ export interface Preset {
   width: number;
   height: number;
   platform: string;
+  deprecated?: boolean;
 }
 
 export interface StudioConfig {

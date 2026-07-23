@@ -139,7 +139,15 @@ export const Canvas = ({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [templateId, props, preset, locale, autoDetected, reloadToken, renderAdapter]);
+  }, [
+    templateId,
+    props,
+    preset,
+    locale,
+    autoDetected,
+    reloadToken,
+    renderAdapter,
+  ]);
 
   useEffect(
     () => () => {
