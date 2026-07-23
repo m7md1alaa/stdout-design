@@ -72,7 +72,7 @@ export class TemplateLoader {
     }
 
     this.viteServer = await createServer({
-      mode: "development",
+      mode: "production",
       optimizeDeps: { noDiscovery: true },
       plugins: [react()],
       root: this.rootDir,
