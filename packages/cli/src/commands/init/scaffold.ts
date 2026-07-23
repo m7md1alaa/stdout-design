@@ -65,8 +65,8 @@ const getPkgJson = (name: string, version: string) => ({
   },
   dependencies: {
     "@stdout-design/cli": `^${version}`,
-    "@stdout-design/dev-server": "^0.2.0",
-    "@stdout-design/web-ui": "^0.2.0",
+    "@stdout-design/dev-server": `^${version}`,
+    "@stdout-design/web-ui": `^${version}`,
     "@types/react": "^19.2.17",
   },
 });
