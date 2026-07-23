@@ -1,16 +1,20 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
+import { createRequire } from "node:module";
 
 import { run } from "./lib/runner.js";
 
 export type { StudioConfig } from "@stdout-design/core";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json") as { version: string };
 
 const program = new Command().allowExcessArguments(true);
 
 program
   .name("studio")
   .description("Social media design tool — render, preview, batch")
-  .version("0.0.0");
+  .version(pkg.version, "-v, -V, --version");
 
 // ── dev
 program
