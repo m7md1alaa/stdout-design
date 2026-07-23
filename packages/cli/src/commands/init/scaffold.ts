@@ -67,6 +67,9 @@ const getPkgJson = (name: string, version: string) => ({
     "@stdout-design/cli": `^${version}`,
     "@stdout-design/dev-server": `^${version}`,
     "@stdout-design/web-ui": `^${version}`,
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "zod": "^4.4.3",
     "@types/react": "^19.2.17",
   },
 });

@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/cli",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "stdout-design CLI — shallow front door to @stdout-design/core and @stdout-design/dev-server",
   "keywords": [
     "cli",
@@ -60,7 +60,8 @@
   },
   "peerDependencies": {
     "@stdout-design/dev-server": "^0.2.0",
-    "@stdout-design/web-ui": "^0.2.0"
+    "@stdout-design/web-ui": "^0.2.0",
+    "zod": "^4.4.3"
   },
   "peerDependenciesMeta": {
     "@stdout-design/dev-server": {
