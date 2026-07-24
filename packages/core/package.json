@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Core rendering engine for stdout-design — compile TSX templates to pixel-perfect images via Takumi",
   "keywords": [
     "design",
@@ -56,10 +56,6 @@
     "takumi-js": "^2.1.1",
     "write-file-atomic": "^8.0.0"
   },
-  "optionalDependencies": {
-    "better-sqlite3": "^11.0.0",
-    "kysely-bun-sqlite": "^0.4.0"
-  },
   "devDependencies": {
     "@sinonjs/fake-timers": "^15.4.0",
     "@stdout-design/config": "workspace:*",
@@ -75,5 +71,9 @@
   "peerDependencies": {
     "react": "^19.2.7",
     "zod": "^4.4.3"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0",
+    "kysely-bun-sqlite": "^0.4.0"
   }
 }

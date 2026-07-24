@@ -1,11 +1,10 @@
+import { createHash } from "node:crypto";
 import { existsSync as realExistsSync } from "node:fs";
 import {
   readFile as realReadFile,
   stat as realStat,
   unlink as realUnlink,
 } from "node:fs/promises";
-
-import { createHash } from "node:crypto";
 
 import realWriteFileAtomic from "write-file-atomic";
 
@@ -81,10 +80,11 @@ export class FsStore {
     // from node:crypto is used instead. The two are not interchangeable
     // across runtimes, but each runtime is self-consistent for cache
     // corruption detection.
-    const isBun =
-      typeof (globalThis as Record<string, unknown>).Bun !== "undefined";
-    if (isBun) {
-      return (Bun as Record<string, (bytes: Buffer) => number>).hash(bytes).toString(16);
+    const bunGlobal = (globalThis as Record<string, unknown>).Bun as
+      | { hash: (data: Uint8Array) => number }
+      | undefined;
+    if (bunGlobal) {
+      return bunGlobal.hash(bytes).toString(16);
     }
     return createHash("sha256").update(bytes).digest("hex");
   }

@@ -1,4 +1,5 @@
 import { writeFile } from "node:fs/promises";
+
 import type { ComponentType } from "react";
 
 import { generateOutputFilename } from "../batch/naming.js";
