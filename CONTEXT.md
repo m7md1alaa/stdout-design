@@ -31,3 +31,7 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 **Studio update**: The `studio update` command that upgrades an existing studio project's scaffolded files to match the current CLI version. Updates `scaffoldVersion`, static assets, `package.json` deps, and merges new default presets/templates into the config. _Avoid_: upgrade, migrate, refresh
 
 **Deprecated preset**: A preset (in `studio.config.ts`) that the CLI no longer recommends. Marked with `deprecated: true` during `studio update`. The rendering pipeline may emit warnings for deprecated presets. _Avoid_: removed, deleted, old
+
+**Agent Skill**: A `SKILL.md` file (at `skills/studio/SKILL.md`) installed into an agent's scope by the `skills` CLI (vercel-labs/skills). Contains instructions for how the agent should use `studio`. _Avoid_: skill (ambiguous), instruction set, prompt, agent config
+
+**Skill installer**: The module in `@stdout-design/cli` (`src/lib/skill.ts`) that detects whether the agent skill is installed, prompts the user, and runs `skills add`. _Avoid_: skill manager, agent setup, skill helper

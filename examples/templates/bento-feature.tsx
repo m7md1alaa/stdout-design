@@ -43,7 +43,7 @@ export default function BentoFeature({
       style={{
         backgroundColor: background,
         color: "#ffffff",
-        fontFamily: "system-ui, sans-serif",
+        fontFamily: "IBM Plex Sans Arabic, system-ui, sans-serif",
       }}
     >
       <div

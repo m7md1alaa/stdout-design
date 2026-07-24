@@ -71,6 +71,7 @@ export default function BentoFeatures({
       tw="flex w-full h-full p-16"
       style={{
         backgroundColor: bgColor,
+        fontFamily: "IBM Plex Sans Arabic, system-ui, sans-serif",
       }}
     >
       {/* Outer Bento Grid Container (Flex based for compatibility) */}
