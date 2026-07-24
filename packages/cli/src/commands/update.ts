@@ -3,9 +3,11 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { loadConfig } from "@stdout-design/core";
+import type { StudioConfig } from "@stdout-design/core";
 
 import { updatePackageJsonDeps } from "./init/deps.js";
 import { mergeConfig } from "./init/merge-config.js";
+import type { Defaults, ChangeSummary } from "./init/merge-config.js";
 import { getLatestVersion } from "./init/registry.js";
 import { copyStaticAssets, getDefaults } from "./init/scaffold.js";
 import { getScaffoldVersion } from "./init/version.js";
@@ -35,10 +37,31 @@ const config: StudioConfig = ${JSON.stringify(config, null, 2)};
 export default config;
 `;
 
+export interface UpdatePlan {
+  mergedConfig: StudioConfig;
+  summary: ChangeSummary;
+  installedVersion: string;
+}
+
 export interface UpdateDeps {
   getInstalledVersion?: () => string;
   getLatestVersion?: () => Promise<string | null>;
 }
+
+export const planUpdate = (
+  existingConfig: StudioConfig,
+  defaults: Defaults,
+  installedVersion: string,
+  deprecatedPresetIds: Set<string>
+): UpdatePlan => {
+  const { config: mergedConfig, summary } = mergeConfig(
+    existingConfig,
+    defaults,
+    installedVersion,
+    deprecatedPresetIds
+  );
+  return { installedVersion, mergedConfig, summary };
+};
 
 const resolveVersion = async (
   deps?: UpdateDeps
@@ -86,6 +109,28 @@ const printChanges = (summary: ChangeSummary, installedVersion: string) => {
   console.log("");
 };
 
+export const applyUpdate = async (
+  dir: string,
+  plan: UpdatePlan
+): Promise<void> => {
+  const configPath = path.resolve(dir, "studio.config.ts");
+
+  await writeFile(configPath, serializeConfig(plan.mergedConfig));
+  await copyStaticAssets(dir);
+
+  const pkgPath = path.resolve(dir, "package.json");
+  if (existsSync(pkgPath)) {
+    const pkgContent = readFileSync(pkgPath, "utf-8");
+    const { updated, changed } = updatePackageJsonDeps(
+      pkgContent,
+      plan.installedVersion
+    );
+    if (changed) {
+      await writeFile(pkgPath, updated);
+    }
+  }
+};
+
 export const update = async (
   projectDir: string | undefined,
   options?: { yes?: boolean },
@@ -93,7 +138,6 @@ export const update = async (
 ): Promise<void> => {
   const cwd = process.cwd();
   const dir = path.resolve(cwd, projectDir ?? ".");
-  const configPath = path.resolve(dir, "studio.config.ts");
 
   const existingConfig = await loadConfig(dir);
 
@@ -103,7 +147,7 @@ export const update = async (
     return;
   }
 
-  const { config: merged, summary } = mergeConfig(
+  const plan = planUpdate(
     existingConfig,
     defaults,
     installedVersion,
@@ -115,10 +159,10 @@ export const update = async (
   intro("studio update");
 
   const hasChanges =
-    summary.addedPresets.length > 0 ||
-    summary.deprecatedPresets.length > 0 ||
-    summary.addedTemplates.length > 0 ||
-    summary.oldVersion !== summary.newVersion;
+    plan.summary.addedPresets.length > 0 ||
+    plan.summary.deprecatedPresets.length > 0 ||
+    plan.summary.addedTemplates.length > 0 ||
+    plan.summary.oldVersion !== plan.summary.newVersion;
 
   if (!hasChanges) {
     console.log("Project is already up to date.");
@@ -126,7 +170,7 @@ export const update = async (
     return;
   }
 
-  printChanges(summary, installedVersion);
+  printChanges(plan.summary, plan.installedVersion);
 
   if (!options?.yes) {
     const confirmed = await confirm({
@@ -141,20 +185,7 @@ export const update = async (
     }
   }
 
-  await writeFile(configPath, serializeConfig(merged));
-  await copyStaticAssets(dir);
-
-  const pkgPath = path.resolve(dir, "package.json");
-  if (existsSync(pkgPath)) {
-    const pkgContent = readFileSync(pkgPath, "utf-8");
-    const { updated, changed } = updatePackageJsonDeps(
-      pkgContent,
-      installedVersion
-    );
-    if (changed) {
-      await writeFile(pkgPath, updated);
-    }
-  }
+  await applyUpdate(dir, plan);
 
   console.log("");
   outro("Done");
