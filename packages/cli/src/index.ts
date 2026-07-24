@@ -73,6 +73,7 @@ program
   .description("Scaffold a new studio project")
   .argument("[projectDir]", "Project directory (default: cwd)")
   .option("-y, --yes", "Skip prompts, use defaults")
+  .option("--install-skill", "Install the studio agent skill after setup")
   .action(run("init"));
 
 // ── update
@@ -82,5 +83,15 @@ program
   .argument("[projectDir]", "Project directory (default: cwd)")
   .option("-y, --yes", "Skip confirmation prompts")
   .action(run("update"));
+
+const skillCmd = program
+  .command("skill")
+  .description("Manage the studio agent skill for AI coding agents");
+
+skillCmd
+  .command("install")
+  .description("Install the studio agent skill")
+  .option("-y, --yes", "Skip confirmation prompts")
+  .action(run("skill", "skillInstall"));
 
 program.parse();

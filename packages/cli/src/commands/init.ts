@@ -6,6 +6,7 @@ import type { AgentName } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
 import { detect as detectPM } from "package-manager-detector/detect";
 
+import { maybeInstallSkill } from "../lib/skill.js";
 import { tryGitInit } from "./init/git.js";
 import type { ClackModule } from "./init/prompts.js";
 import { collectPrompts } from "./init/prompts.js";
@@ -37,7 +38,7 @@ export { detectPackageManager };
 
 export const init = async (
   projectDir: string | undefined,
-  options?: { yes?: boolean }
+  options?: { yes?: boolean; installSkill?: boolean }
 ): Promise<void> => {
   const { intro, outro, spinner } = await import("@clack/prompts");
 
@@ -84,6 +85,12 @@ export const init = async (
     runInstall(collected.resolvedDir, pm);
     installSpinner.stop("Dependencies installed");
   }
+
+  await maybeInstallSkill({
+    packageManager: pm,
+    quiet: options?.yes ?? false,
+    shouldInstall: options?.installSkill,
+  });
 
   console.log("");
   console.log(`  Created project at ${collected.resolvedDir}`);
