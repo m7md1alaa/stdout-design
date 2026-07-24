@@ -1,10 +1,8 @@
-import { Database } from "bun:sqlite";
 import { existsSync, unlinkSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
-import { Kysely, sql } from "kysely";
-import { BunSqliteDialect } from "kysely-bun-sqlite";
+import { Kysely, sql, SqliteDialect } from "kysely";
 
 import { logWarn } from "../shared/logger.js";
 
@@ -89,9 +87,10 @@ const toRow = (r: PixelCacheEntriesTable): PixelCacheEntryRow => ({
 export class MetadataStore {
   private readonly cacheDir: string;
   private readonly dbPath: string;
-  private rawDb: Database | undefined;
+  private closeDb: (() => void) | undefined;
   private db: Kysely<DatabaseSchema> | undefined;
   private initialized = false;
+  private initPromise: Promise<void> | undefined;
 
   constructor(cacheDir: string) {
     this.cacheDir = cacheDir;
@@ -106,61 +105,160 @@ export class MetadataStore {
       return;
     }
 
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this.#doInit();
+    try {
+      await this.initPromise;
+    } finally {
+      this.initPromise = undefined;
+      // Only mark initialized if close() wasn't called during init
+      if (this.closeDb) {
+        this.initialized = true;
+      }
+    }
+  }
+
+  async #doInit(): Promise<void> {
     if (this.cacheDir !== ":memory:" && !existsSync(this.cacheDir)) {
       await mkdir(this.cacheDir, { recursive: true });
     }
 
-    const rawDb = new Database(this.dbPath, { create: true, readwrite: true });
-    // WAL mode is what makes concurrent multi-process access safe and
-    // fast: readers don't block writers, writers don't block readers.
-    rawDb.run("PRAGMA journal_mode = WAL");
-    rawDb.run("PRAGMA synchronous = NORMAL");
-    rawDb.run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+    let isBun = false;
+    try {
+      await import("bun:sqlite");
+      isBun = true;
+    } catch {
+      isBun = false;
+    }
 
-    // Checkpoint any stale WAL left over from a previous crash, then
-    // truncate the WAL file so the next cold open starts clean.
-    rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
+    await (isBun ? this.initBun() : this.initNode());
+  }
 
-    // If the DB (or its WAL) was corrupted by a hard kill mid-write, a
-    // `disk I/O error` surfaces on the very next read. Detect it upfront
-    // and self-heal so every future query doesn't just 500.
+  private async initBun(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Database: new (...args: any[]) => any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let BunSqliteDialect: new (...args: any[]) => any;
+    try {
+      ({ Database } = await import("bun:sqlite"));
+      ({ BunSqliteDialect } = await import("kysely-bun-sqlite"));
+    } catch (error) {
+      throw new Error(
+        "Failed to load Bun SQLite modules. Ensure 'bun:sqlite' and 'kysely-bun-sqlite' are available.",
+        { cause: error }
+      );
+    }
+
+    const createDb = () =>
+      new Database(this.dbPath, { create: true, readwrite: true });
+
+    const rawDb = this.createAndVerifyDb(
+      createDb,
+      (db, statement) => db.run(statement),
+      (db) => {
+        const result = db.query("PRAGMA integrity_check").get() as {
+          integrity_check: string;
+        } | null;
+        return result?.integrity_check ?? null;
+      }
+    );
+
+    this.closeDb = () => {
+      rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
+      rawDb.close();
+    };
+
+    this.db = new Kysely<DatabaseSchema>({
+      dialect: new BunSqliteDialect({ database: rawDb }),
+    });
+
+    await this.createSchema();
+  }
+
+  private async initNode(): Promise<void> {
+    // oxlint-disable-next-line typescript/no-explicit-any
+    let BetterSqlite3: new (...args: any[]) => any;
+    try {
+      const mod = await import("better-sqlite3");
+      BetterSqlite3 = mod.default;
+    } catch (error) {
+      throw new Error(
+        "Failed to load better-sqlite3. This is required when running under Node.js. " +
+          "Install it as a dependency: `npm install better-sqlite3`.",
+        { cause: error }
+      );
+    }
+
+    const createDb = () => new BetterSqlite3(this.dbPath);
+
+    const rawDb = this.createAndVerifyDb(
+      createDb,
+      (db, statement) => db.exec(statement),
+      (db) => {
+        const result = db.prepare("PRAGMA integrity_check").get() as
+          | { integrity_check: string }
+          | undefined;
+        return result?.integrity_check ?? null;
+      }
+    );
+
+    this.closeDb = () => {
+      rawDb.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+      rawDb.close();
+    };
+
+    this.db = new Kysely<DatabaseSchema>({
+      dialect: new SqliteDialect({ database: rawDb }),
+    });
+
+    await this.createSchema();
+  }
+
+  private createAndVerifyDb<T>(
+    createFn: () => T,
+    runFn: (db: T, sql: string) => void,
+    checkFn: (db: T) => string | null
+  ): T {
+    const rawDb = createFn();
+
     let dbHealthy = true;
     try {
-      const result = rawDb.query("PRAGMA integrity_check").get() as {
-        integrity_check: string;
-      } | null;
-      if (result?.integrity_check !== "ok") {
+      runFn(rawDb, "PRAGMA journal_mode = WAL");
+      runFn(rawDb, "PRAGMA synchronous = NORMAL");
+      runFn(rawDb, `PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+      runFn(rawDb, "PRAGMA wal_checkpoint(TRUNCATE)");
+
+      const result = checkFn(rawDb);
+      if (result !== "ok") {
         dbHealthy = false;
         logWarn("SQLite integrity check failed, recreating cache database", {
-          result: result?.integrity_check ?? "null",
+          result: result ?? "null",
         });
       }
     } catch {
       dbHealthy = false;
-      logWarn("SQLite integrity check threw, recreating cache database");
+      logWarn(
+        "SQLite setup or integrity check threw, recreating cache database"
+      );
     }
 
     if (dbHealthy) {
-      this.rawDb = rawDb;
-    } else {
-      rawDb.close();
-      this.deleteDatabaseFiles();
-      const freshDb = new Database(this.dbPath, {
-        create: true,
-        readwrite: true,
-      });
-      freshDb.run("PRAGMA journal_mode = WAL");
-      freshDb.run("PRAGMA synchronous = NORMAL");
-      freshDb.run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
-      this.rawDb = freshDb;
+      return rawDb;
     }
 
-    this.db = new Kysely<DatabaseSchema>({
-      dialect: new BunSqliteDialect({ database: this.rawDb }),
-    });
+    // Native API to close — the generic type T isn't constrained to have
+    // close(), but both bun:sqlite Database and better-sqlite3 Database do.
+    (rawDb as { close: () => void }).close();
+    this.deleteDatabaseFiles();
 
-    await this.createSchema();
-    this.initialized = true;
+    const freshDb = createFn();
+    runFn(freshDb, "PRAGMA journal_mode = WAL");
+    runFn(freshDb, "PRAGMA synchronous = NORMAL");
+    runFn(freshDb, `PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+    return freshDb;
   }
 
   private async createSchema(): Promise<void> {
@@ -237,11 +335,13 @@ export class MetadataStore {
   }
 
   close(): void {
-    if (this.rawDb) {
-      this.rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
-      this.rawDb.close();
+    if (this.closeDb) {
+      this.closeDb();
+      this.closeDb = undefined;
     }
+    this.db = undefined;
     this.initialized = false;
+    this.initPromise = undefined;
   }
 
   private deleteDatabaseFiles(): void {

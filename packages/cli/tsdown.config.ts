@@ -9,6 +9,7 @@ export default defineConfig({
       "@takumi-rs/core",
       "@takumi-rs/helpers",
       "bun:sqlite",
+      "better-sqlite3",
       "takumi-js",
     ],
   },

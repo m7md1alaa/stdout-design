@@ -3,7 +3,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   clean: true,
   deps: {
-    neverBundle: ["bun:sqlite"],
+    neverBundle: ["bun:sqlite", "better-sqlite3"],
   },
   dts: true,
   entry: ["./src/index.ts", "./src/schema.ts"],

@@ -5,6 +5,8 @@ import {
   unlink as realUnlink,
 } from "node:fs/promises";
 
+import { createHash } from "node:crypto";
+
 import realWriteFileAtomic from "write-file-atomic";
 
 import { logDebug, logWarn } from "../shared/logger.js";
@@ -75,7 +77,16 @@ export class FsStore {
    */
   // oxlint-disable-next-line eslint/class-methods-use-this
   computeHash(bytes: Buffer): string {
-    return Bun.hash(bytes).toString(16);
+    // Bun.hash() is a fast non-cryptographic hash. In Node.js, SHA-256
+    // from node:crypto is used instead. The two are not interchangeable
+    // across runtimes, but each runtime is self-consistent for cache
+    // corruption detection.
+    const isBun =
+      typeof (globalThis as Record<string, unknown>).Bun !== "undefined";
+    if (isBun) {
+      return (Bun as Record<string, (bytes: Buffer) => number>).hash(bytes).toString(16);
+    }
+    return createHash("sha256").update(bytes).digest("hex");
   }
 
   /**

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -190,6 +190,83 @@ describe("MetadataStore (:memory:)", () => {
     await store.init();
     expect(await store.getEntry("a")).not.toBeNull();
   });
+
+  it("close() is idempotent -- calling it multiple times does not throw", () => {
+    store.close();
+    store.close();
+    store.close();
+  });
+
+  it("supports close() followed by re-init() — full lifecycle", async () => {
+    store.close();
+
+    await store.init();
+    await store.upsertEntry(sampleEntry({ hash: "cycle-2" }));
+    expect(await store.getEntry("cycle-2")).not.toBeNull();
+    store.close();
+  });
+
+  it("throws a clear error when used after close() — not a cryptic 'Database has closed'", async () => {
+    store.close();
+    await expect(store.getTotals()).rejects.toThrow(
+      "MetadataStore.init() must be called before use."
+    );
+  });
+
+  it("concurrent init() calls serialize — data persists across re-open", async () => {
+    const dir = makeTempDir();
+    const store2 = new MetadataStore(dir);
+    await Promise.all([store2.init(), store2.init(), store2.init()]);
+    await store2.upsertEntry(sampleEntry({ hash: "concurrent" }));
+    expect(await store2.getEntry("concurrent")).not.toBeNull();
+    store2.close();
+
+    expect(existsSync(path.join(dir, "cache.sqlite"))).toBeTrue();
+
+    const store3 = new MetadataStore(dir);
+    await store3.init();
+    expect(await store3.getEntry("concurrent")).not.toBeNull();
+    store3.close();
+
+    rmDir(dir);
+  });
+
+  it("trigger-maintained totals stay accurate under rapid insert/delete cycles", async () => {
+    for (let cycle = 0; cycle < 50; cycle += 1) {
+      for (let i = 0; i < 10; i += 1) {
+        // oxlint-disable-next-line eslint/no-await-in-loop
+        await store.upsertEntry(
+          sampleEntry({ hash: `stress-${cycle}-${i}`, sizeBytes: 100 })
+        );
+      }
+      for (let i = 0; i < 5; i += 1) {
+        // oxlint-disable-next-line eslint/no-await-in-loop
+        await store.deleteEntry(`stress-${cycle}-${i}`);
+      }
+    }
+
+    const totals = await store.getTotals();
+    expect(totals.entryCount).toBe(250);
+    expect(totals.totalSizeBytes).toBe(250 * 100);
+  });
+
+  it("handles 2_000 entries and deleteAll — totals hit zero", async () => {
+    for (let i = 0; i < 2000; i += 1) {
+      // oxlint-disable-next-line eslint/no-await-in-loop
+      await store.upsertEntry(
+        sampleEntry({ hash: `mass-${i}`, sizeBytes: 10 })
+      );
+    }
+    let totals = await store.getTotals();
+    expect(totals.entryCount).toBe(2000);
+    expect(totals.totalSizeBytes).toBe(20_000);
+
+    await store.deleteAll();
+    totals = await store.getTotals();
+    expect(totals.entryCount).toBe(0);
+    expect(totals.totalSizeBytes).toBe(0);
+    expect(await store.listAllOrderedByLastAccessed()).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------
@@ -245,5 +322,25 @@ describe("MetadataStore (real disk, WAL mode)", () => {
     await store.upsertEntry(sampleEntry());
     expect(await store.getEntry("key-a")).not.toBeNull();
     store.close();
+  });
+
+  it("recovers from a corrupted database file via integrity check", async () => {
+    const storeA = new MetadataStore(dir);
+    await storeA.init();
+    await storeA.upsertEntry(sampleEntry({ hash: "pre-corrupt" }));
+    storeA.close();
+
+    writeFileSync(path.join(dir, "cache.sqlite"), "garbage data");
+
+    const storeB = new MetadataStore(dir);
+    await storeB.init();
+
+    expect(await storeB.getEntry("pre-corrupt")).toBeNull();
+    const totals = await storeB.getTotals();
+    expect(totals.entryCount).toBe(0);
+
+    await storeB.upsertEntry(sampleEntry({ hash: "post-corrupt" }));
+    expect(await storeB.getEntry("post-corrupt")).not.toBeNull();
+    storeB.close();
   });
 });

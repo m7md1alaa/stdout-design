@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import type { ComponentType } from "react";
 
 import { generateOutputFilename } from "../batch/naming.js";
@@ -62,7 +63,7 @@ export const renderComponent = async (
 
   const outputPath = `${outDir}/${filename}`;
   await ensureDir(outDir);
-  await Bun.write(outputPath, result.bytes as unknown as Uint8Array);
+  await writeFile(outputPath, result.bytes as unknown as Uint8Array);
 
   return { outputPath };
 };
