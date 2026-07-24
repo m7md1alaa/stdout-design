@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 import { Canvas } from "./components/Canvas";
 import { ErrorBoundary } from "./components/error-boundary";
@@ -97,8 +97,11 @@ const App = () => {
   const currentTemplate = templates.find((t) => t.id === effectiveTemplateId);
   const currentPreset = presets.find((p) => p.id === effectivePresetId) ?? null;
 
+  const defaultPropsCache = useRef<Record<string, Record<string, unknown>>>({});
   const propValues = effectiveTemplateId
-    ? (propStore[effectiveTemplateId] ?? computeDefaultProps(currentTemplate))
+    ? (propStore[effectiveTemplateId] ??
+      (defaultPropsCache.current[effectiveTemplateId] ??=
+        computeDefaultProps(currentTemplate)))
     : {};
 
   const { locale: effectiveLocale, autoDetected } = resolveLocale(
