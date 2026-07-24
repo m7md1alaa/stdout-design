@@ -57,10 +57,6 @@
     "takumi-js": "^2.1.1",
     "write-file-atomic": "^8.0.0"
   },
-  "peerDependencies": {
-    "react": "^19.2.7",
-    "zod": "^4.4.3"
-  },
   "devDependencies": {
     "@sinonjs/fake-timers": "^15.4.0",
     "@stdout-design/config": "workspace:*",
@@ -71,5 +67,9 @@
     "@types/write-file-atomic": "^4.0.3",
     "tsdown": "^0.22.5",
     "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "react": "^19.2.7",
+    "zod": "^4.4.3"
   }
 }

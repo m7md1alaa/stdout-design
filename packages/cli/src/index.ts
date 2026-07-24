@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-import { Command } from "commander";
 import { createRequire } from "node:module";
+
+import { Command } from "commander";
 
 import { run } from "./lib/runner.js";
 
