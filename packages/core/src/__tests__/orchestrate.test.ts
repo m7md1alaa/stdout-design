@@ -302,6 +302,40 @@ describe("orchestrateRender", () => {
 
     cache.close();
   });
+
+  it("survives a cache write failure and returns rendered bytes", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+
+    // oxlint-disable-next-line max-classes-per-file
+    class FailingCache extends RenderCache {
+      // oxlint-disable-next-line class-methods-use-this, require-await
+      override async setPixels(): Promise<string> {
+        throw new Error(
+          "ENOENT: no such file or directory, open '/fake/temp.png.12345'"
+        );
+      }
+    }
+
+    const cache = new FailingCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    const result = await orchestrateRender({
+      cache,
+      compiledTemplate: compiled,
+      height: 100,
+      props: { name: "survive-cache-failure" },
+      templateContentHash: "hash-fail",
+      templateId: "test",
+      width: 100,
+    });
+
+    expect(result.bytes).toBeInstanceOf(Buffer);
+    expect(result.cacheHit).toBe(false);
+    expect(result.format).toBe("png");
+
+    cache.close();
+  });
 });
 
 describe("orchestrateMeasure", () => {

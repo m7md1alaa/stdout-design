@@ -7,6 +7,7 @@ import { compileTemplate } from "../engine/render.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import { measureTemplate, renderToPixels } from "../engine/renderer.js";
 import type { Font } from "../engine/takumi-types-shim.js";
+import { logWarn } from "../shared/logger.js";
 import type { PropSchema } from "../shared/validation.js";
 import { validateProps } from "../shared/validation.js";
 import type {
@@ -196,7 +197,14 @@ export const orchestrateRender = async (
     signal
   );
 
-  await cache.setPixels(pixelKey, output.bytes, width, height, format);
+  try {
+    await cache.setPixels(pixelKey, output.bytes, width, height, format);
+  } catch (error: unknown) {
+    logWarn("Failed to write to pixel cache", {
+      error: String(error),
+      pixelKey,
+    });
+  }
 
   return {
     bytes: output.bytes,

@@ -167,7 +167,12 @@ export class MetadataStore {
     );
 
     this.closeDb = () => {
-      rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
+      try {
+        rawDb.run("PRAGMA wal_checkpoint(TRUNCATE)");
+      } catch {
+        // Best-effort — may fail if the DB file was deleted from under us
+        // (e.g. a user deleted the cache directory). Still close the handle.
+      }
       rawDb.close();
     };
 
@@ -206,7 +211,11 @@ export class MetadataStore {
     );
 
     this.closeDb = () => {
-      rawDb.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+      try {
+        rawDb.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+      } catch {
+        // Best-effort — may fail if the DB file was deleted from under us.
+      }
       rawDb.close();
     };
 

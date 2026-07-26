@@ -111,6 +111,37 @@ describe("RenderCache: end-to-end round-trip and corruption detection", () => {
     expect(stats.pixels.entries).toBe(0);
   });
 
+  it("self-heals after the cache directory is deleted mid-session — setPixels recreates dir and writes survive", async () => {
+    const bytes = randomImageBuffer(1 * KB);
+    const key = RenderCache.createPixelCacheKey({
+      format: "png",
+      height: 10,
+      propsJSON: "{}",
+      templateContentHash: "self-heal",
+      width: 10,
+    });
+
+    // Simulate a user (or cleanup script) deleting the cache directory
+    // after init() created it. SQLite keeps working via its open fd to
+    // the deleted cache.sqlite, but writeAtomic will hit ENOENT because
+    // its parent directory is gone.
+    rmSync(dir, { recursive: true });
+
+    // setPixels should self-heal: recreate dir on ENOENT, recover metadata
+    // on SQLite I/O error, and retry both.
+    await expect(
+      cache.setPixels(key, bytes, 10, 10, "png")
+    ).resolves.toBeDefined();
+
+    // Directory should be recreated and writable.
+    expect(existsSync(dir)).toBe(true);
+
+    // The write should be fully readable.
+    const readBack = await cache.getPixels(key);
+    expect(readBack).not.toBeNull();
+    expect(sha256(readBack as Buffer)).toBe(sha256(bytes));
+  });
+
   it("re-rendering the same key at a new size updates totals correctly (upsert path, not insert+orphan)", async () => {
     const key = RenderCache.createPixelCacheKey({
       format: "png",

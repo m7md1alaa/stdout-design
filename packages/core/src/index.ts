@@ -42,7 +42,10 @@ export { openCache } from "./cache/open-cache.js";
 export type { OpenCacheOptions } from "./cache/open-cache.js";
 
 export { createFetchFontsFromConfig } from "./assets/font-config.js";
-export { resolveAssetsForLocale } from "./assets/assets-resolver.js";
+export {
+  clearFontCache,
+  resolveAssetsForLocale,
+} from "./assets/assets-resolver.js";
 export type {
   AssetsForLocale,
   AssetsResolverOptions,

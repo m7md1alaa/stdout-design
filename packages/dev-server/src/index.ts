@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import {
+  clearFontCache,
   createFetchFontsFromConfig,
   logWarn,
   openCache,
@@ -101,10 +102,15 @@ export const createDevServer = async (options: DevServerOptions) => {
 
   fileWatcher.start();
 
-  // Reload notifications from the file watcher are the only thing that
-  // pushes to clients (see SSE endpoint below); the watcher already calls
-  // templateLoader.reloadTemplate/reloadAll internally on change, so there
-  // is nothing further to wire up here beyond relaying its events.
+  // When the config changes, font resolution and pixel caches may hold
+  // stale data (e.g. locale-keyed font results, PNGs with old fonts).
+  // Clean both so the next render picks up the new config.
+  fileWatcher.onEvent((event) => {
+    if (event.type === "full") {
+      clearFontCache();
+      renderCache.clean();
+    }
+  });
 
   const app = new Hono();
   app.onError(errorHandler);
@@ -211,7 +217,7 @@ export const createDevServer = async (options: DevServerOptions) => {
     }
 
     const config = await templateLoader.getConfig();
-    const fetchFonts = createFetchFontsFromConfig(config.fonts);
+    const fetchFonts = createFetchFontsFromConfig(config.fonts, rootDir);
     const preset = presetId
       ? config.presets.find((p) => p.id === presetId)
       : config.presets.find((p) => p.id === config.defaultPreset);
@@ -304,7 +310,7 @@ export const createDevServer = async (options: DevServerOptions) => {
     }
 
     const config = await templateLoader.getConfig();
-    const fetchFonts = createFetchFontsFromConfig(config.fonts);
+    const fetchFonts = createFetchFontsFromConfig(config.fonts, rootDir);
 
     try {
       const result = await orchestrateMeasure({

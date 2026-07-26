@@ -205,6 +205,53 @@ describe("FsStore (injected fake fs primitives)", () => {
     // problem," and only the former is treated as a cache miss.
   });
 
+  it("readVerified returns null when stat throws ENOENT after existsSync claimed the file was present (TOCTOU race with a concurrent deleter)", async () => {
+    const enoent = new Error("ENOENT: no such file or directory");
+    (enoent as NodeJS.ErrnoException).code = "ENOENT";
+
+    const fakeFs: FsPrimitives = {
+      ...defaultFsPrimitives,
+      existsSync: () => true,
+      stat: () => {
+        throw enoent;
+      },
+    };
+
+    const store = new FsStore(undefined, fakeFs);
+
+    const result = await store.readVerified(
+      "/fake/race.png",
+      100,
+      "stale-hash"
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("readVerified returns null when readFile throws ENOENT after stat succeeded (TOCTOU race with a concurrent deleter)", async () => {
+    const enoent = new Error("ENOENT: no such file or directory");
+    (enoent as NodeJS.ErrnoException).code = "ENOENT";
+
+    const fakeFs: FsPrimitives = {
+      ...defaultFsPrimitives,
+      existsSync: () => true,
+      readFile: () => {
+        throw enoent;
+      },
+      stat: () => Promise.resolve({ size: 100 }),
+    };
+
+    const store = new FsStore(undefined, fakeFs);
+
+    const result = await store.readVerified(
+      "/fake/race.png",
+      100,
+      "stale-hash"
+    );
+
+    expect(result).toBeNull();
+  });
+
   it("delete() tolerates a fake unlink throwing ENOENT-shaped errors (simulating a concurrent deleter) without crashing", async () => {
     const enoent = new Error("ENOENT: no such file or directory");
     (enoent as NodeJS.ErrnoException).code = "ENOENT";

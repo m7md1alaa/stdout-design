@@ -196,25 +196,57 @@ export class RenderCache {
     height: number,
     format = "png"
   ): Promise<string> {
-    const metadata = this.requireMetadata();
+    let metadata = this.requireMetadata();
     const fsStore = this.requireFsStore();
 
     const fileName = `${key}.${format}`;
     const filePath = path.join(this.cacheDir, fileName);
     const contentHash = fsStore.computeHash(bytes);
 
-    await fsStore.writeAtomic(filePath, bytes);
-    await metadata.upsertEntry({
-      contentHash,
-      fileName,
-      hash: key,
-      height,
-      sizeBytes: bytes.length,
-      width,
-    });
+    try {
+      await fsStore.writeAtomic(filePath, bytes);
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException)?.code === "ENOENT") {
+        await mkdir(this.cacheDir, { recursive: true });
+        await fsStore.writeAtomic(filePath, bytes);
+      } else {
+        throw error;
+      }
+    }
 
-    // Debounced, lock-coordinated -- does not run the eviction scan
-    // inline on the write's critical path.
+    try {
+      await metadata.upsertEntry({
+        contentHash,
+        fileName,
+        hash: key,
+        height,
+        sizeBytes: bytes.length,
+        width,
+      });
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (
+        err?.code === "SQLITE_IOERR_VNODE" ||
+        (err?.message ?? "").includes("disk I/O error")
+      ) {
+        logWarn("Metadata write failed (I/O error), recovering and retrying", {
+          error: String(error),
+          key,
+        });
+        await this.recoverMetadata();
+        metadata = this.requireMetadata();
+        await metadata.upsertEntry({
+          contentHash,
+          fileName,
+          hash: key,
+          height,
+          sizeBytes: bytes.length,
+          width,
+        });
+      } else {
+        throw error;
+      }
+    }
     this.requireEviction().requestEviction();
 
     return filePath;

@@ -11,6 +11,9 @@ import realWriteFileAtomic from "write-file-atomic";
 import { logDebug, logWarn } from "../shared/logger.js";
 import type { ConcurrencyLimiter } from "./concurrency-limiter.js";
 
+const isFsNotFoundError = (error: unknown): boolean =>
+  (error as NodeJS.ErrnoException)?.code === "ENOENT";
+
 /**
  * The filesystem primitives FsStore depends on, injectable so tests can
  * supply deterministic fakes (e.g. a writer that stalls mid-write to
@@ -132,7 +135,19 @@ export class FsStore {
       return null;
     }
 
-    const fileStat = await this.fs.stat(filePath);
+    let fileStat;
+    try {
+      fileStat = await this.fs.stat(filePath);
+    } catch (error: unknown) {
+      if (isFsNotFoundError(error)) {
+        logDebug("FsStore: file disappeared before stat (TOCTOU)", {
+          filePath,
+        });
+        return null;
+      }
+      throw error;
+    }
+
     if (fileStat.size !== expectedSizeBytes) {
       logWarn("FsStore: size mismatch on read, treating as corrupt", {
         expected: expectedSizeBytes,
@@ -142,7 +157,19 @@ export class FsStore {
       return null;
     }
 
-    const bytes = await this.fs.readFile(filePath);
+    let bytes;
+    try {
+      bytes = await this.fs.readFile(filePath);
+    } catch (error: unknown) {
+      if (isFsNotFoundError(error)) {
+        logDebug("FsStore: file disappeared before readFile (TOCTOU)", {
+          filePath,
+        });
+        return null;
+      }
+      throw error;
+    }
+
     const actualHash = this.computeHash(bytes);
     if (actualHash !== expectedContentHash) {
       logWarn("FsStore: content-hash mismatch on read, treating as corrupt", {
