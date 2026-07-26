@@ -93,8 +93,8 @@ export class FsStore {
    */
   // oxlint-disable-next-line eslint/class-methods-use-this
   private hashesMatch(stored: string, computed: string): boolean {
-    const storedPrefix = stored.split(":")[0];
-    const computedPrefix = computed.split(":")[0];
+    const [storedPrefix] = stored.split(":");
+    const [computedPrefix] = computed.split(":");
 
     if (storedPrefix !== computedPrefix) {
       // Cross-runtime: different algorithm. Treat as a cache miss, not

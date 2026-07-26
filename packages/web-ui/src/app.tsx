@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 
-import { Canvas } from "./components/Canvas";
+import { Canvas } from "./components/canvas";
 import { ErrorBoundary } from "./components/error-boundary";
 import { LocaleBar } from "./components/locale-bar";
 import { PropPanel } from "./components/prop-panel";

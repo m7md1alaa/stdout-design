@@ -155,7 +155,7 @@ export class CompileCache {
     this.tail.prev = node;
   }
 
-  private removeFromList(node: LRUNode): void {
+  private static removeFromList(node: LRUNode): void {
     node.prev!.next = node.next;
     node.next!.prev = node.prev;
     node.prev = null;
@@ -163,7 +163,7 @@ export class CompileCache {
   }
 
   private moveToTail(node: LRUNode): void {
-    this.removeFromList(node);
+    CompileCache.removeFromList(node);
     this.insertBeforeTail(node);
   }
 

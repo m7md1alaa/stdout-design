@@ -43,6 +43,15 @@ const DEFAULT_MAX_SIZE_MB = 500;
 const RECOVERY_COOLDOWN_MS = 2000;
 
 /**
+ * Returns true for files that look like pixel cache entries:
+ * a hex string followed by a dot and a format extension.
+ * Excludes SQLite files (cache.sqlite, cache.sqlite-wal, cache.sqlite-shm)
+ * and any other non-cache files.
+ */
+const isCacheEntryFileName = (name: string): boolean =>
+  /^[0-9a-f]{32,}\.[a-z]+$/u.test(name);
+
+/**
  * Content-addressed two-stage render cache — coordinator.
  *
  * FIX (recoverMetadata mutex): concurrent calls that both hit a SQLite
@@ -446,11 +455,12 @@ export class RenderCache {
       return this.recoveryPromise;
     }
 
-    this.recoveryPromise = this.doRecoverMetadata().finally(() => {
+    this.recoveryPromise = this.doRecoverMetadata();
+    try {
+      await this.recoveryPromise;
+    } finally {
       this.recoveryPromise = null;
-    });
-
-    return this.recoveryPromise;
+    }
   }
 
   private async doRecoverMetadata(): Promise<void> {
@@ -485,12 +495,3 @@ export class RenderCache {
     return this.eviction;
   }
 }
-
-/**
- * Returns true for files that look like pixel cache entries:
- * a hex string followed by a dot and a format extension.
- * Excludes SQLite files (cache.sqlite, cache.sqlite-wal, cache.sqlite-shm)
- * and any other non-cache files.
- */
-const isCacheEntryFileName = (name: string): boolean =>
-  /^[0-9a-f]{32,}\.[a-z]+$/.test(name);
