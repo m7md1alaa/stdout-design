@@ -1,16 +1,17 @@
-import Link from "next/link";
+import { CtaFooter } from "@/components/marketing/cta-footer";
+import { GapSection } from "@/components/marketing/gap-section";
+import { Hero } from "@/components/marketing/hero";
+import { HowItWorks } from "@/components/marketing/how-it-works";
+import { InterfaceParity } from "@/components/marketing/interface-parity";
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col justify-center text-center flex-1">
-      <h1 className="text-2xl font-bold mb-4">Hello World</h1>
-      <p>
-        You can open{" "}
-        <Link href="/docs" className="font-medium underline">
-          /docs
-        </Link>{" "}
-        and see the documentation.
-      </p>
-    </div>
+    <main>
+      <Hero />
+      <GapSection />
+      <HowItWorks />
+      <InterfaceParity />
+      <CtaFooter />
+    </main>
   );
 }
