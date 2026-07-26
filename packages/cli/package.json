@@ -55,20 +55,12 @@
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
+    "@stdout-design/dev-server": "workspace:*",
+    "@stdout-design/web-ui": "workspace:*",
     "tsdown": "^0.22.5",
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "@stdout-design/dev-server": "workspace:*",
-    "@stdout-design/web-ui": "workspace:*",
     "zod": "^4.4.3"
-  },
-  "peerDependenciesMeta": {
-    "@stdout-design/dev-server": {
-      "optional": true
-    },
-    "@stdout-design/web-ui": {
-      "optional": true
-    }
   }
 }
