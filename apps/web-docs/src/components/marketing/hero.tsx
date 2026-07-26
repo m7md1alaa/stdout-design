@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { DitherGradient } from "@/components/dither-kit/gradient";
+import { InstallCommand } from "@/components/install-command";
 import { hero } from "@/lib/marketing-copy";
+import { ACCENT_HUE } from "@/lib/theme";
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border">
-      <DitherGradient from="orange" direction="up" />
+      <DitherGradient from={ACCENT_HUE} direction="up" />
 
       <div className="relative mx-auto flex max-w-3xl flex-col items-start px-6 pb-28 pt-32 sm:px-8">
         <p className="mb-6 font-mono text-xs uppercase tracking-[0.2em] text-accent">
@@ -32,6 +34,7 @@ export function Hero() {
             {hero.primaryCta.label}
           </Link>
           <Link
+            target="_blank"
             href={hero.secondaryCta.href}
             className="inline-flex items-center rounded-sm border border-border px-5 py-2.5 font-mono text-sm text-fg-muted transition-colors hover:border-fg-faint hover:text-foreground"
           >
@@ -39,9 +42,8 @@ export function Hero() {
           </Link>
         </div>
 
-        <div className="mt-14 w-full max-w-md rounded-sm border border-border bg-card/80 px-4 py-3 font-mono text-sm text-fg-muted">
-          <span className="select-none text-fg-faint">$ </span>
-          {hero.installCommand}
+        <div className="mt-14">
+          <InstallCommand />
         </div>
       </div>
     </section>

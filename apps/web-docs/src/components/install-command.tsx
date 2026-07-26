@@ -1,0 +1,75 @@
+"use client";
+
+import { Clipboard, Check } from "lucide-react";
+import { useState } from "react";
+
+interface InstallCommandProps {
+  command?: string;
+}
+
+export function InstallCommand({
+  command = "npx @stdout-design/cli init",
+}: InstallCommandProps) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <pre className="relative inline-flex h-11 w-full max-w-max items-center overflow-auto whitespace-pre rounded-xl border border-border pl-4 pr-11 font-mono text-sm backdrop-blur-md">
+      <div
+        className="absolute right-0 top-0 h-px w-50"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, rgba(56, 189, 248, 0) 0%, rgba(232, 232, 232, 0.2) 33.02%, rgba(143, 143, 143, 0.6719) 64.41%, rgba(236, 72, 153, 0) 98.93%)",
+        }}
+      />
+
+      <div
+        className="whitespace-pre"
+        style={{ color: "#EDEDEF", fontSize: 13, lineHeight: "130%" }}
+      >
+        {command}
+      </div>
+
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="absolute right-1 flex cursor-pointer items-center justify-center rounded-xl p-2.5 text-[#EEF7FE] transition-all duration-200 ease-out hover:text-white active:scale-95 focus:outline-hidden"
+        aria-label="Copy to clipboard"
+      >
+        <Clipboard
+          className="absolute size-4 transition-all duration-200 ease-out"
+          style={{
+            opacity: copied ? 0 : 1,
+            transform: copied ? "scale(0.75)" : "scale(1)",
+          }}
+        />
+        <Check
+          className="absolute size-4 transition-all duration-200"
+          style={{
+            opacity: copied ? 1 : 0,
+            transform: copied ? "scale(1)" : "scale(0.75)",
+            transitionTimingFunction: copied
+              ? "cubic-bezier(0.34, 1.56, 0.64, 1)"
+              : "cubic-bezier(0.23, 1, 0.32, 1)",
+          }}
+        />
+        <span className="sr-only" aria-live="polite">
+          {copied ? "Copied" : "Copy to clipboard"}
+        </span>
+      </button>
+
+      <div
+        className="absolute bottom-0 left-0 h-px w-50"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, rgba(56, 189, 248, 0) 0%, rgba(232, 232, 232, 0.2) 33.02%, rgba(143, 143, 143, 0.6719) 64.41%, rgba(236, 72, 153, 0) 98.93%)",
+        }}
+      />
+    </pre>
+  );
+}

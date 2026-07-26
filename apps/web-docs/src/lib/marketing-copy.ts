@@ -43,7 +43,7 @@ export const steps = {
     {
       index: "01",
       title: "Write the template once",
-      body: "A plain React component with typed props. No custom DSL — an agent can pattern-match it from your existing components.",
+      body: "A plain React component with typed props. No custom DSL an agent can pattern-match it from your existing components.",
     },
     {
       index: "02",

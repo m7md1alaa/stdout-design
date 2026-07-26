@@ -1,152 +1,170 @@
 "use client";
 
-/**
- * STAND-IN IMPLEMENTATION.
- *
- * This file exists because the real `@dither-kit/cli add gradient` command
- * could not be run from this environment (tripwire.sh is not reachable from
- * the sandbox this was built in). It reproduces the documented public API —
- *
- *   <DitherGradient from="purple" direction="up" />
- *
- * — used inside a `position: relative` container, via a small ordered
- * (Bayer) dithering routine on canvas.
- *
- * To swap in the real component: run `npx @dither-kit/cli add gradient`
- * from the project root, then delete this file. Nothing that imports
- * `DitherGradient` needs to change — the prop contract matches.
- */
-
 import { useEffect, useRef } from "react";
 
-type DitherColor =
-  | "green"
-  | "blue"
-  | "purple"
-  | "pink"
-  | "orange"
-  | "red"
-  | "grey";
+import { cn } from "./lib";
+import { rgb } from "./palette";
+import {
+  BAYER4,
+  fillOf,
+  type PixelBloom,
+  type PixelColor,
+  pixelBloomStyle,
+} from "./pixel";
 
-type Direction = "up" | "down" | "left" | "right";
+// Backing-resolution caps — a background wash never needs more cells than this.
+const MAX_COLS = 960;
+const MAX_ROWS = 600;
 
-interface DitherGradientProps {
-  from: DitherColor;
-  direction?: Direction;
-  /** Dither cell size in device pixels. Bigger = chunkier/more retro. */
+export type GradientDirection = "up" | "down" | "left" | "right";
+
+export type DitherGradientProps = {
+  /** The colour the gradient starts solid as — a palette name or a hue. */
+  from: PixelColor;
+  /** What it dissolves into: another colour for a two-tone dither blend, or
+   * "transparent" (default) so the background shows through. */
+  to?: PixelColor | "transparent";
+  /** Where `to` ends up — "up" reads as a glow rising from the bottom edge. */
+  direction?: GradientDirection;
+  /** CSS px per dither cell — bigger is chunkier. */
   cell?: number;
+  /** Overall opacity multiplier. */
+  opacity?: number;
+  /** Glow on the dither fill. */
+  bloom?: PixelBloom;
   className?: string;
-}
-
-const PALETTE: Record<DitherColor, [number, number, number]> = {
-  blue: [79, 140, 255],
-  green: [92, 214, 150],
-  grey: [156, 150, 138],
-  orange: [255, 138, 43],
-  pink: [255, 122, 178],
-  purple: [162, 122, 255],
-  red: [255, 92, 92],
 };
 
-// 4x4 Bayer ordered-dither threshold matrix, normalized 0..1.
-const BAYER_4X4 = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-].map((row) => row.map((v) => (v + 0.5) / 16));
+type PaintSpec = {
+  from: PixelColor;
+  to: PixelColor | "transparent";
+  direction: GradientDirection;
+  cell: number;
+  opacity: number;
+};
 
+/**
+ * Paint the ordered-dither ramp onto a low-res backing canvas sized from the
+ * wrapper's box. Static — one paint per prop/size change, no animation loop,
+ * so it's free to use as a page-wide background.
+ */
+function paintGradient(
+  canvas: HTMLCanvasElement,
+  bloomCanvas: HTMLCanvasElement | null,
+  width: number,
+  height: number,
+  spec: PaintSpec
+): void {
+  const ctx = canvas.getContext("2d");
+  if (!ctx || width <= 0 || height <= 0) return;
+  const cols = Math.min(MAX_COLS, Math.max(4, Math.round(width / spec.cell)));
+  const rows = Math.min(MAX_ROWS, Math.max(4, Math.round(height / spec.cell)));
+  canvas.width = cols;
+  canvas.height = rows;
+
+  const fromFill = fillOf(spec.from);
+  const toFill = spec.to === "transparent" ? null : fillOf(spec.to);
+  const o = spec.opacity;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      // t runs 0 at the `from` edge → 1 at the `to` edge.
+      const t =
+        spec.direction === "up"
+          ? 1 - (y + 0.5) / rows
+          : spec.direction === "down"
+            ? (y + 0.5) / rows
+            : spec.direction === "left"
+              ? 1 - (x + 0.5) / cols
+              : (x + 0.5) / cols;
+      const density = 1 - t;
+      const lit = density > BAYER4[y & 3][x & 3];
+      if (toFill) {
+        // Two-tone: every cell is painted, the dither decides which colour.
+        ctx.fillStyle = rgb(lit ? fromFill : toFill, 1, o);
+        ctx.fillRect(x, y, 1, 1);
+      } else {
+        // Dissolve to transparent: lit cells carry the ramp, off cells keep a
+        // faint tint that also fades out, so the falloff reads smooth.
+        const alpha = (lit ? 0.35 + 0.65 * density : 0.12 * density) * o;
+        if (alpha <= 0.004) continue;
+        ctx.fillStyle = rgb(fromFill, 1, alpha);
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+
+  const bloomCtx = bloomCanvas?.getContext("2d") ?? null;
+  if (bloomCanvas && bloomCtx) {
+    bloomCanvas.width = cols;
+    bloomCanvas.height = rows;
+    bloomCtx.drawImage(canvas, 0, 0);
+  }
+}
+
+/**
+ * Dithered gradient wash — the charts' ordered-dither texture as a background.
+ * Fills its nearest positioned ancestor (footer glows, section fades, card
+ * backdrops). Dissolves to transparent by default, or dither-blends between
+ * two colours when `to` is set.
+ */
 export function DitherGradient({
   from,
+  to = "transparent",
   direction = "up",
   cell = 3,
+  opacity = 1,
+  bloom = "off",
   className,
 }: DitherGradientProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bloomRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    const wrap = wrapRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const [r, g, b] = PALETTE[from];
-
-    const draw = () => {
-      const parent = canvas.parentElement;
-      if (!parent) return;
-      const { width, height } = parent.getBoundingClientRect();
-      if (width === 0 || height === 0) return;
-
-      const cols = Math.ceil(width / cell);
-      const rows = Math.ceil(height / cell);
-      canvas.width = cols;
-      canvas.height = rows;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-
-      const image = ctx.createImageData(cols, rows);
-
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          let t: number;
-          switch (direction) {
-            case "down":
-              t = y / rows;
-              break;
-            case "left":
-              t = 1 - x / cols;
-              break;
-            case "right":
-              t = x / cols;
-              break;
-            case "up":
-            default:
-              t = 1 - y / rows;
-              break;
-          }
-
-          // Ease so the wash concentrates near its source edge.
-          const intensity = Math.pow(t, 1.6);
-          const threshold = BAYER_4X4[y % 4]![x % 4]!;
-          const on = intensity > threshold;
-
-          const idx = (y * cols + x) * 4;
-          if (on) {
-            const alpha = 0.35 + intensity * 0.4;
-            image.data[idx] = r;
-            image.data[idx + 1] = g;
-            image.data[idx + 2] = b;
-            image.data[idx + 3] = Math.round(alpha * 255);
-          } else {
-            image.data[idx + 3] = 0;
-          }
-        }
-      }
-
-      ctx.putImageData(image, 0, 0);
+    if (!wrap || !canvas) return;
+    const paint = () => {
+      const box = wrap.getBoundingClientRect();
+      paintGradient(canvas, bloomRef.current, box.width, box.height, {
+        from,
+        to,
+        direction,
+        cell,
+        opacity,
+      });
     };
+    paint();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(paint);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [from, to, direction, cell, opacity, bloom]);
 
-    draw();
-
-    const observer = new ResizeObserver(draw);
-    if (canvas.parentElement) observer.observe(canvas.parentElement);
-
-    return () => observer.disconnect();
-  }, [from, direction, cell]);
+  const bloomStyle = pixelBloomStyle(bloom);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className={className}
-      style={{
-        imageRendering: "pixelated",
-        inset: 0,
-        pointerEvents: "none",
-        position: "absolute",
-      }}
-    />
+    <div
+      ref={wrapRef}
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute inset-0 overflow-hidden",
+        className
+      )}
+    >
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 h-full w-full"
+        style={{ imageRendering: "pixelated" }}
+      />
+      {bloomStyle && (
+        <canvas
+          ref={bloomRef}
+          className="absolute inset-0 h-full w-full"
+          style={bloomStyle}
+        />
+      )}
+    </div>
   );
 }

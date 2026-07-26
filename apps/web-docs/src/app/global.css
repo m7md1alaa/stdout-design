@@ -12,6 +12,7 @@ html > body[data-scroll-locked] {
   --removed-body-scroll-bar-size: 0px !important;
 }
 :root {
+  --accent-hue: 310;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -24,10 +25,10 @@ html > body[data-scroll-locked] {
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.749 0.173 53.84);
-  --fg-muted: oklch(0.675 0.019 84.59);
-  --fg-faint: oklch(0.483 0.017 84.59);
-  --accent-dim: oklch(0.543 0.119 55.23);
+  --accent: oklch(0.749 0.173 calc(var(--accent-hue) * 1deg));
+  --fg-muted: oklch(0.675 0.019 calc(var(--accent-hue) * 1deg));
+  --fg-faint: oklch(0.58 0.017 calc(var(--accent-hue) * 1deg));
+  --accent-dim: oklch(0.543 0.119 calc(var(--accent-hue) * 1deg));
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
