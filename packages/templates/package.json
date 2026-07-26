@@ -1,15 +1,14 @@
 {
-  "name": "@stdout-design/dev-server",
+  "name": "@stdout-design/templates",
   "version": "0.3.2",
-  "description": "Hono-based dev server for stdout-design — live preview, hot reload, and template rendering API",
+  "description": "Ready-to-use Takumi-compatible templates for stdout-design — OG images, social cards, and more",
   "keywords": [
     "design",
-    "dev-server",
-    "hono",
     "image-generation",
-    "live-preview",
+    "og",
     "social-media",
-    "studio"
+    "templates",
+    "tsx"
   ],
   "homepage": "https://github.com/m7md1alaa/stdout-design#readme",
   "bugs": {
@@ -29,10 +28,6 @@
     ".": {
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
-    },
-    "./serve": {
-      "import": "./dist/serve.mjs",
-      "types": "./dist/serve.d.mts"
     }
   },
   "publishConfig": {
@@ -40,29 +35,17 @@
   },
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch",
-    "serve": "bun src/serve.ts",
     "check-types": "tsc --noEmit",
     "check-types:tsgo": "tsgo --noEmit",
-    "test": "bun test",
     "lint": "ultracite check"
-  },
-  "dependencies": {
-    "@stdout-design/core": "workspace:*",
-    "@vitejs/plugin-react": "^6.0.3",
-    "chokidar": "^5.0.0",
-    "hono": "^4.12.29",
-    "vite": "^8.1.4",
-    "vite-node": "^6.0.0"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
-    "tsdown": "^0.22.5",
-    "typescript": "^7.0.2"
+    "@types/react": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "zod": "^4.4.3"
+    "react": "^19.2.7"
   }
 }

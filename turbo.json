@@ -35,6 +35,10 @@
       "cache": false,
       "persistent": true
     },
+    "@stdout-design/templates#build": {
+      "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
+      "outputs": ["dist/**"]
+    },
     "@stdout-design/dev-server#build": {
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]
