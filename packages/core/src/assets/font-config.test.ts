@@ -1,7 +1,11 @@
 // oxlint-disable typescript/no-non-null-assertion
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const mockGoogleFonts = mock(() => Promise.resolve([]));
+import type { Font } from "../engine/takumi-types-shim.js";
+
+const mockGoogleFonts = mock<(...args: unknown[]) => Promise<Font[]>>(() =>
+  Promise.resolve([])
+);
 const mockReadFile = mock(() => Promise.resolve(Buffer.from([])));
 
 mock.module("@takumi-rs/helpers", () => ({
@@ -22,13 +26,13 @@ const { createFetchFontsFromConfig } = await import("./font-config.js");
 describe("createFetchFontsFromConfig", () => {
   describe("factory: fontsConfig parameter", () => {
     it("returns undefined when fontsConfig is undefined", () => {
-      const result = createFetchFontsFromConfig();
+      const result = createFetchFontsFromConfig(undefined);
 
       expect(result).toBeUndefined();
     });
 
     it("returns undefined when fontsConfig is null", () => {
-      const result = createFetchFontsFromConfig(null);
+      const result = createFetchFontsFromConfig(null as never);
 
       expect(result).toBeUndefined();
     });
@@ -50,7 +54,7 @@ describe("createFetchFontsFromConfig", () => {
     });
 
     it("returns null when locale entry is null", async () => {
-      const fetchFonts = createFetchFontsFromConfig({ ar: null })!;
+      const fetchFonts = createFetchFontsFromConfig({ ar: null as never })!;
 
       const result = await fetchFonts("ar");
 
@@ -146,7 +150,7 @@ describe("createFetchFontsFromConfig", () => {
     it("filters font with null name from fontFamilies", async () => {
       mockGoogleFonts.mockImplementation(() =>
         Promise.resolve([
-          { data: new Uint8Array([1]), name: null, weight: 400 },
+          { data: new Uint8Array([1]), name: null, weight: 400 } as never,
         ])
       );
       const fetchFonts = createFetchFontsFromConfig(validConfig)!;

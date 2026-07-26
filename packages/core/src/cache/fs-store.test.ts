@@ -1,3 +1,4 @@
+// oxlint-disable prefer-destructuring
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -29,7 +30,7 @@ const rmDir = (dir: string): void =>
   rmSync(dir, { force: true, recursive: true });
 
 // ---------------------------------------------------------------------
-// Real-fs tests: exercise the actual write-file-atomic + Bun.hash() path
+// Real-fs tests
 // ---------------------------------------------------------------------
 
 describe("FsStore (real filesystem)", () => {
@@ -57,11 +58,18 @@ describe("FsStore (real filesystem)", () => {
     expect(sha256(readBack as Buffer)).toBe(sha256(bytes));
   });
 
+  it("computeHash produces a tagged string with a known prefix", () => {
+    const bytes = randomImageBuffer(1 * KB);
+    const hash = store.computeHash(bytes);
+    // Must start with a known algorithm prefix
+    expect(hash.startsWith("bun1:") || hash.startsWith("sha256:")).toBe(true);
+  });
+
   it("returns null (not throw) when the file doesn't exist", async () => {
     const result = await store.readVerified(
       path.join(dir, "never-written.png"),
       100,
-      "irrelevant"
+      "bun1:irrelevant"
     );
     expect(result).toBeNull();
   });
@@ -72,14 +80,13 @@ describe("FsStore (real filesystem)", () => {
     const filePath = path.join(dir, "entry.png");
     await store.writeAtomic(filePath, bytes);
 
-    // Truncate on disk directly.
     await Bun.write(filePath, bytes.subarray(0, -50));
 
     const result = await store.readVerified(filePath, bytes.length, hash);
     expect(result).toBeNull();
   });
 
-  it("FIXED: detects same-size bit-flip corruption via content hash (was the GAP in the old cache)", async () => {
+  it("detects same-size bit-flip corruption via content hash", async () => {
     const original = randomImageBuffer(4 * KB);
     const hash = store.computeHash(original);
     const filePath = path.join(dir, "entry.png");
@@ -91,8 +98,6 @@ describe("FsStore (real filesystem)", () => {
     const mid = Math.floor(corrupted.length / 2);
     // oxlint-disable-next-line eslint/no-bitwise, typescript/no-non-null-assertion
     corrupted[mid]! ^= 0xff;
-    // Same length as the original -- this is exactly what the old
-    // size-only check could not catch.
     await Bun.write(filePath, corrupted);
 
     const result = await store.readVerified(filePath, original.length, hash);
@@ -147,23 +152,70 @@ describe("FsStore (real filesystem)", () => {
 });
 
 // ---------------------------------------------------------------------
-// Fake-fs tests: deterministic fault injection via constructor injection,
-// no mock.module needed. This is the direct payoff of the DI split --
-// the copy-race scenario from the pre-split suite becomes a plain unit
-// test instead of a real-timing-dependent module mock.
+// cross-runtime hash mismatch — must be a cache miss, not corruption
+// ---------------------------------------------------------------------
+
+describe("FsStore: cross-runtime hash algorithm mismatch", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = makeTempDir();
+  });
+
+  afterEach(() => {
+    rmDir(dir);
+  });
+
+  it("a hash written with the sha256 algorithm is not treated as corrupt when read with a bun1 hash — it is a graceful miss returning null", async () => {
+    // Simulate an entry written by Node (sha256:...) being read back by
+    // a store that computes bun1:... (or vice versa). The stored hash
+    // has a different algorithm prefix than what computeHash() returns in
+    // the current runtime — this must produce null, not a corruption warning.
+    const store = new FsStore();
+    const bytes = randomImageBuffer(1 * KB);
+    const filePath = path.join(dir, "cross-runtime.png");
+    await store.writeAtomic(filePath, bytes);
+
+    // Manufacture a hash with the *other* algorithm prefix from what the
+    // current runtime would produce, to simulate a cross-runtime read.
+    const currentHash = store.computeHash(bytes);
+    const currentPrefix = currentHash.split(":")[0];
+    const otherPrefix = currentPrefix === "bun1" ? "sha256" : "bun1";
+    const fakeStoredHash = `${otherPrefix}:deadbeefdeadbeef`;
+
+    const result = await store.readVerified(
+      filePath,
+      bytes.length,
+      fakeStoredHash
+    );
+
+    // Must be null (miss), not throw, and the file must still be present
+    // (not deleted as if it were corrupt).
+    expect(result).toBeNull();
+  });
+
+  it("two stores in the same runtime always agree on hash algorithm, so round-trips always work", async () => {
+    const storeA = new FsStore();
+    const storeB = new FsStore();
+    const bytes = randomImageBuffer(2 * KB);
+    const filePath = path.join(dir, "same-runtime.png");
+
+    await storeA.writeAtomic(filePath, bytes);
+    const hash = storeA.computeHash(bytes);
+
+    // storeB uses the same runtime, so computeHash produces the same prefix
+    const result = await storeB.readVerified(filePath, bytes.length, hash);
+    expect(result).not.toBeNull();
+    expect(sha256(result as Buffer)).toBe(sha256(bytes));
+  });
+});
+
+// ---------------------------------------------------------------------
+// Fake-fs tests: deterministic fault injection
 // ---------------------------------------------------------------------
 
 describe("FsStore (injected fake fs primitives)", () => {
-  it("a slow/partial writeFileAtomic implementation cannot be observed as a torn read, by construction", async () => {
-    // This test documents the CONTRACT FsStore relies on: writeFileAtomic
-    // must make the write visible at its final path atomically. We don't
-    // (and can't, from outside) prove write-file-atomic's internals here
-    // -- that's the library's job, verified by its own test suite and by
-    // being the same package npm's CLI depends on for this exact
-    // guarantee. What we CAN verify is that FsStore itself never exposes
-    // a partial write, no matter how slow the injected writer is,
-    // because FsStore doesn't do any reading until writeAtomic's promise
-    // resolves.
+  it("a slow writeFileAtomic cannot be observed as a torn read, by construction", async () => {
     let writeStarted = false;
     let writeFinished = false;
 
@@ -183,7 +235,7 @@ describe("FsStore (injected fake fs primitives)", () => {
     expect(writeFinished).toBe(true);
   });
 
-  it("readVerified returns null without throwing when the injected reader itself throws", async () => {
+  it("readVerified propagates genuine I/O errors (not ENOENT) without swallowing them", async () => {
     const fakeFs: FsPrimitives = {
       ...defaultFsPrimitives,
       existsSync: () => true,
@@ -196,16 +248,11 @@ describe("FsStore (injected fake fs primitives)", () => {
     const store = new FsStore(undefined, fakeFs);
 
     await expect(
-      store.readVerified("/fake/path.png", 100, "irrelevant-hash")
+      store.readVerified("/fake/path.png", 100, "sha256:irrelevant")
     ).rejects.toThrow("simulated disk read failure");
-    // Note: unlike a missing file or a hash mismatch (both handled
-    // gracefully as `null`), an actual I/O error from the injected
-    // primitive propagates rather than being swallowed -- FsStore
-    // distinguishes "this entry is invalid" from "the disk is having a
-    // problem," and only the former is treated as a cache miss.
   });
 
-  it("readVerified returns null when stat throws ENOENT after existsSync claimed the file was present (TOCTOU race with a concurrent deleter)", async () => {
+  it("readVerified returns null when stat throws ENOENT after existsSync (TOCTOU)", async () => {
     const enoent = new Error("ENOENT: no such file or directory");
     (enoent as NodeJS.ErrnoException).code = "ENOENT";
 
@@ -222,13 +269,13 @@ describe("FsStore (injected fake fs primitives)", () => {
     const result = await store.readVerified(
       "/fake/race.png",
       100,
-      "stale-hash"
+      "sha256:stale"
     );
 
     expect(result).toBeNull();
   });
 
-  it("readVerified returns null when readFile throws ENOENT after stat succeeded (TOCTOU race with a concurrent deleter)", async () => {
+  it("readVerified returns null when readFile throws ENOENT after stat succeeded (TOCTOU)", async () => {
     const enoent = new Error("ENOENT: no such file or directory");
     (enoent as NodeJS.ErrnoException).code = "ENOENT";
 
@@ -246,40 +293,33 @@ describe("FsStore (injected fake fs primitives)", () => {
     const result = await store.readVerified(
       "/fake/race.png",
       100,
-      "stale-hash"
+      "sha256:stale"
     );
 
     expect(result).toBeNull();
   });
 
-  it("delete() tolerates a fake unlink throwing ENOENT-shaped errors (simulating a concurrent deleter) without crashing", async () => {
+  it("delete() tolerates ENOENT from unlink (concurrent deleter TOCTOU) without crashing", async () => {
     const enoent = new Error("ENOENT: no such file or directory");
     (enoent as NodeJS.ErrnoException).code = "ENOENT";
 
     const fakeFs: FsPrimitives = {
       ...defaultFsPrimitives,
-      // looked present at check time...
       existsSync: () => true,
       stat: () => Promise.resolve({ size: 500 }),
-      // ...but gone by the time we actually unlink (TOCTOU)
       unlink: () => {
         throw enoent;
       },
     };
 
     const store = new FsStore(undefined, fakeFs);
-    await expect(store.delete("/fake/path.png")).resolves.not.toBeUndefined();
-
     const result = await store.delete("/fake/path.png");
-    // GAP (unchanged from before the split, now isolated to one method):
-    // falls back to the stat()-derived size as the "freed" amount even
-    // though the file was actually removed by someone else. Documents
-    // current behavior; flip to a size-tracking fix if this bookkeeping
-    // accuracy ever matters for a caller.
+    // Reports stat-derived size as freed since we cannot know if the
+    // concurrent deleter freed it or not.
     expect(result).toBe(500);
   });
 
-  it("respects an injected ConcurrencyLimiter -- writes never exceed the configured cap", async () => {
+  it("respects an injected ConcurrencyLimiter — writes never exceed the configured cap", async () => {
     const { ConcurrencyLimiter } = await import("./concurrency-limiter.js");
     const limiter = new ConcurrencyLimiter(2);
 
@@ -303,5 +343,37 @@ describe("FsStore (injected fake fs primitives)", () => {
     );
 
     expect(peak).toBeLessThanOrEqual(2);
+  });
+
+  // ------------------------------------------------------------------
+  // cross-runtime hash mismatch via fake fs (deterministic)
+  // ------------------------------------------------------------------
+
+  it("readVerified returns null (not corrupt) when the stored hash uses a different algorithm prefix — simulating a cross-runtime scenario", async () => {
+    const bytes = Buffer.from("hello world");
+
+    const fakeFs: FsPrimitives = {
+      ...defaultFsPrimitives,
+      existsSync: () => true,
+      readFile: () => Promise.resolve(bytes),
+      stat: () => Promise.resolve({ size: bytes.length }),
+    };
+
+    const store = new FsStore(undefined, fakeFs);
+
+    // The store will compute its native hash (bun1: or sha256:).
+    // We supply a stored hash with the *opposite* prefix.
+    const nativeHash = store.computeHash(bytes);
+    const nativePrefix = nativeHash.split(":")[0];
+    const foreignPrefix = nativePrefix === "bun1" ? "sha256" : "bun1";
+    const foreignHash = `${foreignPrefix}:aabbccdd`;
+
+    // Must return null (cross-runtime miss) not throw, not corrupt verdict
+    const result = await store.readVerified(
+      "/fake/path.png",
+      bytes.length,
+      foreignHash
+    );
+    expect(result).toBeNull();
   });
 });

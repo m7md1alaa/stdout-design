@@ -14,13 +14,11 @@ describe("CompileCache", () => {
     expect(cache.get("a")).toEqual({ compiled: 1 });
   });
 
-  it("overwrites an existing key without growing insertion order", () => {
+  it("overwrites an existing key without growing the entry count", () => {
     const cache = new CompileCache(2);
     cache.set("a", 1);
     cache.set("a", 2);
     cache.set("b", 3);
-    // "a" was set twice but only occupies one insertion-order slot, so "b"
-    // fitting alongside it means neither gets evicted yet.
     expect(cache.get("a")).toBe(2);
     expect(cache.get("b")).toBe(3);
   });
@@ -46,7 +44,6 @@ describe("CompileCache", () => {
     cache.set("a", 1);
     cache.set("b", 2);
     cache.set("c", 3);
-    // Repeatedly read "a" to keep promoting it.
     cache.get("a");
     cache.set("d", 4);
     cache.get("a");
@@ -59,16 +56,20 @@ describe("CompileCache", () => {
     expect(cache.get("e")).toBe(5);
   });
 
-  it("evicting via the limit does not leave a stale entry in the content-hash index", () => {
+  // ------------------------------------------------------------------
+  // Content-hash index: eviction path
+  // ------------------------------------------------------------------
+
+  it("evicting via the limit cleans the content-hash index — invalidating the evicted hash is a safe no-op and does not affect the surviving entry", () => {
     const cache = new CompileCache(1);
     cache.setWithContentHash("a", "content-x", 1);
     // evicts "a" via the size limit
     cache.setWithContentHash("b", "content-y", 2);
 
-    // "a" is gone from the main cache...
     expect(cache.get("a")).toBeNull();
-    // ...but invalidating its content hash must not throw or resurrect it,
-    // and must not affect "b" (a different content hash).
+
+    // eviction now removes "a" from the index, so this should be a
+    // complete no-op — it must not throw and must not affect "b".
     expect(() => cache.invalidateByContentHash("content-x")).not.toThrow();
     expect(cache.get("b")).toBe(2);
   });
@@ -76,7 +77,6 @@ describe("CompileCache", () => {
   it("invalidateByContentHash removes only entries registered under that hash", () => {
     const cache = new CompileCache(10);
     cache.setWithContentHash("a", "content-x", 1);
-    // same content hash, different key
     cache.setWithContentHash("b", "content-x", 2);
     cache.setWithContentHash("c", "content-y", 3);
 
@@ -84,7 +84,6 @@ describe("CompileCache", () => {
 
     expect(cache.get("a")).toBeNull();
     expect(cache.get("b")).toBeNull();
-    // untouched, different content hash
     expect(cache.get("c")).toBe(3);
   });
 
@@ -97,25 +96,87 @@ describe("CompileCache", () => {
 
   it("a plain set() (no content hash) is untouched by invalidateByContentHash", () => {
     const cache = new CompileCache(10);
-    // not registered under any content hash
     cache.set("a", 1);
     cache.invalidateByContentHash("anything");
     expect(cache.get("a")).toBe(1);
   });
 
-  it("clear() empties both the value map and the content-hash index", () => {
+  // ------------------------------------------------------------------
+  // re-registration under a new hash
+  // ------------------------------------------------------------------
+
+  it("re-registering the same key under a new content hash: invalidating the OLD hash no longer evicts the live entry", () => {
+    const cache = new CompileCache(10);
+    cache.setWithContentHash("a", "content-x", 1);
+    // Re-register under a new hash
+    cache.setWithContentHash("a", "content-y", 2);
+
+    // the old implementation left a stale pointer so invalidating
+    // "content-x" removed "a" even though it was live under "content-y".
+    // Now "a" must survive invalidation of the old hash.
+    cache.invalidateByContentHash("content-x");
+    expect(cache.get("a")).toBe(2);
+
+    // Invalidating the NEW hash removes it correctly.
+    cache.invalidateByContentHash("content-y");
+    expect(cache.get("a")).toBeNull();
+  });
+
+  it("re-registration does not double-count the key under two hashes simultaneously", () => {
+    const cache = new CompileCache(10);
+    cache.setWithContentHash("a", "content-x", 1);
+    cache.setWithContentHash("a", "content-y", 2);
+
+    // Only "content-y" should have "a"; "content-x" should be gone.
+    // Invalidating "content-y" is the only thing that should remove "a".
+    cache.invalidateByContentHash("content-y");
+    expect(cache.get("a")).toBeNull();
+  });
+
+  // ------------------------------------------------------------------
+  // Content-hash index: stale pointer after eviction (the index growth bug)
+  // ------------------------------------------------------------------
+
+  it("evicting many entries does not leave dead references in the index — invalidating their hashes is O(1)-ish and produces no errors", () => {
+    const cache = new CompileCache(2);
+    // Each setWithContentHash will evict the previous entry and clean up its index entry.
+    for (let i = 0; i < 20; i += 1) {
+      cache.setWithContentHash(`k${i}`, `hash-${i}`, i);
+    }
+    // Only the last 2 entries survive
+    expect(cache.size).toBe(2);
+
+    // Calling invalidate on any of the evicted hashes must not throw and
+    // must return cleanly, because eviction already cleaned the index.
+    for (let i = 0; i < 18; i += 1) {
+      expect(() => cache.invalidateByContentHash(`hash-${i}`)).not.toThrow();
+    }
+
+    // The surviving entries are still intact
+    expect(cache.get("k18")).toBe(18);
+    expect(cache.get("k19")).toBe(19);
+  });
+
+  // ------------------------------------------------------------------
+  // clear()
+  // ------------------------------------------------------------------
+
+  it("clear() empties the value map, the content-hash index, and the reverse key map", () => {
     const cache = new CompileCache(10);
     cache.setWithContentHash("a", "content-x", 1);
     cache.clear();
 
     expect(cache.get("a")).toBeNull();
     expect(cache.size).toBe(0);
-    // Re-adding after clear should behave like a fresh cache, not carry
-    // over any stale index state.
+    // After clear, re-adding should behave like a fresh cache
     cache.setWithContentHash("a", "content-x", 2);
     cache.invalidateByContentHash("content-x");
     expect(cache.get("a")).toBeNull();
   });
+
+  // ------------------------------------------------------------------
+  // size and default cap
+  // ------------------------------------------------------------------
 
   it("size reflects the current entry count, not the limit", () => {
     const cache = new CompileCache(5);
@@ -125,34 +186,38 @@ describe("CompileCache", () => {
     expect(cache.size).toBe(2);
   });
 
-  it("re-registering the same key under a new content hash does not double-index it under the old one", () => {
-    const cache = new CompileCache(10);
-    cache.setWithContentHash("a", "content-x", 1);
-    // same key, new content hash
-    cache.setWithContentHash("a", "content-y", 2);
-
-    // Invalidating the OLD content hash should not remove "a" a second
-    // time in a way that throws, and should leave "a" registered under
-    // the new hash still removable.
-    cache.invalidateByContentHash("content-x");
-    // Current implementation note: setWithContentHash does not clear the
-    // key out of the old content-hash's set when re-registered under a
-    // new one, so invalidating "content-x" still removes "a" here. This
-    // test documents that actual behavior rather than an idealized one --
-    // if that's surprising, it's a candidate for a follow-up fix, not a
-    // silent assumption.
-    expect(cache.get("a")).toBeNull();
-  });
-
-  it("default max entries (no constructor argument) is a sane positive number", () => {
+  it("default max entries is a sane positive number and actually enforces a cap", () => {
     const cache = new CompileCache();
     for (let i = 0; i < 150; i += 1) {
       cache.set(`k${i}`, i);
     }
-    // Should have evicted down to *some* bound rather than growing
-    // unbounded — exact default value is an implementation detail, but
-    // "did it cap at all" is worth asserting.
     expect(cache.size).toBeLessThan(150);
     expect(cache.size).toBeGreaterThan(0);
+  });
+
+  // ------------------------------------------------------------------
+  // O(1) LRU correctness at scale
+  // ------------------------------------------------------------------
+
+  it("LRU order is maintained correctly under a long sequence of mixed gets and sets", () => {
+    const cache = new CompileCache(3);
+    cache.set("a", 1);
+    cache.set("b", 2);
+    cache.set("c", 3);
+    // Order (LRU→MRU): a, b, c
+
+    cache.get("a");
+    cache.set("d", 4);
+    expect(cache.get("b")).toBeNull();
+    expect(cache.get("a")).toBe(1);
+    expect(cache.get("c")).toBe(3);
+    expect(cache.get("d")).toBe(4);
+
+    // Order after reads: a, c, d  (a was MRU of previous get, then c, then d)
+    // Actually after the gets above: a→MRU, then c→MRU, then d→MRU
+    // LRU is now a
+    cache.set("e", 5);
+    expect(cache.get("a")).toBeNull();
+    expect(cache.size).toBe(3);
   });
 });

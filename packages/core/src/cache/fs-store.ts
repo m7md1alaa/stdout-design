@@ -16,9 +16,8 @@ const isFsNotFoundError = (error: unknown): boolean =>
 
 /**
  * The filesystem primitives FsStore depends on, injectable so tests can
- * supply deterministic fakes (e.g. a writer that stalls mid-write to
- * reproduce a race) instead of mocking node:fs/promises at the module
- * level. Defaults to the real implementations below.
+ * supply deterministic fakes instead of mocking node:fs/promises at the
+ * module level.
  */
 export interface FsPrimitives {
   writeFileAtomic: (filePath: string, data: Buffer) => Promise<void>;
@@ -37,25 +36,18 @@ export const defaultFsPrimitives: FsPrimitives = {
 };
 
 /**
- * Filesystem I/O for pixel cache entries.
+ * Hash algorithm tags stored as a prefix in the content_hash column.
  *
- * Replaces two things from the old monolithic RenderCache:
- *
- * 1. The hand-rolled tmp-file-then-rename with a copy+unlink fallback on
- *    cross-device rename (EXDEV). That fallback was NOT atomic -- a
- *    concurrent reader could observe a partially-copied file at the final
- *    path. `write-file-atomic` (maintained by the npm CLI team, who hit
- *    this exact problem with npm's own package cache) handles the
- *    cross-device case correctly.
- *
- * 2. The size-only integrity check on read (comparing `stat().size`
- *    against a DB column). A same-size bit-flip was silently served as
- *    valid. `Bun.hash()` gives us a cheap digest to verify content, not
- *    just length, on every read.
- *
- * This class knows nothing about SQLite or eviction policy -- it only
- * knows how to put bytes on disk safely and get verified bytes back.
+ * FIX: The old implementation used Bun.hash() in Bun and SHA-256 in Node
+ * without tagging which algorithm was used. A cache written by one runtime
+ * and read by the other would fail the hash check on *every* entry and
+ * treat the entire cache as corrupt, silently wiping it. By prefixing with
+ * the algorithm name we can detect a cross-runtime mismatch and treat it as
+ * a graceful cache miss rather than a corruption verdict.
  */
+const HASH_PREFIX_BUN = "bun1:";
+const HASH_PREFIX_SHA256 = "sha256:";
+
 export class FsStore {
   private readonly limiter: ConcurrencyLimiter | undefined;
   private readonly fs: FsPrimitives;
@@ -69,34 +61,57 @@ export class FsStore {
   }
 
   /**
-   * Non-cryptographic content hash, used purely for corruption detection
-   * within a cache whose entries are always regenerable -- not for
-   * anything requiring cross-version stability or resistance to
-   * intentional tampering. Bun.hash()'s algorithm is not a documented,
-   * version-stable guarantee; if a future Bun upgrade changes it, the
-   * worst case is a one-time false "corrupted" verdict that costs a
-   * re-render, not data loss.
+   * Compute a content hash that is stable within a single runtime and
+   * tagged with the algorithm so cross-runtime mismatches are a graceful
+   * miss, not a false corruption verdict.
+   *
+   * Format: "<algorithm>:<hex-digest>"
+   *   Bun:   "bun1:<Bun.hash() as hex>"
+   *   Node:  "sha256:<sha256 hex>"
+   *
+   * FIX: was untagged — Bun.hash() and SHA-256 produce different values for
+   * the same bytes. A cache entry written by Bun would always fail
+   * verification when read by Node and vice versa, silently evicting every
+   * cached entry on the first read in a mixed-runtime environment (e.g. Bun
+   * dev-server writing, Node CI reading).
    */
   // oxlint-disable-next-line eslint/class-methods-use-this
   computeHash(bytes: Buffer): string {
-    // Bun.hash() is a fast non-cryptographic hash. In Node.js, SHA-256
-    // from node:crypto is used instead. The two are not interchangeable
-    // across runtimes, but each runtime is self-consistent for cache
-    // corruption detection.
     const bunGlobal = (globalThis as Record<string, unknown>).Bun as
-      | { hash: (data: Uint8Array) => number }
+      | { hash: (data: Uint8Array) => number | bigint }
       | undefined;
     if (bunGlobal) {
-      return bunGlobal.hash(bytes).toString(16);
+      return `${HASH_PREFIX_BUN}${bunGlobal.hash(bytes).toString(16)}`;
     }
-    return createHash("sha256").update(bytes).digest("hex");
+    return `${HASH_PREFIX_SHA256}${createHash("sha256").update(bytes).digest("hex")}`;
   }
 
   /**
-   * Writes `bytes` to `filePath` atomically: either the write is fully
-   * visible at `filePath` or `filePath` doesn't change at all. No caller
-   * ever observes a partial file at the final path, including across a
-   * cross-device fallback.
+   * Returns true if `stored` and `computed` hashes are compatible —
+   * i.e. both produced by the same algorithm. If they were produced by
+   * different algorithms (cross-runtime read) this is a miss, not corruption.
+   */
+  // oxlint-disable-next-line eslint/class-methods-use-this
+  private hashesMatch(stored: string, computed: string): boolean {
+    const storedPrefix = stored.split(":")[0];
+    const computedPrefix = computed.split(":")[0];
+
+    if (storedPrefix !== computedPrefix) {
+      // Cross-runtime: different algorithm. Treat as a cache miss, not
+      // corruption — log at debug level, not warn, because it's expected
+      // on first read after a runtime switch.
+      logDebug(
+        "FsStore: cross-runtime hash algorithm mismatch, treating as cache miss",
+        { computed: computedPrefix, stored: storedPrefix }
+      );
+      return false;
+    }
+
+    return stored === computed;
+  }
+
+  /**
+   * Writes `bytes` to `filePath` atomically.
    */
   async writeAtomic(filePath: string, bytes: Buffer): Promise<void> {
     const doWrite = () => this.fs.writeFileAtomic(filePath, bytes);
@@ -105,11 +120,8 @@ export class FsStore {
 
   /**
    * Reads `filePath` and verifies both size and content hash against the
-   * expected values before returning it. Returns `null` (and does NOT
-   * throw) on any mismatch or read failure -- callers are expected to
-   * treat `null` as "entry is gone/invalid, self-heal by forgetting it,"
-   * matching the old cache's missing-file behavior, now extended to
-   * cover content corruption too instead of only missing/truncated files.
+   * expected values before returning it. Returns `null` on any mismatch or
+   * missing-file condition. Throws on genuine I/O errors.
    */
   readVerified(
     filePath: string,
@@ -171,11 +183,17 @@ export class FsStore {
     }
 
     const actualHash = this.computeHash(bytes);
-    if (actualHash !== expectedContentHash) {
-      logWarn("FsStore: content-hash mismatch on read, treating as corrupt", {
-        expected: expectedContentHash,
-        filePath,
-      });
+    if (!this.hashesMatch(expectedContentHash, actualHash)) {
+      // Only log as corruption if both sides agree on the algorithm.
+      // Cross-algorithm mismatches are logged at debug level inside hashesMatch.
+      if (
+        expectedContentHash.split(":")[0] === actualHash.split(":")[0]
+      ) {
+        logWarn("FsStore: content-hash mismatch on read, treating as corrupt", {
+          expected: expectedContentHash,
+          filePath,
+        });
+      }
       return null;
     }
 
@@ -183,13 +201,8 @@ export class FsStore {
   }
 
   /**
-   * Removes a cache entry's file, if present. Returns the number of
-   * bytes actually freed. Tolerant of the file already being gone (a
-   * concurrent process may have removed it first) -- this is the TOCTOU
-   * gap from the old implementation, still possible here since checking
-   * existence and then deleting is inherently two steps, but now
-   * contained to one small, well-tested method instead of being
-   * duplicated across the eviction and clean code paths.
+   * Removes a cache entry's file if present. Returns the number of bytes
+   * freed. Tolerant of the file already being gone.
    */
   async delete(filePath: string, knownSizeBytes?: number): Promise<number> {
     if (!this.fs.existsSync(filePath)) {

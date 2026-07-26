@@ -28,14 +28,18 @@ export const createCompileCacheKey = (input: CompileCacheKeyInput): string =>
       `${input.templateId}\u0000${input.templateContentHash}\u0000${input.propsJSON}`
     )
     .digest("hex")
-    .slice(0, 16);
+    // 16 (64-bit collision space — marginal). 32 chars = 128 bits,
+    // matching the pixel key and eliminating the asymmetry.
+    .slice(0, 32);
 
 export const createPixelCacheKey = (input: PixelCacheKeyInput): string =>
   createHash("sha256")
     .update(
-      `${input.templateContentHash}\u0000${
-        input.propsJSON
-      }\u0000${input.width}x${input.height}\u0000${input.format ?? "png"}`
+      // `widthxheight` with no separator before format, ambiguous if
+      // format starts with a digit. All fields now separated by \u0000.
+      `${input.templateContentHash}\u0000${input.propsJSON}\u0000${
+        input.width
+      }\u0000${input.height}\u0000${input.format ?? "png"}`
     )
     .digest("hex")
     .slice(0, 32);

@@ -43,7 +43,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { compileTemplate } = await import("../engine/render.js");
 
       const element = createElement("span", null, "Text");
-      const result = await compileTemplate(element, { width: 50 });
+      const result = await compileTemplate(element, { defaultStyles: false });
 
       expect(result.node).toBeDefined();
       expect(result.stylesheets).toBeInstanceOf(Array);
