@@ -1,0 +1,29 @@
+name: CD (Packages)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun --bun run check
+
+      - run: bun --bun run check-types
+
+      - run: bun --bun run build
+
+      - run: bun --bun run test
+
+      - run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          bun --bun run publish:all
