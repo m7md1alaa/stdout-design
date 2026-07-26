@@ -25,7 +25,7 @@ export const setNestedValue = <T extends Record<string, unknown>>(
 
 const ARABIC_RANGE = /[\u0600-\u06FF]/u;
 
-export const hasArabicChars = (value: unknown): boolean => {
+const hasArabicChars = (value: unknown): boolean => {
   if (typeof value === "string") {
     return ARABIC_RANGE.test(value);
   }

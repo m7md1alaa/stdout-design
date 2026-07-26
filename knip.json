@@ -3,39 +3,31 @@
   "workspaces": {
     ".": { "entry": ["turbo.json"] },
     "packages/config": {},
-    "packages/cli": {},
+    "packages/cli": {
+      "ignoreDependencies": [
+        "@stdout-design/dev-server",
+        "@stdout-design/web-ui"
+      ]
+    },
     "packages/core": {},
     "packages/dev-server": {},
     "packages/web-ui": {}
   },
   "ignoreDependencies": [
     "@fontsource-variable/geist",
-    "@stdout-design/core",
-    "@stdout-design/dev-server",
     "@takumi-rs/core",
-    "@takumi-rs/helpers",
     "@takumi-rs/wasm",
     "@types/react-dom",
     "@types/sinonjs__fake-timers",
-    "@types/react",
-    "@vitejs/plugin-react",
     "bun-types",
-    "chokidar",
     "class-variance-authority",
-    "csv-parse",
-    "dotenv",
-    "hono",
-    "kysely",
-    "kysely-bun-sqlite",
-    "p-limit",
-    "proper-lockfile",
-    "react",
-    "react-dom",
-    "takumi-js",
-    "vite",
-    "vite-node",
-    "write-file-atomic",
-    "zod"
+    "dotenv"
   ],
-  "ignore": ["**/__tests__/**", "**/examples/**", "**/fixtures/**"]
+  "ignore": [
+    "**/__tests__/**",
+    "**/examples/**",
+    "**/fixtures/**",
+    "apps/web-docs/src/components/dither-kit/**",
+    "packages/cli/template/**"
+  ]
 }

@@ -10,8 +10,6 @@ import { EvictionCoordinator } from "./eviction-coordinator.js";
 import { FsStore } from "./fs-store.js";
 import { MetadataStore } from "./metadata-store.js";
 
-export type { CompileCacheKeyInput, PixelCacheKeyInput } from "./cache-keys.js";
-
 export interface CacheStats {
   compiled: { entries: number };
   pixels: { entries: number; sizeBytes: number; maxSizeBytes: number };

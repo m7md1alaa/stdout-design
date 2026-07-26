@@ -38,7 +38,7 @@ export function xorshift32(seed: number): () => number {
 export type PixelColor = DitherColor | number;
 
 /** Hue (0–360) → an rgb fill tuned to sit alongside the chart palette. */
-export function hueFill(hue: number): Rgb {
+function hueFill(hue: number): Rgb {
   const h = ((hue % 360) + 360) % 360;
   const s = 0.85;
   const l = 0.58;

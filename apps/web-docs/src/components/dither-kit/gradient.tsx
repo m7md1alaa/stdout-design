@@ -16,7 +16,7 @@ import {
 const MAX_COLS = 960;
 const MAX_ROWS = 600;
 
-export type GradientDirection = "up" | "down" | "left" | "right";
+type GradientDirection = "up" | "down" | "left" | "right";
 
 export type DitherGradientProps = {
   /** The colour the gradient starts solid as — a palette name or a hue. */

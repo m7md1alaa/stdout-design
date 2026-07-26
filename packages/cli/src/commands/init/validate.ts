@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const projectNameSchema = z
+const projectNameSchema = z
   .string()
   .min(1, "Project name cannot be empty.")
   .max(214, "Project name must be 214 characters or fewer.")

@@ -7,7 +7,7 @@ export interface FontConfig {
   path?: string;
 }
 
-export interface TemplateEntry {
+interface TemplateEntry {
   componentPath: string;
   description?: string;
 }

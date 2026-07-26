@@ -1,7 +1,7 @@
 import type { Preset } from "../shared/types.js";
 import type { MatrixCell } from "./types.js";
 
-export interface DataRow {
+interface DataRow {
   key?: string;
   id?: string;
   slug?: string;

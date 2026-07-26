@@ -27,7 +27,6 @@ describe("createFetchFontsFromConfig", () => {
   describe("factory: fontsConfig parameter", () => {
     it("returns undefined when fontsConfig is undefined", () => {
       const result = createFetchFontsFromConfig();
-
       expect(result).toBeUndefined();
     });
 

@@ -189,7 +189,7 @@ export class CompileCache {
     if (!node) {
       return;
     }
-    this.removeFromList(node);
+    CompileCache.removeFromList(node);
     this.nodeMap.delete(key);
 
     const contentHash = this.keyToContentHash.get(key);

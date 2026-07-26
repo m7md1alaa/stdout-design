@@ -11,13 +11,10 @@
     "lint": "oxlint"
   },
   "dependencies": {
-    "@base-ui/react": "^1.6.0",
     "@orama/orama": "^3.1.18",
-    "@remixicon/react": "^4.9.0",
     "@stdout-design/templates": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cnfast": "^0.0.8",
     "fumadocs-core": "16.12.1",
     "fumadocs-mdx": "15.2.0",
     "fumadocs-ui": "npm:@fumadocs/base-ui@16.12.1",

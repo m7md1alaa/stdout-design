@@ -28,7 +28,7 @@ const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
   c.source === "local" && typeof c.path === "string" && c.path.length > 0;
 
 export const createFetchFontsFromConfig = (
-  fontsConfig: Record<string, FontConfig[]> | undefined,
+  fontsConfig?: Record<string, FontConfig[]> | undefined,
   configDir?: string
 ): ((localeId: string) => Promise<FontResolutionResult | null>) | undefined => {
   if (!fontsConfig) {
