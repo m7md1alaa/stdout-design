@@ -226,6 +226,58 @@ describe("createFetchFontsFromConfig", () => {
     });
   });
 
+  describe("fetcher: local fonts — configDir resolution", () => {
+    it("resolves local font path relative to configDir when provided", async () => {
+      const fontBytes = Buffer.from([10, 11, 12]);
+      mockReadFile.mockImplementation(() => Promise.resolve(fontBytes));
+
+      const fetchFonts = createFetchFontsFromConfig(
+        {
+          en: [
+            {
+              family: "Config Dir Font",
+              path: "./subdir/my-font.ttf",
+              source: "local",
+            },
+          ],
+        },
+        "/tmp/test-studio-config"
+      )!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).not.toBeNull();
+      const [descriptor] = result!.fonts;
+      expect((descriptor as { name: string }).name).toBe("Config Dir Font");
+      expect((descriptor as { data: unknown }).data).toBe(fontBytes);
+      // readFile should have been called with the path resolved against configDir
+      expect(mockReadFile).toHaveBeenCalledWith(
+        "/tmp/test-studio-config/subdir/my-font.ttf"
+      );
+    });
+
+    it("resolves local font path relative to CWD when configDir is not provided", async () => {
+      const fontBytes = Buffer.from([20, 21, 22]);
+      mockReadFile.mockImplementation(() => Promise.resolve(fontBytes));
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          {
+            family: "CWD Font",
+            path: "./other-dir/font.woff2",
+            source: "local",
+          },
+        ],
+      })!;
+
+      await fetchFonts("en");
+
+      // Without configDir, path.resolve("./other-dir/font.woff2") uses CWD
+      const cwd = process.cwd();
+      expect(mockReadFile).toHaveBeenCalledWith(`${cwd}/other-dir/font.woff2`);
+    });
+  });
+
   describe("fetcher: local fonts", () => {
     it("returns FontDescriptor with file contents for local config", async () => {
       const fontBytes = Buffer.from([0, 1, 2, 3, 4]);

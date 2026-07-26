@@ -54,7 +54,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
 
   const config = await loadConfig(rootDir);
 
-  const fetchFonts = createFetchFontsFromConfig(config.fonts);
+  const fetchFonts = createFetchFontsFromConfig(config.fonts, rootDir);
 
   const entry = config.templates[templateId];
   if (!entry) {

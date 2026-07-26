@@ -14,9 +14,13 @@ const isFontObject = (f: Font): f is FontDescriptor =>
 const loadLocalFontDescriptor = async (
   family: string,
   filePath: string,
-  weight?: number
+  weight?: number,
+  configDir?: string
 ): Promise<FontDescriptor> => {
-  const data = await readFile(path.resolve(filePath));
+  const resolved = configDir
+    ? path.resolve(configDir, filePath)
+    : path.resolve(filePath);
+  const data = await readFile(resolved);
   return { data, name: family, weight: weight ?? 400 };
 };
 
@@ -24,7 +28,8 @@ const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
   c.source === "local" && typeof c.path === "string" && c.path.length > 0;
 
 export const createFetchFontsFromConfig = (
-  fontsConfig: Record<string, FontConfig[]> | undefined
+  fontsConfig: Record<string, FontConfig[]> | undefined,
+  configDir?: string
 ): ((localeId: string) => Promise<FontResolutionResult | null>) | undefined => {
   if (!fontsConfig) {
     return undefined;
@@ -42,7 +47,7 @@ export const createFetchFontsFromConfig = (
 
       const localFonts: Font[] = await Promise.all(
         localConfigs.map((c) =>
-          loadLocalFontDescriptor(c.family, c.path, c.weights?.[0])
+          loadLocalFontDescriptor(c.family, c.path, c.weights?.[0], configDir)
         )
       );
 
