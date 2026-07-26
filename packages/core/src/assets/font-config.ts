@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 import { googleFonts } from "@takumi-rs/helpers";
 
 import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
@@ -7,6 +10,18 @@ import type { FontResolutionResult } from "./assets-resolver.js";
 
 const isFontObject = (f: Font): f is FontDescriptor =>
   typeof f === "object" && !(f instanceof Uint8Array);
+
+const loadLocalFontDescriptor = async (
+  family: string,
+  filePath: string,
+  weight?: number
+): Promise<FontDescriptor> => {
+  const data = await readFile(path.resolve(filePath));
+  return { data, name: family, weight: weight ?? 400 };
+};
+
+const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
+  c.source === "local" && typeof c.path === "string" && c.path.length > 0;
 
 export const createFetchFontsFromConfig = (
   fontsConfig: Record<string, FontConfig[]> | undefined
@@ -22,12 +37,27 @@ export const createFetchFontsFromConfig = (
     }
 
     try {
-      const families = configs.map((c) => ({
-        name: c.family,
-        weight: (c.weights ?? [400, 700]) as number[],
-      }));
+      const localConfigs = configs.filter(isLocalConfig);
+      const googleConfigs = configs.filter((c) => !isLocalConfig(c));
 
-      const fonts = await googleFonts(families);
+      const localFonts: Font[] = await Promise.all(
+        localConfigs.map((c) =>
+          loadLocalFontDescriptor(c.family, c.path, c.weights?.[0])
+        )
+      );
+
+      let googleFontDescriptors: Font[] = [];
+
+      if (googleConfigs.length > 0) {
+        const families = googleConfigs.map((c) => ({
+          name: c.family,
+          weight: (c.weights ?? [400, 700]) as number[],
+        }));
+
+        googleFontDescriptors = await googleFonts(families);
+      }
+
+      const fonts = [...localFonts, ...googleFontDescriptors];
 
       const fontFamilies = fonts
         .filter(isFontObject)

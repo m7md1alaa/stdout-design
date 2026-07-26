@@ -4,6 +4,8 @@ import type { StudioConfig } from "./types.js";
 
 const fontConfigSchema = z.object({
   family: z.string().min(1),
+  path: z.string().optional(),
+  source: z.enum(["google", "local"]).optional(),
   weights: z.array(z.number().int().positive()).optional(),
 });
 

@@ -2,13 +2,19 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const mockGoogleFonts = mock(() => Promise.resolve([]));
+const mockReadFile = mock(() => Promise.resolve(Buffer.from([])));
 
 mock.module("@takumi-rs/helpers", () => ({
   googleFonts: mockGoogleFonts,
 }));
 
+mock.module("node:fs/promises", () => ({
+  readFile: mockReadFile,
+}));
+
 afterEach(() => {
   mockGoogleFonts.mockImplementation(() => Promise.resolve([]));
+  mockReadFile.mockImplementation(() => Promise.resolve(Buffer.from([])));
 });
 
 const { createFetchFontsFromConfig } = await import("./font-config.js");
@@ -217,6 +223,159 @@ describe("createFetchFontsFromConfig", () => {
       expect(first).toBeNull();
       expect(second).not.toBeNull();
       expect(second!.fontFamilies).toEqual(["Roboto"]);
+    });
+  });
+
+  describe("fetcher: local fonts", () => {
+    it("returns FontDescriptor with file contents for local config", async () => {
+      const fontBytes = Buffer.from([0, 1, 2, 3, 4]);
+      mockReadFile.mockImplementation(() => Promise.resolve(fontBytes));
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          {
+            family: "My Local Font",
+            path: "./fonts/my-font.woff2",
+            source: "local",
+          },
+        ],
+      })!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).not.toBeNull();
+      expect(result!.fonts).toHaveLength(1);
+      const [descriptor] = result!.fonts;
+      expect(descriptor).not.toBeInstanceOf(Uint8Array);
+      expect((descriptor as { name: string }).name).toBe("My Local Font");
+      expect((descriptor as { data: unknown }).data).toBe(fontBytes);
+      expect((descriptor as { weight: unknown }).weight).toBe(400);
+      expect(result!.fontFamilies).toEqual(["My Local Font"]);
+    });
+
+    it("uses custom weight from local config", async () => {
+      const fontBytes = Buffer.from([10, 20]);
+      mockReadFile.mockImplementation(() => Promise.resolve(fontBytes));
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          {
+            family: "Bold Font",
+            path: "./fonts/bold.woff2",
+            source: "local",
+            weights: [700],
+          },
+        ],
+      })!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).not.toBeNull();
+      expect((result!.fonts[0] as { weight: unknown }).weight).toBe(700);
+    });
+
+    it("returns null when local font file read fails", async () => {
+      mockReadFile.mockImplementation(() =>
+        Promise.reject(new Error("ENOENT: no such file"))
+      );
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          {
+            family: "Missing Font",
+            path: "./fonts/missing.woff2",
+            source: "local",
+          },
+        ],
+      })!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).toBeNull();
+    });
+
+    it("mixes local and Google fonts in same locale", async () => {
+      const fontBytes = Buffer.from([1, 2, 3]);
+      mockReadFile.mockImplementation(() => Promise.resolve(fontBytes));
+
+      const googleDescriptor = {
+        data: new Uint8Array([9, 8, 7]),
+        name: "Google Font",
+        weight: 400,
+      };
+      mockGoogleFonts.mockImplementation(() =>
+        Promise.resolve([googleDescriptor])
+      );
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          { family: "Local Font", path: "./fonts/local.ttf", source: "local" },
+          { family: "Google Font", weights: [400] },
+        ],
+      })!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).not.toBeNull();
+      expect(result!.fonts).toHaveLength(2);
+      expect((result!.fonts[0] as { name: string }).name).toBe("Local Font");
+      expect((result!.fonts[1] as { name: string }).name).toBe("Google Font");
+      expect(result!.fontFamilies).toEqual(["Local Font", "Google Font"]);
+    });
+
+    it("treats local config with missing path as Google font", async () => {
+      const googleDescriptor = {
+        data: new Uint8Array([1]),
+        name: "Fallback Font",
+        weight: 400,
+      };
+      mockGoogleFonts.mockImplementation(() =>
+        Promise.resolve([googleDescriptor])
+      );
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          {
+            family: "Fallback Font",
+            source: "local",
+          } as never,
+        ],
+      })!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).not.toBeNull();
+      expect(result!.fonts).toHaveLength(1);
+      expect((result!.fonts[0] as { name: string }).name).toBe("Fallback Font");
+    });
+
+    it("treats local config with empty path as Google font", async () => {
+      const googleDescriptor = {
+        data: new Uint8Array([5]),
+        name: "Empty Path Font",
+        weight: 400,
+      };
+      mockGoogleFonts.mockImplementation(() =>
+        Promise.resolve([googleDescriptor])
+      );
+
+      const fetchFonts = createFetchFontsFromConfig({
+        en: [
+          {
+            family: "Empty Path Font",
+            path: "",
+            source: "local",
+          },
+        ],
+      })!;
+
+      const result = await fetchFonts("en");
+
+      expect(result).not.toBeNull();
+      expect(result!.fonts).toHaveLength(1);
+      expect((result!.fonts[0] as { name: string }).name).toBe(
+        "Empty Path Font"
+      );
     });
   });
 });

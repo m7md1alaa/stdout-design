@@ -3,6 +3,8 @@ import type { z } from "zod";
 export interface FontConfig {
   family: string;
   weights?: number[];
+  source?: "google" | "local";
+  path?: string;
 }
 
 export interface TemplateEntry {
