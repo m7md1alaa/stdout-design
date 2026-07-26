@@ -186,9 +186,7 @@ export class FsStore {
     if (!this.hashesMatch(expectedContentHash, actualHash)) {
       // Only log as corruption if both sides agree on the algorithm.
       // Cross-algorithm mismatches are logged at debug level inside hashesMatch.
-      if (
-        expectedContentHash.split(":")[0] === actualHash.split(":")[0]
-      ) {
+      if (expectedContentHash.split(":")[0] === actualHash.split(":")[0]) {
         logWarn("FsStore: content-hash mismatch on read, treating as corrupt", {
           expected: expectedContentHash,
           filePath,

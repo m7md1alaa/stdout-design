@@ -32,6 +32,10 @@
     "./schema": {
       "import": "./dist/schema.mjs",
       "types": "./dist/schema.d.mts"
+    },
+    "./og": {
+      "import": "./dist/og/index.mjs",
+      "types": "./dist/og/index.d.mts"
     }
   },
   "publishConfig": {

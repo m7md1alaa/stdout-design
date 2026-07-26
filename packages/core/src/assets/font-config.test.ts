@@ -26,7 +26,7 @@ const { createFetchFontsFromConfig } = await import("./font-config.js");
 describe("createFetchFontsFromConfig", () => {
   describe("factory: fontsConfig parameter", () => {
     it("returns undefined when fontsConfig is undefined", () => {
-      const result = createFetchFontsFromConfig(undefined);
+      const result = createFetchFontsFromConfig();
 
       expect(result).toBeUndefined();
     });

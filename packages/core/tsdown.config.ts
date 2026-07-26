@@ -6,7 +6,7 @@ export default defineConfig({
     neverBundle: ["bun:sqlite", "better-sqlite3"],
   },
   dts: true,
-  entry: ["./src/index.ts", "./src/schema.ts"],
+  entry: ["./src/index.ts", "./src/schema.ts", "./src/og/index.ts"],
   format: "esm",
   minify: {
     compress: true,

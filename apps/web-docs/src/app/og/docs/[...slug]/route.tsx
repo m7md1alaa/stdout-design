@@ -1,6 +1,6 @@
-import { generate as DefaultImage } from "fumadocs-ui/og/takumi";
+import { createOgResponse } from "@stdout-design/core/og";
+import { StandardOgTemplate } from "@stdout-design/templates";
 import { notFound } from "next/navigation";
-import { ImageResponse } from "takumi-js/response";
 
 import { appName } from "@/lib/shared";
 import { getPageImageUrl, source } from "@/lib/source";
@@ -15,22 +15,17 @@ export async function GET(
   const page = source.getPage(slug.slice(0, -1));
   if (!page) notFound();
 
-  return new ImageResponse(
-    <DefaultImage
+  return createOgResponse(
+    <StandardOgTemplate
       title={page.data.title}
       description={page.data.description}
-      site={appName}
-    />,
-    {
-      width: 1200,
-      height: 630,
-      format: "webp",
-    }
+      siteName={appName}
+    />
   );
 }
 
 export function generateStaticParams() {
-  return source.getPages().map((page) => ({
+  return source.getPages().map((page: (typeof source)["$inferPage"]) => ({
     lang: page.locale,
     slug: getPageImageUrl(page).segments,
   }));

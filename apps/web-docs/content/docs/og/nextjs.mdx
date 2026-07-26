@@ -1,0 +1,66 @@
+---
+title: Next.js App Router
+description: Setting up OG image endpoints in Next.js
+---
+
+The standard pattern for OG images in Next.js App Router is a dynamic route that renders a component and returns it as a `Response` via `createOgResponse`.
+
+## Basic Route
+
+Create a file at `app/og/[...slug]/route.tsx`:
+
+```tsx
+import { createOgResponse } from "@stdout-design/core/og";
+import { StandardOgTemplate } from "@stdout-design/templates";
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ slug: string[] }> }
+) {
+  const { slug } = await params;
+  const data = getPageData(slug);
+
+  return createOgResponse(
+    <StandardOgTemplate
+      title={data.title}
+      description={data.description}
+      siteName="My App"
+    />
+  );
+}
+```
+
+## Static Generation
+
+For static exports, use `generateStaticParams` to pre-render OG images at build time:
+
+```tsx
+export function generateStaticParams() {
+  return getAllPages().map((page) => ({
+    slug: page.slug,
+  }));
+}
+```
+
+## Linking from Pages
+
+Set the OG image URL in `generateMetadata`:
+
+```tsx
+import type { Metadata } from "next";
+
+export function generateMetadata({ params }): Metadata {
+  const page = getPage(params.slug);
+
+  return {
+    title: page.title,
+    openGraph: {
+      images: `/og/${page.slug}/image.webp`,
+    },
+  };
+}
+```
+
+## Full Example
+
+See the [docs site source](https://github.com/m7md1alaa/stdout-design/tree/main/apps/web-docs/src/app/og/docs) for a complete reference — the stdout-design docs use this exact pattern.

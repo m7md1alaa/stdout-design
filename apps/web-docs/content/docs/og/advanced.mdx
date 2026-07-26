@@ -1,0 +1,102 @@
+---
+title: Custom Templates & Fonts
+description: Using your own components and custom fonts for OG images
+---
+
+## Custom OG Components
+
+You can use any Takumi-compatible React component in place of `StandardOgTemplate`:
+
+```tsx
+import { createOgResponse } from "@stdout-design/core/og";
+
+function MyOGCard({ title, stat }: { title: string; stat: string }) {
+  return (
+    <div tw="flex flex-col w-full h-full items-center justify-center bg-slate-900 p-16">
+      <p tw="text-2xl text-slate-400 mb-4">{title}</p>
+      <p tw="text-8xl font-bold text-white">{stat}</p>
+    </div>
+  );
+}
+
+export async function GET() {
+  return createOgResponse(
+    <MyOGCard title="Monthly Active Users" stat="124.5K" />
+  );
+}
+```
+
+## Custom Fonts
+
+Font URLs work directly — no `fetch` → `arrayBuffer()` conversion needed:
+
+```tsx
+import { createOgResponse } from "@stdout-design/core/og";
+import { StandardOgTemplate } from "@stdout-design/templates";
+
+export async function GET(data) {
+  return createOgResponse(
+    <StandardOgTemplate
+      title={data.title}
+      description={data.description}
+      siteName="My App"
+    />,
+    {
+      fonts: [
+        "https://cdn.example.com/Inter-Bold.woff2",
+        {
+          name: "Inter",
+          data: "https://cdn.example.com/Inter-Regular.woff2",
+          weight: 400,
+        },
+      ],
+    }
+  );
+}
+```
+
+Takumi accepts font URLs as bare strings or as descriptors — it fetches and caches them on demand.
+
+## Locale Support
+
+Pass `locale` directly to `createOgResponse` — it auto-sets Takumi's `lang` option for proper text shaping and RTL handling:
+
+```tsx
+import { createOgResponse } from "@stdout-design/core/og";
+import { StandardOgTemplate } from "@stdout-design/templates";
+
+export async function GET(req: Request) {
+  const locale = new URL(req.url).searchParams.get("locale") ?? "en";
+
+  return createOgResponse(
+    <StandardOgTemplate
+      title={locale === "ar" ? "مرحبا بالعالم" : "Hello World"}
+      description="Localized OG image"
+      siteName="My App"
+    />,
+    { locale }
+  );
+}
+```
+
+For locale-aware OG images with font resolution and caching, use the full `@stdout-design/core` pipeline via `compileTemplate` + `renderToPixels`.
+
+## Other Frameworks (Hono, Express)
+
+The same pattern works in any framework:
+
+```ts
+import { createOgResponse } from "@stdout-design/core/og";
+import { StandardOgTemplate } from "@stdout-design/templates";
+import { Hono } from "hono";
+
+const app = new Hono();
+
+app.get("/og", (c) => {
+  return createOgResponse(
+    <StandardOgTemplate title={c.req.query("title") ?? "Default"} />,
+  );
+});
+```
+
+For locale-aware OG images with font resolution and caching, use the full core pipeline via `compileTemplate` + `renderToPixels` documented in the [core package](/docs/core).

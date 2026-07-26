@@ -81,9 +81,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1]
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1]
       );
 
       const listener = mock((_event: WatchEvent) => {});
@@ -98,9 +96,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1]
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1]
       );
 
       const listener = mock((_event: WatchEvent) => {});
@@ -135,9 +131,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1],
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1],
         { debounceMs: 100 }
       );
 
@@ -152,9 +146,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1],
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1],
         { debounceMs: 100 }
       );
 
@@ -179,9 +171,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1],
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1],
         { debounceMs: 100 }
       );
 
@@ -200,9 +190,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1]
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1]
       );
 
       await watcher.stop();
@@ -216,9 +204,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1]
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1]
       );
 
       await watcher.stop();
@@ -231,9 +217,7 @@ describe("FileWatcher", () => {
       const loader = createFakeTemplateLoader();
       const watcher = new FileWatcher(
         "/project",
-        loader as unknown as ConstructorParameters<
-          typeof FileWatcher
-        >[1]
+        loader as unknown as ConstructorParameters<typeof FileWatcher>[1]
       );
 
       // Manipulate watcher directly to simulate already-started state
