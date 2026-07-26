@@ -7,7 +7,7 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "turbo run dev serve",
+    "dev": "turbo run build dev serve",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "check-types:tsgo": "turbo check-types:tsgo",

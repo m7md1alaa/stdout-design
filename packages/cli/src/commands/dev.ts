@@ -33,7 +33,7 @@ export const dev = async (
     });
 
   const resolvedRoot = rootDir ?? process.cwd();
-  const port = Number(options.port ?? "3000");
+  const port = Number(options.port ?? "3030");
   const webUiDist = findWebUiDist();
 
   console.log(`Starting studio dev server for ${resolvedRoot}...`);

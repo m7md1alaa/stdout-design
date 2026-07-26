@@ -19,17 +19,17 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/cache": "http://localhost:3000",
-      "/config": "http://localhost:3000",
+      "/cache": "http://localhost:3030",
+      "/config": "http://localhost:3030",
       "/events": {
-        target: "http://localhost:3000",
+        target: "http://localhost:3030",
         ws: false,
       },
-      "/locales": "http://localhost:3000",
-      "/measure": "http://localhost:3000",
-      "/presets": "http://localhost:3000",
-      "/render": "http://localhost:3000",
-      "/templates": "http://localhost:3000",
+      "/locales": "http://localhost:3030",
+      "/measure": "http://localhost:3030",
+      "/presets": "http://localhost:3030",
+      "/render": "http://localhost:3030",
+      "/templates": "http://localhost:3030",
     },
   },
 });

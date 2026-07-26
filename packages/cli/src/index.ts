@@ -22,7 +22,7 @@ program
   .command("dev")
   .description("Start the studio dev server with live preview")
   .argument("[rootDir]", "Project root directory (default: cwd)")
-  .option("-p, --port <number>", "Port to run on", "3000")
+  .option("-p, --port <number>", "Port to run on", "3030")
   .option("--open", "Open browser on start")
   .action(run("dev"));
 

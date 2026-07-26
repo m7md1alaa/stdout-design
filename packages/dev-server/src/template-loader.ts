@@ -77,7 +77,10 @@ export class TemplateLoader {
       plugins: [react()],
       root: this.rootDir,
       server: { hmr: false, middlewareMode: true },
-      ssr: { optimizeDeps: { include: ["zod"] } },
+      ssr: {
+        external: ["@stdout-design/core"],
+        optimizeDeps: { include: ["zod"] },
+      },
     });
 
     // Vite's own dependency-graph invalidation (configFileDependencies,

@@ -32,7 +32,7 @@ export const resolveStudioRoot = (cwd: string, givenArg?: string): string => {
 
 if (import.meta.main) {
   const rootDir = resolveStudioRoot(process.cwd(), process.argv[2]);
-  const port = Math.trunc(Number(process.env.PORT ?? "3000"));
+  const port = Math.trunc(Number(process.env.PORT ?? "3030"));
 
   await startStandaloneServer({ port, rootDir });
 }
