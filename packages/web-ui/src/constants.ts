@@ -1,4 +1,4 @@
-const DEV_SERVER_PORT = 3000;
+const DEV_SERVER_PORT = 3030;
 const DEV_SERVER_HOST = `http://localhost:${DEV_SERVER_PORT}`;
 
 export const API_BASE = import.meta.env.DEV ? DEV_SERVER_HOST : "";

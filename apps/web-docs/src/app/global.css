@@ -114,8 +114,8 @@ html > body[data-scroll-locked] {
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--bg);
+  background: oklch(0.3 0.12 calc(var(--accent-hue) * 1deg));
+  color: var(--foreground);
 }
 
 /* Visible keyboard focus, everywhere, no exceptions. */

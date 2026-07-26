@@ -2,11 +2,11 @@ export const hero = {
   eyebrow: "TSX → pixels, from your repo",
   headline: "Your components already are your marketing assets.",
   subhead:
-    "stdout-design renders the TSX you already wrote into App Store screenshots, launch cards, and Open Graph images — one CLI command, no Figma, no drift.",
+    "stdout-design renders the TSX you already wrote into App Store screenshots, launch cards, and Open Graph images one CLI command, no Figma, no drift.",
   primaryCta: { href: "/docs", label: "Read the docs" },
   secondaryCta: {
     href: "https://github.com/m7md1alaa/stdout-design",
-    label: "View on GitHub",
+    label: "Star on GitHub",
   },
   installCommand: "npx @stdout-design/cli init",
 };

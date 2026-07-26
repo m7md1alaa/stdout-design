@@ -19,7 +19,7 @@ export function InstallCommand({
   }
 
   return (
-    <pre className="relative inline-flex h-11 w-full max-w-max items-center overflow-auto whitespace-pre rounded-xl border border-border pl-4 pr-11 font-mono text-sm backdrop-blur-md">
+    <pre className="relative inline-flex h-11 w-full max-w-max items-center overflow-auto whitespace-pre rounded-xl border border-border pl-4 pr-11 font-mono text-sm bg-black/80">
       <div
         className="absolute right-0 top-0 h-px w-50"
         style={{
