@@ -2,11 +2,16 @@ import { describe, expect, mock, test } from "bun:test";
 
 describe("getLatestVersion", () => {
   test("returns version string when npm registry responds with 200", async () => {
-    const fakeResponse = {
-      json: () => Promise.resolve({ version: "0.2.9" }),
-      status: 200,
-    };
-    globalThis.fetch = mock(() => Promise.resolve(fakeResponse));
+    globalThis.fetch = mock(
+      (): Promise<{
+        json: () => Promise<{ version: string }>;
+        status: number;
+      }> =>
+        Promise.resolve({
+          json: () => Promise.resolve({ version: "0.2.9" }),
+          status: 200,
+        })
+    ) as unknown as typeof fetch;
 
     const { getLatestVersion } = await import("../registry.js");
     const result = await getLatestVersion();
@@ -14,7 +19,9 @@ describe("getLatestVersion", () => {
   });
 
   test("returns null when fetch throws a network error", async () => {
-    globalThis.fetch = mock(() => Promise.reject(new Error("network error")));
+    globalThis.fetch = mock(() =>
+      Promise.reject(new Error("network error"))
+    ) as unknown as typeof fetch;
 
     const { getLatestVersion } = await import("../registry.js");
     const result = await getLatestVersion();
@@ -22,11 +29,16 @@ describe("getLatestVersion", () => {
   });
 
   test("returns null when registry responds with non-200 status", async () => {
-    const fakeResponse = {
-      json: () => Promise.resolve({ version: "0.2.9" }),
-      status: 500,
-    };
-    globalThis.fetch = mock(() => Promise.resolve(fakeResponse));
+    globalThis.fetch = mock(
+      (): Promise<{
+        json: () => Promise<{ version: string }>;
+        status: number;
+      }> =>
+        Promise.resolve({
+          json: () => Promise.resolve({ version: "0.2.9" }),
+          status: 500,
+        })
+    ) as unknown as typeof fetch;
 
     const { getLatestVersion } = await import("../registry.js");
     const result = await getLatestVersion();

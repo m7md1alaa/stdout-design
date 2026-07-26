@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-non-null-assertion
 import { spawnSync } from "node:child_process";
 
 import type { AgentName } from "package-manager-detector";
@@ -25,7 +26,7 @@ const buildSkillListCommand = (
     ...(global ? ["-g"] : []),
     "--json",
   ];
-  return { args, command: parts[0] };
+  return { args, command: parts[0]! };
 };
 
 const buildSkillInstallCommand = (
@@ -34,7 +35,7 @@ const buildSkillInstallCommand = (
   const dlx = DLX_MAP[pm] ?? "npx";
   const parts = dlx.split(" ");
   const args = [...parts.slice(1), "skills", "add", STUDIO_SKILL_REPO];
-  return { args, command: parts[0] };
+  return { args, command: parts[0]! };
 };
 
 const isSkillInstalledInScope = (pm: AgentName, global = false): boolean => {
@@ -48,12 +49,10 @@ const isSkillInstalledInScope = (pm: AgentName, global = false): boolean => {
     return false;
   }
 
+  const { stdout } = result;
+
   try {
-    const installedSkills = JSON.parse(
-      typeof result.stdout === "string"
-        ? result.stdout
-        : result.stdout.toString("utf-8")
-    ) as {
+    const installedSkills = JSON.parse(stdout) as {
       name?: string;
     }[];
 
