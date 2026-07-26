@@ -2,6 +2,7 @@ import path from "node:path";
 
 import type { ComponentType } from "react";
 
+import { createFetchFontsFromConfig } from "../assets/font-config.js";
 import { openCache } from "../cache/open-cache.js";
 import { orchestrateRender } from "../orchestrate/orchestrate.js";
 import { ensureDir, tryWriteFile } from "../orchestrate/utils.js";
@@ -52,6 +53,8 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
   } = input;
 
   const config = await loadConfig(rootDir);
+
+  const fetchFonts = createFetchFontsFromConfig(config.fonts);
 
   const entry = config.templates[templateId];
   if (!entry) {
@@ -123,6 +126,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
         const result = await orchestrateRender({
           cache,
           component: Component as ComponentType<Record<string, unknown>>,
+          fetchFonts,
           format: "png",
           height: cell.preset.height,
           loadLocaleData,

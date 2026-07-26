@@ -1,5 +1,6 @@
 import { createElement } from "react";
 
+import type { FontResolutionResult } from "../assets/assets-resolver.js";
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
 import { RenderCache } from "../cache/render-cache.js";
 import { compileTemplate } from "../engine/render.js";
@@ -38,6 +39,9 @@ const prepPipeline = async (input: {
     | undefined;
   preResolvedFonts: Font[] | undefined;
   preResolvedFontFamilies: string[] | undefined;
+  fetchFonts:
+    | ((localeId: string) => Promise<FontResolutionResult | null>)
+    | undefined;
   cache: RenderCache;
 }): Promise<PrepResult> => {
   const {
@@ -51,6 +55,7 @@ const prepPipeline = async (input: {
     loadLocaleData,
     preResolvedFonts,
     preResolvedFontFamilies,
+    fetchFonts,
     cache,
   } = input;
 
@@ -67,6 +72,7 @@ const prepPipeline = async (input: {
     locale,
     validated as Record<string, unknown>,
     {
+      fetchFonts,
       loadLocaleData,
       preResolvedFontFamilies,
       preResolvedFonts,
@@ -128,6 +134,7 @@ export const orchestrateRender = async (
     propsSchema,
     locale: localeId,
     loadLocaleData,
+    fetchFonts,
     fonts: preResolvedFonts,
     fontFamilies: preResolvedFontFamilies,
     width,
@@ -143,6 +150,7 @@ export const orchestrateRender = async (
     cache,
     compiledTemplate,
     component,
+    fetchFonts,
     loadLocaleData,
     locale: resolvedLocale,
     preResolvedFontFamilies,
@@ -213,6 +221,7 @@ export const orchestrateMeasure = async (
     propsSchema,
     locale: localeId,
     loadLocaleData,
+    fetchFonts,
     cache,
     signal,
   } = input;
@@ -223,6 +232,7 @@ export const orchestrateMeasure = async (
     cache,
     compiledTemplate,
     component,
+    fetchFonts,
     loadLocaleData,
     locale: resolvedLocale,
     preResolvedFontFamilies: undefined,

@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 
+import type { FontResolutionResult } from "../assets/assets-resolver.js";
 import type { RenderCache } from "../cache/render-cache.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import type { Font, RenderOptions } from "../engine/takumi-types-shim.js";
@@ -39,6 +40,7 @@ export interface OrchestrateRenderInput {
   propsSchema?: PropSchema;
   locale?: string;
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
+  fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
   fonts?: Font[];
   fontFamilies?: string[];
   width: number;
@@ -66,6 +68,7 @@ export interface OrchestrateMeasureInput {
   propsSchema?: PropSchema;
   locale?: string;
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
+  fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
   cache: RenderCache;
   signal?: AbortSignal;
 }

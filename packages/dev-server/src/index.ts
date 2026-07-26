@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import {
+  createFetchFontsFromConfig,
   logWarn,
   openCache,
   orchestrateRender,
@@ -210,6 +211,7 @@ export const createDevServer = async (options: DevServerOptions) => {
     }
 
     const config = await templateLoader.getConfig();
+    const fetchFonts = createFetchFontsFromConfig(config.fonts);
     const preset = presetId
       ? config.presets.find((p) => p.id === presetId)
       : config.presets.find((p) => p.id === config.defaultPreset);
@@ -230,6 +232,7 @@ export const createDevServer = async (options: DevServerOptions) => {
         component: templateModule.default as ComponentType<
           Record<string, unknown>
         >,
+        fetchFonts,
         height: preset.height,
         loadLocaleData:
           locale && !autoDetected
@@ -300,12 +303,16 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
+    const config = await templateLoader.getConfig();
+    const fetchFonts = createFetchFontsFromConfig(config.fonts);
+
     try {
       const result = await orchestrateMeasure({
         cache: renderCache,
         component: templateModule.default as ComponentType<
           Record<string, unknown>
         >,
+        fetchFonts,
         loadLocaleData:
           locale && !autoDetected
             ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)

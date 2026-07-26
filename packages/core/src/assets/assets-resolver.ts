@@ -121,6 +121,9 @@ export const resolveAssetsForLocale = async (
       const promise = fetch(localeId);
       fontCache.set(localeId, promise);
       resolution = await promise;
+      if (!resolution) {
+        fontCache.delete(localeId);
+      }
     }
 
     if (resolution) {

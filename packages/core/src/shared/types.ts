@@ -1,5 +1,10 @@
 import type { z } from "zod";
 
+export interface FontConfig {
+  family: string;
+  weights?: number[];
+}
+
 export interface TemplateEntry {
   componentPath: string;
   description?: string;
@@ -20,6 +25,7 @@ export interface StudioConfig {
   locales?: string[];
   outDir?: string;
   scaffoldVersion?: string;
+  fonts?: Record<string, FontConfig[]>;
 }
 
 export interface TemplateModule {

@@ -2,6 +2,9 @@ import type { StudioConfig } from "@stdout-design/core";
 
 const config: StudioConfig = {
   defaultPreset: "instagram-square",
+  fonts: {
+    ar: [{ family: "IBM Plex Sans Arabic", weights: [400, 700] }],
+  },
   locales: ["en", "ar"],
   outDir: "./out",
   presets: [
