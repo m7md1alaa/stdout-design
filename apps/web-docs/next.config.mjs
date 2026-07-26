@@ -4,9 +4,8 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
-  serverExternalPackages: ["@takumi-rs/core"],
-  output: "export",
   reactStrictMode: true,
+  serverExternalPackages: ["takumi-js", "@takumi-rs/core"],
 };
 
 export default withMDX(config);

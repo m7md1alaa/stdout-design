@@ -3,9 +3,9 @@ import { StandardOgTemplate } from "@stdout-design/templates";
 import { notFound } from "next/navigation";
 
 import { appName } from "@/lib/shared";
-import { getPageImageUrl, source } from "@/lib/source";
+import { source } from "@/lib/source";
 
-export const revalidate = false;
+export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: Request,
@@ -22,11 +22,4 @@ export async function GET(
       siteName={appName}
     />
   );
-}
-
-export function generateStaticParams() {
-  return source.getPages().map((page: (typeof source)["$inferPage"]) => ({
-    lang: page.locale,
-    slug: getPageImageUrl(page).segments,
-  }));
 }
