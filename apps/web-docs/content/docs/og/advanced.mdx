@@ -32,7 +32,7 @@ Font URLs work directly — no `fetch` → `arrayBuffer()` conversion needed:
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/templates";
+import { StandardOgTemplate } from "@stdout-design/core/og";
 
 export async function GET(data) {
   return createOgResponse(
@@ -63,7 +63,7 @@ Pass `locale` directly to `createOgResponse` — it auto-sets Takumi's `lang` op
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/templates";
+import { StandardOgTemplate } from "@stdout-design/core/og";
 
 export async function GET(req: Request) {
   const locale = new URL(req.url).searchParams.get("locale") ?? "en";
@@ -87,7 +87,7 @@ The same pattern works in any framework:
 
 ```ts
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/templates";
+import { StandardOgTemplate } from "@stdout-design/core/og";
 import { Hono } from "hono";
 
 const app = new Hono();

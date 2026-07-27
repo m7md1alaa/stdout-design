@@ -1,5 +1,5 @@
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/templates";
+import { StandardOgTemplate } from "@stdout-design/core/og";
 import { notFound } from "next/navigation";
 
 import { appName } from "@/lib/shared";

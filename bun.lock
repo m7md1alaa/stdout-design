@@ -31,7 +31,6 @@
       "version": "0.0.8",
       "dependencies": {
         "@orama/orama": "^3.1.18",
-        "@stdout-design/templates": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "fumadocs-core": "16.12.1",
@@ -139,19 +138,6 @@
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "zod": "^4.4.3",
-      },
-    },
-    "packages/templates": {
-      "name": "@stdout-design/templates",
-      "version": "0.3.2",
-      "devDependencies": {
-        "@stdout-design/config": "workspace:*",
-        "@types/react": "catalog:",
-        "tsdown": "catalog:",
-        "typescript": "catalog:",
-      },
-      "peerDependencies": {
-        "react": "^19.2.7",
       },
     },
     "packages/web-ui": {
@@ -721,8 +707,6 @@
     "@stdout-design/core": ["@stdout-design/core@workspace:packages/core"],
 
     "@stdout-design/dev-server": ["@stdout-design/dev-server@workspace:packages/dev-server"],
-
-    "@stdout-design/templates": ["@stdout-design/templates@workspace:packages/templates"],
 
     "@stdout-design/web-ui": ["@stdout-design/web-ui@workspace:packages/web-ui"],
 

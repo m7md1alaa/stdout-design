@@ -35,7 +35,6 @@ export const StandardOgTemplate = ({
         width: "100%",
       }}
     >
-      {/* Indigo top accent bar — the single brand signature element */}
       <div
         style={{
           background: "linear-gradient(90deg, #6366f1 0%, #818cf8 100%)",
@@ -47,7 +46,6 @@ export const StandardOgTemplate = ({
         }}
       />
 
-      {/* Site name / logo mark — top left */}
       <div
         style={{
           alignItems: "center",
@@ -55,7 +53,6 @@ export const StandardOgTemplate = ({
           gap: "10px",
         }}
       >
-        {/* Indigo dot — minimal logo mark */}
         <div
           style={{
             backgroundColor: "#6366f1",
@@ -80,7 +77,6 @@ export const StandardOgTemplate = ({
         ) : null}
       </div>
 
-      {/* Main content — vertically centered in the remaining space */}
       <div
         style={{
           display: "flex",
@@ -124,7 +120,6 @@ export const StandardOgTemplate = ({
         ) : null}
       </div>
 
-      {/* Footer rule — quiet, not decorative */}
       <div
         style={{
           backgroundColor: "#27272a",

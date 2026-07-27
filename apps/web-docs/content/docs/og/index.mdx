@@ -3,7 +3,7 @@ title: OG Image Generation
 description: Generate social preview images with @stdout-design/core
 ---
 
-`@stdout-design/core/og` provides `createOgResponse` — the render bridge for OG images. `@stdout-design/templates` provides the `StandardOgTemplate` component with your product's design tokens baked in.
+`@stdout-design/core/og` provides `createOgResponse` — the render bridge for OG images — and the `StandardOgTemplate` component with your product's design tokens baked in.
 
 The template uses the same design tokens as `@stdout-design/web-ui`: dark surface (`#0a0a0b`), indigo accent (`#6366f1`), and content-colored text. OG images match your product's look without a second design system for marketing assets.
 
@@ -11,7 +11,7 @@ The template uses the same design tokens as `@stdout-design/web-ui`: dark surfac
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/templates";
+import { StandardOgTemplate } from "@stdout-design/core/og";
 
 export async function GET() {
   return createOgResponse(
@@ -48,7 +48,7 @@ Font URLs work directly — no `fetch` → `arrayBuffer()` dance:
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/templates";
+import { StandardOgTemplate } from "@stdout-design/core/og";
 
 createOgResponse(<StandardOgTemplate title="..." />, {
   fonts: ["https://cdn.example.com/Inter-Bold.woff2"],
