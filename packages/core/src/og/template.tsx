@@ -3,6 +3,7 @@ export interface OgTemplateProps {
   description?: string;
   siteName?: string;
 }
+
 const getTitleSize = (length: number): string => {
   if (length > 60) {
     return "48px";
@@ -13,12 +14,23 @@ const getTitleSize = (length: number): string => {
   return "76px";
 };
 
+// Helper function to safely truncate long description text
+const truncateText = (text: string, maxLength: number = 130): string => {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength).trimEnd()}…`;
+};
+
 export const StandardOgTemplate = ({
   title,
   description,
   siteName,
 }: OgTemplateProps) => {
   const titleSize = getTitleSize(title.length);
+  const truncatedDescription = description
+    ? truncateText(description, 130)
+    : null;
 
   return (
     <div
@@ -100,22 +112,19 @@ export const StandardOgTemplate = ({
           {title}
         </h1>
 
-        {description ? (
+        {truncatedDescription ? (
           <p
             style={{
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: "2",
               color: "#a1a1aa",
-              display: "-webkit-box",
+              display: "flex",
               fontSize: "26px",
               fontWeight: "400",
               lineHeight: "1.5",
               margin: "0",
               marginTop: "24px",
-              overflow: "hidden",
             }}
           >
-            {description}
+            {truncatedDescription}
           </p>
         ) : null}
       </div>
