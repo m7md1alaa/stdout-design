@@ -83,7 +83,7 @@ describe("renderOgResponse", () => {
       await import("../engine/renderer.js");
     __resetRendererForTesting();
     const renderer = __getRendererForTesting();
-    renderer.render.mockImplementation(() =>
+    renderer.render = mock(() =>
       Promise.reject(new Error("mock render failure"))
     );
 

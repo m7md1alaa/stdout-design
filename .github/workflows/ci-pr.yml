@@ -25,6 +25,6 @@ jobs:
 
       - run: bun --bun run check-types
 
-      - run: bun --bun run build
+      - run: bun run build
 
       - run: bun --bun run test

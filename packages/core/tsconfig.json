@@ -4,7 +4,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": true,
-    "types": ["bun"]
+    "types": ["bun"],
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["src"]
 }

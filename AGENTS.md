@@ -1,5 +1,7 @@
 you must always run commands using `bun --bun <script>`
 
+> **Exception**: the Next.js docs app (`apps/web-docs`) build must run without `--bun` (plain `bun run build`), because the takumi NAPI native binding cannot load under the Bun runtime during Turbopack's page-data collection. This matches production, where Vercel runs the build on Node.
+
 # Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.

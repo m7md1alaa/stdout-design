@@ -35,6 +35,9 @@
       "cache": false,
       "persistent": true
     },
+    "web-docs#build": {
+      "dependsOn": ["^build", "@stdout-design/core#build"]
+    },
     "@stdout-design/dev-server#build": {
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]

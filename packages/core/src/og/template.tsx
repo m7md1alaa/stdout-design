@@ -15,7 +15,7 @@ const getTitleSize = (length: number): string => {
 };
 
 // Helper function to safely truncate long description text
-const truncateText = (text: string, maxLength: number = 130): string => {
+const truncateText = (text: string, maxLength = 130): string => {
   if (text.length <= maxLength) {
     return text;
   }

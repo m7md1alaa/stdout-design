@@ -33,7 +33,7 @@ export const renderOgResponse = async (
       { format }
     );
 
-    return new Response(bytes, {
+    return new Response(new Uint8Array(bytes), {
       headers: {
         "Cache-Control": OG_CACHE_CONTROL,
         "Content-Type": `image/${format}`,
