@@ -40,15 +40,15 @@ export default config;
 
 ## Fields
 
-| Field             | Type                                              | Required | Description                                       |
-| ----------------- | ------------------------------------------------- | -------- | ------------------------------------------------- |
-| `templates`       | `Record<string, { componentPath, description? }>` | **Yes**  | The template registry (see below)                 |
-| `presets`         | `Array<{ id, width, height, platform }>`          | **Yes**  | Output sizes (see below)                          |
-| `defaultPreset`   | `string`                                          | No       | Preset ID used by default                         |
-| `locales`         | `string[]`                                        | No       | Supported locale codes, e.g. `["en", "ar"]`       |
-| `outDir`          | `string`                                          | No       | Output directory (default `./out`)                |
-| `fonts`           | `Record<locale, FontConfig[]>`                    | No       | Per-locale font config (see Internationalization) |
-| `scaffoldVersion` | `string`                                          | No       | Written by `init`/`update`; not for manual edits  |
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `templates` | `Record<string, { componentPath, description? }>` | **Yes** | The template registry (see below) |
+| `presets` | `Array<{ id, width, height, platform }>` | **Yes** | Output sizes (see below) |
+| `defaultPreset` | `string` | No | Preset ID used by default |
+| `locales` | `string[]` | No | Supported locale codes, e.g. `["en", "ar"]` |
+| `outDir` | `string` | No | Output directory (default `./out`) |
+| `fonts` | `Record<locale, FontConfig[]>` | No | Per-locale font config (see Internationalization) |
+| `scaffoldVersion` | `string` | No | Written by `init`/`update`; not for manual edits |
 
 ### `templates`
 

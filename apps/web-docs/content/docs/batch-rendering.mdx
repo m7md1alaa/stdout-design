@@ -115,10 +115,10 @@ The manifest is the programmatic contract for scripting and AI agents: it tells 
 
 ## Controlling failures
 
-| Flag          | Behavior                                                        |
-| ------------- | --------------------------------------------------------------- |
+| Flag | Behavior |
+| --- | --- |
 | `--fail-fast` | Stop the batch at the first error; `status` becomes `"aborted"` |
-| `--json`      | Print the manifest as JSON instead of the human summary         |
+| `--json` | Print the manifest as JSON instead of the human summary |
 
 Without `--fail-fast`, failures are collected and reported in the manifest; the command still exits with code `1` if any render failed.
 

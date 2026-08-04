@@ -31,7 +31,7 @@ export const propsSchema = defineSchema(
       .enum(["light", "dark"])
       .default("dark")
       .describe("Color theme mode"),
-  }),
+  })
 );
 
 export type Props = z.infer<typeof propsSchema>;
@@ -104,17 +104,17 @@ If a template fails to load, other templates keep working errors surface per-tem
 
 Because the schema is plain Zod, you get the whole validation toolbox. The studio prop panel maps types to editors automatically:
 
-| Zod type                                           | Studio control                                | CLI flag value          |
-| -------------------------------------------------- | --------------------------------------------- | ----------------------- |
-| `z.string()`                                       | Text input (textarea if `describe` is long)   | string                  |
-| `z.string()` + `z.url()`                           | Text input                                    | string                  |
-| `z.string().default("#…")` (name contains "color") | Color picker                                  | `#hex` string           |
-| `z.enum([...])`                                    | Dropdown                                      | one of the options      |
-| `z.number()`                                       | Number input (or slider when `min`/`max` set) | number                  |
-| `z.boolean()`                                      | Toggle switch                                 | `true` / `false`        |
-| `z.array(z.number())`                              | Chip list editor                              | comma-separated or JSON |
-| `z.array(z.string())` / `z.url()`                  | Tag editor                                    | comma-separated or JSON |
-| `z.object({...})`                                  | Nested fields, flattened into `dotted.path`   | JSON (or per-key)       |
+| Zod type | Studio control | CLI flag value |
+| --- | --- | --- |
+| `z.string()` | Text input (textarea if `describe` is long) | string |
+| `z.string()` + `z.url()` | Text input | string |
+| `z.string().default("#…")` (name contains "color") | Color picker | `#hex` string |
+| `z.enum([...])` | Dropdown | one of the options |
+| `z.number()` | Number input (or slider when `min`/`max` set) | number |
+| `z.boolean()` | Toggle switch | `true` / `false` |
+| `z.array(z.number())` | Chip list editor | comma-separated or JSON |
+| `z.array(z.string())` / `z.url()` | Tag editor | comma-separated or JSON |
+| `z.object({...})` | Nested fields, flattened into `dotted.path` | JSON (or per-key) |
 
 Other rules that matter:
 

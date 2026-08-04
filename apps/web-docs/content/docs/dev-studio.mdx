@@ -21,17 +21,17 @@ The **Template Selector** dropdown lists every template registered in `studio.co
 
 The panel is generated automatically from your template's Zod `propsSchema` no UI wiring per template. It reads the schema (exposed by the dev server as JSON Schema) and renders the right control for each prop type:
 
-| Prop                                        | Control                                       |
-| ------------------------------------------- | --------------------------------------------- |
-| String                                      | Text input (textarea when `describe` is long) |
-| Color (name contains `color` + `#` default) | Swatch + color picker + hex text input        |
-| `z.enum([...])`                             | Dropdown                                      |
-| Number (with `min` and `max`)               | Range slider                                  |
-| Number                                      | Number input                                  |
-| Boolean                                     | Toggle switch                                 |
-| Array of numbers                            | Chip list + input editor                      |
-| Array of strings / URLs                     | Tag editor                                    |
-| Nested object                               | Fields flattened into `dotted.path` fields    |
+| Prop | Control |
+| --- | --- |
+| String | Text input (textarea when `describe` is long) |
+| Color (name contains `color` + `#` default) | Swatch + color picker + hex text input |
+| `z.enum([...])` | Dropdown |
+| Number (with `min` and `max`) | Range slider |
+| Number | Number input |
+| Boolean | Toggle switch |
+| Array of numbers | Chip list + input editor |
+| Array of strings / URLs | Tag editor |
+| Nested object | Fields flattened into `dotted.path` fields |
 
 Field names come from the schema keys; `.describe("…")` values are shown as field descriptions. Defaults from `.default(...)` seed the initial values, and validation errors appear inline beneath the offending field.
 

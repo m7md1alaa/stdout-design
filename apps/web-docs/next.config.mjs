@@ -6,6 +6,14 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   serverExternalPackages: ["takumi-js", "@takumi-rs/core"],
+  async rewrites() {
+    return [
+      {
+        source: "/docs/:path*.md",
+        destination: "/llms.mdx/docs/:path*/content.md",
+      },
+    ];
+  },
 };
 
 export default withMDX(config);

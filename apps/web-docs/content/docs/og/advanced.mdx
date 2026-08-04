@@ -21,7 +21,7 @@ function MyOGCard({ title, stat }: { title: string; stat: string }) {
 
 export async function GET() {
   return createOgResponse(
-    <MyOGCard title="Monthly Active Users" stat="124.5K" />,
+    <MyOGCard title="Monthly Active Users" stat="124.5K" />
   );
 }
 ```
@@ -50,7 +50,7 @@ export async function GET(data) {
           weight: 400,
         },
       ],
-    },
+    }
   );
 }
 ```
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
       description="Localized OG image"
       siteName="My App"
     />,
-    { locale },
+    { locale }
   );
 }
 ```
