@@ -8,80 +8,115 @@ export const hero = {
     href: "https://github.com/m7md1alaa/stdout-design",
     label: "Star on GitHub",
   },
-  installCommand: "npx @stdout-design/cli init",
 };
 
-export const gap = {
-  eyebrow: "The gap",
+export const logos = {
+  label: "Renders to",
+  items: [
+    "App Store",
+    "Google Play",
+    "Open Graph",
+    "X cards",
+    "Launch pages",
+    "Web",
+  ],
+};
+
+export const features = {
+  eyebrow: "Why stdout-design",
   headline:
-    "The design system stops being the source of truth the moment you need to post something.",
-  oldWay: {
-    label: "Today",
-    lines: [
-      "$ open figma.com",
-      "→ rebuild the card by hand",
-      "→ ship changes to the product",
-      "→ forget to update the export",
-      "→ post a screenshot that's already wrong",
-    ],
-  },
-  newWay: {
-    label: "With stdout-design",
-    lines: [
-      "$ studio render bento-feature \\",
-      "    --data posts.csv \\",
-      "    --out-dir ./out/",
-      "→ 10 assets, from the templates you ship",
-    ],
-  },
-};
-
-export const steps = {
-  eyebrow: "How it works",
-  headline: "Three commands, not a second design tool.",
+    "A render pipeline for the assets you post, not a second design tool.",
   items: [
     {
-      index: "01",
-      title: "Write the template once",
-      body: "A plain React component with typed props. No custom DSL an agent can pattern-match it from your existing components.",
+      label: "One command",
+      title: "Render tonight",
+      body: "One `studio render` call turns a typed TSX template into production assets. No Figma, no rebuild, no drift between the product and the export.",
     },
     {
-      index: "02",
-      title: "Render, single or batch",
-      body: "One asset from the CLI, or a whole matrix of presets and locales from a data file. Same render path either way.",
-    },
-    {
-      index: "03",
+      label: "Built for agents",
       title: "Point an agent at it",
-      body: "The same render core is exposed over MCP, so Claude Code, Cursor, or any agent can generate assets on command.",
+      body: "The same render core is exposed over MCP, so Claude Code, Cursor, or any agent can generate assets on command from the templates you already ship.",
+    },
+    {
+      label: "Batch at scale",
+      title: "A data file, a whole set",
+      body: "Render a full matrix of presets and locales from a CSV or JSON data file  ten assets, or ten thousand. Same render path as a single asset.",
+    },
+    {
+      label: "Multi-target",
+      title: "One template, every canvas",
+      body: "App Store screenshots, Open Graph images, and launch cards from the same component. Each target gets its own size, preset, and crop.",
+    },
+    {
+      label: "Type-safe templates",
+      title: "Props, not a DSL",
+      body: "A plain React component with typed props. No custom DSL  agents can pattern-match it from your existing components on day one.",
+    },
+    {
+      label: "Local-first",
+      title: "Open source, no account",
+      body: "Runs on your machine against your repo. Open source, no account, no locked-in exports. Your future self will thank you.",
     },
   ],
 };
 
-export const parity = {
+export const showcase = {
   eyebrow: "One core, three interfaces",
   headline:
     "The live studio, the CLI, and your agent all call the same render path.",
-  rows: [
+  body: "The same render task  a bento-feature card from a data file  expressed in each interface.",
+  ariaLabel: "Interface example",
+  tabs: [
     {
-      capability: "Prop editing",
-      ui: "Sliders & pickers",
-      cli: "--prop flags",
+      id: "cli",
+      label: "CLI",
+      file: "$ studio render",
+      code: `$ npx @stdout-design/cli init
+✔ Created stdout.config.ts
+
+$ studio render bento-feature \\
+    --data ./data/posts.csv \\
+    --preset all \\
+    --out-dir ./out/
+✔ Rendered 10 assets in 1.2s
+
+$ ls ./out/
+launch-card.png  og-post-01.png  og-post-02.png  store@3x.png  x-card.png`,
     },
     {
-      capability: "Batch processing",
-      ui: "Data-row toggle",
-      cli: "--data file.csv",
+      id: "studio",
+      label: "Studio",
+      file: "BentoFeature.tsx",
+      code: `// Same template, prop editing live in the Studio
+import type { Props } from "@stdout-design/core";
+
+export function BentoFeature({ title, rows }: Props) {
+  return (
+    <section className="grid grid-cols-2 gap-4">
+      {rows.map((row) => (
+        <Card key={row.id} {...row} />
+      ))}
+    </section>
+  );
+}`,
     },
     {
-      capability: "Multi-target",
-      ui: "Side-by-side preview",
-      cli: "--preset all",
-    },
-    {
-      capability: "Validation",
-      ui: "Inline error state",
-      cli: "Exit code 1",
+      id: "agent",
+      label: "Agent (MCP)",
+      file: "mcp request",
+      code: `// Any agent, over MCP  the same render path
+{
+  "method": "tools/call",
+  "params": {
+    "name": "studio_render",
+    "arguments": {
+      "template": "bento-feature",
+      "data": "./data/posts.csv",
+      "preset": "all",
+      "outDir": "./out"
+    }
+  }
+}`,
     },
   ],
 };
@@ -89,7 +124,6 @@ export const parity = {
 export const footer = {
   headline: "Render your first asset tonight.",
   body: "Open source, local-first, no account required.",
-  installCommand: "npx @stdout-design/cli init",
   links: [
     { href: "/docs", label: "Documentation" },
     { href: "/docs/agents", label: "For agents" },

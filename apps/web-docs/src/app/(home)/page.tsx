@@ -1,16 +1,16 @@
 import { CtaFooter } from "@/components/marketing/cta-footer";
-import { GapSection } from "@/components/marketing/gap-section";
+import { FeaturesGrid } from "@/components/marketing/features-grid";
 import { Hero } from "@/components/marketing/hero";
-import { HowItWorks } from "@/components/marketing/how-it-works";
-import { InterfaceParity } from "@/components/marketing/interface-parity";
+import { InterfaceShowcase } from "@/components/marketing/interface-showcase";
+import { LogosStrip } from "@/components/marketing/logos-strip";
 
 export default function HomePage() {
   return (
     <main>
       <Hero />
-      <GapSection />
-      <HowItWorks />
-      <InterfaceParity />
+      <LogosStrip />
+      <FeaturesGrid />
+      <InterfaceShowcase />
       <CtaFooter />
     </main>
   );
