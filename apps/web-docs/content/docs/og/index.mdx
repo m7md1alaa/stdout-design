@@ -3,7 +3,7 @@ title: OG Image Generation
 description: Generate social preview images with @stdout-design/core
 ---
 
-`@stdout-design/core/og` provides `createOgResponse` — the render bridge for OG images — and the `StandardOgTemplate` component with your product's design tokens baked in.
+`@stdout-design/core/og` provides `createOgResponse` the render bridge for OG images and the `StandardOgTemplate` component with your product's design tokens baked in.
 
 The template uses the same design tokens as `@stdout-design/web-ui`: dark surface (`#0a0a0b`), indigo accent (`#6366f1`), and content-colored text. OG images match your product's look without a second design system for marketing assets.
 
@@ -19,32 +19,32 @@ export async function GET() {
       title="Hello World"
       description="My first OG image"
       siteName="My App"
-    />
+    />,
   );
 }
 ```
 
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `title` | `string` | required | Main headline (auto-sizes for long text) |
-| `description` | `string?` | — | Supporting text below the title |
-| `siteName` | `string?` | — | Site name displayed in the footer |
+| Prop          | Type      | Default  | Description                              |
+| ------------- | --------- | -------- | ---------------------------------------- |
+| `title`       | `string`  | required | Main headline (auto-sizes for long text) |
+| `description` | `string?` |          | Supporting text below the title          |
+| `siteName`    | `string?` |          | Site name displayed in the footer        |
 
 ## Options
 
-`createOgResponse` accepts every option Takumi supports — `fonts`, `quality`, `lossless`, `stylesheets`, `devicePixelRatio`, `lang`, `images`, `keyframes` — plus OG-specific defaults:
+`createOgResponse` accepts every option Takumi supports `fonts`, `quality`, `lossless`, `stylesheets`, `devicePixelRatio`, `lang`, `images`, `keyframes` plus OG-specific defaults:
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `width` | `1200` | OG standard width |
-| `height` | `630` | OG standard height |
-| `format` | `"webp"` | Best size/quality for social previews |
-| `devicePixelRatio` | `2` | Retina-quality rendering |
-| `locale` | — | BCP-47 locale (auto-sets `lang` + RTL shaping) |
+| Option             | Default  | Description                                    |
+| ------------------ | -------- | ---------------------------------------------- |
+| `width`            | `1200`   | OG standard width                              |
+| `height`           | `630`    | OG standard height                             |
+| `format`           | `"webp"` | Best size/quality for social previews          |
+| `devicePixelRatio` | `2`      | Retina-quality rendering                       |
+| `locale`           |          | BCP-47 locale (auto-sets `lang` + RTL shaping) |
 
-Font URLs work directly — no `fetch` → `arrayBuffer()` dance:
+Font URLs work directly no `fetch` → `arrayBuffer()` dance:
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";

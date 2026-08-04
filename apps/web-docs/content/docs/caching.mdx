@@ -1,0 +1,58 @@
+---
+title: Caching
+description: How the render cache works, and how to inspect or clear it.
+---
+
+Rendering is expensive; re-rendering the same thing twice shouldn't be. stdout-design keeps a two-stage, content-addressed cache so unchanged renders are served instantly.
+
+## Where it lives
+
+The cache lives in `.studio-cache/` at your project root (gitignored by the scaffold, along with `out/`). It has a default size limit of **500 MB** with least-recently-used eviction.
+
+## The two stages
+
+### Compile cache (in-memory)
+
+Compiled template outputs are keyed by `templateId + template content hash + props JSON`. This avoids recompiling a template when nothing about it changed within a session. It's capped at 100 entries.
+
+### Pixel cache (on disk)
+
+Final image bytes are keyed by `template content hash + props JSON + width + height + format`. Each entry is a `<key>.png` file in the cache directory, with metadata tracked in a local database. A render is a **cache hit** when the exact bytes already exist for that combination.
+
+Because the key is content-addressed, any change to the template source, props, size, or locale produces a different key you never get a stale image from the cache.
+
+## When the cache is invalidated
+
+- **Template edits** change the template's content hash, which changes every key derived from it old entries fall out of use naturally.
+- **Config changes** (editing `studio.config.ts` while `studio dev` is running) trigger a full reload that clears the font cache and cleans the pixel cache, since presets, fonts, or locales may have changed.
+- **`studio cache clean`** wipes both caches entirely.
+
+## How hits surface
+
+- **CLI**: batch `manifest.json` entries report `cacheHit: true` for assets served from cache.
+- **Dev server**: `/render` responses carry an `X-Cache: hit | miss` header.
+
+## Inspecting and clearing
+
+```bash
+# See what's cached
+studio cache stats
+
+# As JSON
+studio cache stats --json
+
+# Wipe the cache
+studio cache clean
+```
+
+`stats` shows the cache location, compiled and pixel entry counts, disk usage, and the size limit. `clean` frees the space and reports how much was freed.
+
+## Self-healing
+
+The cache repairs itself:
+
+- Corrupt or truncated pixel entries are deleted and treated as misses.
+- Orphaned files (no matching metadata) are reconciled during full sweeps.
+- I/O errors trigger a serialized recovery pass, and write failures recreate the cache directory and retry.
+
+In practice this means you never have to manually fix a broken cache the worst case is a few missed entries that simply re-render.

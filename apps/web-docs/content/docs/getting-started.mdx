@@ -1,0 +1,104 @@
+---
+title: Getting Started
+description: Install stdout-design, scaffold a project, and render your first image.
+---
+
+## Prerequisites
+
+- **Node.js 18+**
+- **Bun 1.2+** (recommended package manager)
+
+## Install
+
+Add the CLI as a dev dependency:
+
+```bash
+bun add -d @stdout-design/cli
+```
+
+Or install globally to use `studio` directly:
+
+```bash
+bun add -g @stdout-design/cli
+```
+
+If you installed locally, prefix commands with `npx` (or `bunx`):
+
+```bash
+npx @stdout-design/cli <command>
+```
+
+## Scaffold a project
+
+```bash
+npx @stdout-design/cli init
+```
+
+`init` walks you through a few prompts project name, which starter templates to include, which locales to set up, whether to initialize git, and whether to install dependencies. Pass `-y` to skip prompts and use the defaults.
+
+> If `studio.config.ts` already exists in the target directory, `init` skips scaffolding entirely.
+
+`init` creates:
+
+```
+my-project/
+├── studio.config.ts   template registry, presets, locales
+├── package.json
+├── tsconfig.json
+├── types.d.ts         adds the tw= attribute type for React
+├── templates/         your TSX components
+│   └── bento-feature.tsx
+└── locales/           translation files
+    ├── en.json
+    └── ar.json
+```
+
+The scaffolded `studio.config.ts` registers a single `bento-feature` template with two presets (`instagram-square` 1080×1080 as default, and `x-card`).
+
+## Render your first image
+
+```bash
+npx @stdout-design/cli render bento-feature --title "Hello" --out-dir out
+```
+
+By default `render` outputs one PNG **per configured preset** (and per locale), named like:
+
+```
+out/bento-feature.en.instagram-square.0.png
+out/bento-feature.en.x-card.0.png
+```
+
+It also writes a `manifest.json` alongside the images summarizing what was rendered.
+
+## Open the live studio
+
+```bash
+npx @stdout-design/cli dev
+```
+
+This starts the dev server on `http://localhost:3030` with a live preview, an auto-generated prop panel, preset tabs, and locale switching. See [Live Studio](/docs/dev-studio) for the full walkthrough.
+
+## Project structure
+
+```
+my-project/
+├── studio.config.ts      template registry, presets, locales, fonts
+├── templates/            your TSX components
+├── data/                 CSV/JSON for batch renders
+├── locales/              translation files
+├── out/                  rendered assets (gitignored)
+└── .studio-cache/        render cache (gitignored)
+```
+
+- `templates/` one `.tsx` file per template. See [Writing Templates](/docs/templates).
+- `data/` CSV or JSON files for data-driven batch rendering. See [Batch Rendering](/docs/batch-rendering).
+- `locales/` per-locale translation JSON. See [Internationalization](/docs/internationalization).
+- `out/` and `.studio-cache/` are gitignored by the scaffold and rebuilt as needed.
+
+## Next steps
+
+<Cards>
+  <Card title="Writing Templates" href="/docs/templates" />
+  <Card title="CLI Reference" href="/docs/cli" />
+  <Card title="Configuration" href="/docs/configuration" />
+</Cards>

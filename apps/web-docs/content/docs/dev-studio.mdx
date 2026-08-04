@@ -1,0 +1,76 @@
+---
+title: Live Studio
+description: Iterate on templates in the browser with a live canvas, auto-generated prop panel, and hot reload.
+---
+
+The live studio is the fastest way to iterate on a template. Start it from your project root:
+
+```bash
+studio dev
+# or with a custom port
+studio dev --port 3031
+```
+
+Open `http://localhost:3030` (or your chosen port). The UI is split into a sidebar template selector, prop panel, export button and a main area with the locale bar, preset tabs, and the live canvas.
+
+## Picking a template
+
+The **Template Selector** dropdown lists every template registered in `studio.config.ts`, using its `description` from the config. Pick one to load its props and render it on the canvas.
+
+## The prop panel
+
+The panel is generated automatically from your template's Zod `propsSchema` no UI wiring per template. It reads the schema (exposed by the dev server as JSON Schema) and renders the right control for each prop type:
+
+| Prop                                        | Control                                       |
+| ------------------------------------------- | --------------------------------------------- |
+| String                                      | Text input (textarea when `describe` is long) |
+| Color (name contains `color` + `#` default) | Swatch + color picker + hex text input        |
+| `z.enum([...])`                             | Dropdown                                      |
+| Number (with `min` and `max`)               | Range slider                                  |
+| Number                                      | Number input                                  |
+| Boolean                                     | Toggle switch                                 |
+| Array of numbers                            | Chip list + input editor                      |
+| Array of strings / URLs                     | Tag editor                                    |
+| Nested object                               | Fields flattened into `dotted.path` fields    |
+
+Field names come from the schema keys; `.describe("…")` values are shown as field descriptions. Defaults from `.default(...)` seed the initial values, and validation errors appear inline beneath the offending field.
+
+## Preset tabs
+
+Each configured preset appears as a tab showing its `id` and dimensions (e.g. `instagram-square 1080×1080`). Switch tabs to see the same props rendered at each platform size the way to check "does this fit as an OG card too?"
+
+## Locale bar
+
+If your config defines `locales`, they appear as tabs. Switching locales re-renders with that locale's translation data (see [Internationalization](/docs/internationalization)).
+
+If no locale is selected and your props contain Arabic text, the studio **auto-detects** it and selects an Arabic locale automatically, marking the render as `autoDetected`.
+
+## Live canvas
+
+The canvas preview:
+
+- Re-renders **debounced** (~200ms) as you edit props, aborting stale in-flight requests so the preview never falls behind.
+- Scales the output to fit the viewport while keeping the true pixel dimensions visible.
+- Shows the active preset id and dimensions.
+- Displays per-field validation errors in a red panel when a render fails.
+
+## Hot reload
+
+The dev server watches `studio.config.ts`, `templates/`, and `locales/`. On save:
+
+- A template change reloads just that template and re-renders the canvas.
+- A config or shared-file change triggers a full reload (templates, locales, presets) the font and pixel caches are cleared too.
+- Template load errors are streamed to the UI in real time so you see what broke without checking the terminal.
+
+## Export PNG
+
+The **Export PNG** button renders the current template, props, preset, and locale and downloads `<templateId>-<presetId>.png`. It uses the exact same render path as the CLI, so what you see is what you get. On failure it shows the validation issues inline.
+
+> Batch and data-driven output, `manifest.json`, and CLI flags live in the terminal see [Batch Rendering](/docs/batch-rendering) and the [CLI Reference](/docs/cli).
+
+## Tips
+
+- **Give every prop a default** so templates render the moment you select them.
+- **Use `.describe()`** on props to get friendlier labels and longer textareas.
+- **Name color props with "color"** (e.g. `accentColor`, `background`) to get the color picker for free.
+- **Nest related props** (e.g. `trend: z.object({...})`) they flatten into grouped `trend.isPositive`-style fields.

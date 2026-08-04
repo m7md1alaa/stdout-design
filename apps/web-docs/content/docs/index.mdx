@@ -1,13 +1,76 @@
 ---
-title: Hello World
-description: Your first document
+title: Overview
+description: Storybook for images  render your own TSX components into pixel-perfect social and marketing images, in your repo.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+stdout-design is a local-first studio that renders **your own TSX components** into pixel-perfect social and marketing images. No design tool, no SaaS dashboard, no custom DSL you write React, and the studio handles the rest.
 
-## What is Next?
+```bash
+# Scaffold a project
+npx @stdout-design/cli init
+
+# Render an image
+bun studio render bento-feature --title "Hello" --out-dir out
+
+# Open the live studio
+bun studio dev
+```
+
+## The Problem
+
+In 2026, a huge and growing class of builders ships entire products through AI coding agents Claude Code, Cursor, without a traditional engineering team and without a marketing team. They are founders, indie hackers, who are "near code": they read diffs, they run CLIs, they live in a terminal, but they are not necessarily classically trained engineers.
+
+When this person needs a marketing asset an App Store screenshot, an Instagram milestone card, they hit a dead workflow:
+
+- **Design tools (Figma/Canva) require leaving the codebase entirely**, manually recreating UI that already exists in their app.
+- **Component rendering engines (Satori, Takumi, `next/og`)** solve the hard rendering problem JSX/CSS to pixels, fast, no headless browser but they are _libraries_, not _workflows_. There is no live preview, no prop-editing UI, no CLI, no batch/data-driven generation, and no agent interface on top of them.
+
+**The result:** the same person who built the product's UI in TSX rebuilds a worse, drifting copy of that UI by hand in a separate design tool every single time they want to post something. The design system that is the single source of truth for the product is _not_ the single source of truth for how the product is marketed.
+
+This was true in 2023 too. What's different now is _who's affected_. The population of people building products solo, through agents, without a design or marketing function, has exploded and that population is uniquely well-positioned to want a code-native tool, because they already live in TSX and in the terminal. The gap was always there; the audience that would actually adopt the fix is new.
+
+## What you get
+
+- **Render from TSX** Plain React components with typed, Zod-defined props.
+- **Live studio** A browser UI with hot-reload, an auto-generated prop panel, and side-by-side preset previews. Tweak props and export PNGs without touching the command line.
+- **Batch & data-driven** Point `render` at a CSV or JSON file and generate one asset per row.
+- **Internationalization** Locale-aware templates, per-locale translation files, RTL support, and automatic Arabic font loading.
+- **Platform presets** Define any output size Instagram, X, LinkedIn, OG, App Store and render one template into all of them at once.
+- **Built-in cache** Re-renders are cheap: unchanged templates and props are served from a content-addressed cache.
+- **Agent-friendly** Deterministic output naming, structured validation errors, and an installable agent skill for AI coding tools.
+
+## How it works
+
+A template is a single TSX component plus a Zod prop schema:
+
+```tsx
+type Props = {
+  title: string;
+  stat: string;
+};
+
+export default function MilestoneCard({ title, stat }: Props) {
+  return (
+    <div tw="bg-black text-white p-8 rounded-2xl">
+      <h1 tw="text-4xl font-bold">{title}</h1>
+      <p tw="text-lg mt-2">{stat}</p>
+    </div>
+  );
+}
+```
+
+Drop it in `templates/`, register it in `studio.config.ts`, and it is immediately renderable from the CLI, the studio, and batch jobs.
+
+## What it is not
+
+- **Not a design tool** You write TSX. This is for people who are comfortable in code.
+- **Not a hosted SaaS** No accounts, no cloud rendering. It runs in your repo like a dev dependency.
+- **Not a new rendering engine** Rendering is powered by [Takumi](https://takumi.bytedance.com/), which turns JSX/CSS into pixels without a headless browser.
+
+## Next steps
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Getting Started" href="/docs/getting-started" />
+  <Card title="Writing Templates" href="/docs/templates" />
+  <Card title="CLI Reference" href="/docs/cli" />
 </Cards>

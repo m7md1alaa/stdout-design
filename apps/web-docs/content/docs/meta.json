@@ -1,0 +1,14 @@
+{
+  "pages": [
+    "index",
+    "getting-started",
+    "templates",
+    "cli",
+    "batch-rendering",
+    "internationalization",
+    "configuration",
+    "dev-studio",
+    "caching",
+    "agents"
+  ]
+}

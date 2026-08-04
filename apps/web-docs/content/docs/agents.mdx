@@ -1,0 +1,93 @@
+---
+title: AI Agents
+description: Use stdout-design from AI coding agents  installable skill, deterministic outputs, and structured errors.
+---
+
+stdout-design is built to be driven by AI coding agents (Claude Code, Cursor, and similar). Rendering is deterministic, outputs are machine-readable, and errors are structured so an agent can self-correct without guessing.
+
+## Install the agent skill
+
+The CLI ships an agent skill that teaches coding agents how to work with a studio project:
+
+```bash
+# From anywhere
+studio skill install
+
+# During scaffolding
+npx @stdout-design/cli init --install-skill
+
+# Non-interactive
+studio skill install --yes
+```
+
+The skill installs from the `m7md1alaa/stdout-design` skill repository using the `skills` CLI (resolved through your package manager `npx`, `bunx`, `pnpm dlx`, or `yarn dlx`). If a skill is already installed, it's left alone.
+
+## Why agents work well with this tool
+
+### Deterministic output naming
+
+Every asset lands at a predictable path no UUIDs, no timestamps:
+
+```
+<templateId>.<locale>.<presetId>.<rowKey>.png
+```
+
+An agent knows exactly where a render will appear before it runs it, and can reference the file afterwards without parsing logs.
+
+### `manifest.json`
+
+Batch renders write a structured `manifest.json` to the output directory:
+
+```json
+{
+  "status": "completed",
+  "completedCount": 4,
+  "totalCount": 4,
+  "succeeded": [
+    {
+      "rowIndex": 0,
+      "locale": "en",
+      "preset": "instagram-square",
+      "outputPath": "out/stat-card.en.instagram-square.0.png",
+      "cacheHit": false
+    }
+  ],
+  "failed": []
+}
+```
+
+This is the contract for piping results into the next step a tweet, a PR description, a changelog post. See [Batch Rendering](/docs/batch-rendering).
+
+### Structured validation errors
+
+When props don't match the template's schema, rendering fails with a structured `PropValidationError` carrying per-field issues: the field path, what was expected, what was received, a human-readable message, and a **suggestion**:
+
+```
+Invalid props: stat - expected number but received abc. Suggestion: provide a valid number
+```
+
+The suggestions are written for self-correction an agent that passes the wrong prop type gets told exactly what to fix, including hinting at the right approach (e.g. "add `.default({})` to make this object optional", "check for typos" on unknown fields).
+
+### Typo-tolerant template IDs
+
+Unknown template IDs trigger a closest-match hint:
+
+```
+Template "btn-feature" not found in studio.config.ts. Did you mean "bento-feature"?
+```
+
+### Agent-writable data
+
+Everything an agent needs to generate assets is plain files:
+
+- **Data files** write a CSV or JSON array, then `studio render <template> --data data/posts.csv` produces one asset per row.
+- **Locale files** write `locales/ar.json` with a template's translations to get localized renders.
+- **Templates** a template is a plain TSX component with a Zod `propsSchema`. Agents can author new templates by pattern-matching the existing ones in your repo, and the studio's per-template error reporting isolates failures.
+
+## A typical agent workflow
+
+1. **Discover** read `studio.config.ts` and the template files to learn template IDs and prop schemas.
+2. **Author** write a data file (or edit a template).
+3. **Render** `studio render stat-card --data data/stats.csv --out-dir out`.
+4. **Verify** read `manifest.json`; check `status`, `failed`, and each `outputPath`.
+5. **Self-correct** if a render fails, parse the structured error and fix the offending prop, then re-run (unchanged cells hit the cache).

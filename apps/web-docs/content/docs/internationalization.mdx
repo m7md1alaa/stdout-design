@@ -1,0 +1,134 @@
+---
+title: Internationalization
+description: Locale-aware templates, per-locale translation files, RTL support, and per-locale fonts.
+---
+
+stdout-design treats locale as a first-class concept. The same template can render in every language you configure same props shape, different string values with RTL handled by the renderer.
+
+## Configuration
+
+Declare the locales you support in `studio.config.ts`:
+
+```ts
+const config: StudioConfig = {
+  locales: ["en", "ar"],
+  // ...
+};
+```
+
+The CLI and studio then expose these locales (CLI `--locale en,ar`, studio locale tabs) and inject the current `locale` into every render's props.
+
+## Translation files
+
+Create one JSON file per locale under `locales/`, keyed by template ID:
+
+```json
+// locales/en.json
+{
+  "stat-card": {
+    "title": "Milestone",
+    "label": "and counting"
+  },
+  "bento-features": {
+    "feature_one_title": "Deep Work",
+    "feature_one_subtitle": "Uninterrupted focus sessions."
+  }
+}
+```
+
+```json
+// locales/ar.json
+{
+  "stat-card": {
+    "title": "إنجاز",
+    "label": "والعدد في ازدياد"
+  },
+  "bento-features": {
+    "feature_one_title": "العمل العميق",
+    "feature_one_subtitle": "جلسات تركيز بدون أي مقاطعات."
+  }
+}
+```
+
+The top-level key is the **template ID**; its value is a set of prop overrides.
+
+### Merge rules
+
+When rendering locale `ar`, the section for the current template is loaded and merged into the render's props:
+
+- **String → string** props are overridden (this is the translation case).
+- **Array → array** props are overridden too (e.g. translated tag lists).
+- Other value types and unknown keys are ignored locale data never introduces new props or overrides numbers/booleans.
+
+So props that aren't translated (colors, booleans, numbers) keep their data-file or default values, and props you don't override in a given locale fall back to the base props.
+
+## RTL
+
+Templates receive the `locale` prop, so you flip the layout yourself:
+
+```tsx
+export default function BentoFeature({ headline, description, locale }: Props) {
+  const isRtl = locale?.startsWith("ar");
+
+  return (
+    <div dir={isRtl ? "rtl" : "ltr"} tw="flex ...">
+      ...
+    </div>
+  );
+}
+```
+
+For Arabic locales the renderer is also told the text direction (`lang: "ar"`), so text shaping is handled correctly.
+
+## Fonts
+
+Arabic (and any locale whose code starts with `ar`) triggers automatic font loading. By default the renderer pulls **Noto Sans Arabic** from Google Fonts. To use your own fonts, configure them per locale:
+
+```ts
+const config: StudioConfig = {
+  fonts: {
+    ar: [
+      {
+        family: "Doran",
+        path: "./Doran-Bold.ttf",
+        source: "local",
+        weights: [700],
+      },
+    ],
+    en: [
+      {
+        family: "Doran",
+        path: "./Doran-Bold.ttf",
+        source: "local",
+        weights: [700],
+      },
+    ],
+  },
+};
+```
+
+Each font entry supports:
+
+| Field     | Description                                                                  |
+| --------- | ---------------------------------------------------------------------------- |
+| `family`  | Font family name used in your template's `fontFamily`                        |
+| `path`    | Path to a local font file (`.ttf`/`.woff2`); required when `source: "local"` |
+| `source`  | `"local"` or `"google"` (default)                                            |
+| `weights` | Font weights to load (e.g. `[400, 700]`)                                     |
+
+Reference the family in your template with inline styles:
+
+```tsx
+<div style={{ fontFamily: "Doran, sans-serif" }} ...>
+```
+
+The `fonts` map is keyed by locale code, so you can serve different families or weights per language. Rendered images are cached per locale, so switching languages in the studio doesn't re-fetch fonts every time.
+
+## Rendering across locales
+
+```bash
+# One command, every locale × every preset
+studio render stat-card --data data/stats.csv --locale en,ar --preset instagram-square,x-card --out-dir out
+```
+
+Each locale produces its own set of files `stat-card.en.instagram-square.0.png`, `stat-card.ar.instagram-square.0.png`, and so on. See [Batch Rendering](/docs/batch-rendering) for the full matrix behavior.

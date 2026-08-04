@@ -21,14 +21,14 @@ function MyOGCard({ title, stat }: { title: string; stat: string }) {
 
 export async function GET() {
   return createOgResponse(
-    <MyOGCard title="Monthly Active Users" stat="124.5K" />
+    <MyOGCard title="Monthly Active Users" stat="124.5K" />,
   );
 }
 ```
 
 ## Custom Fonts
 
-Font URLs work directly — no `fetch` → `arrayBuffer()` conversion needed:
+Font URLs work directly no `fetch` → `arrayBuffer()` conversion needed:
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";
@@ -50,16 +50,16 @@ export async function GET(data) {
           weight: 400,
         },
       ],
-    }
+    },
   );
 }
 ```
 
-Takumi accepts font URLs as bare strings or as descriptors — it fetches and caches them on demand.
+Takumi accepts font URLs as bare strings or as descriptors it fetches and caches them on demand.
 
 ## Locale Support
 
-Pass `locale` directly to `createOgResponse` — it auto-sets Takumi's `lang` option for proper text shaping and RTL handling:
+Pass `locale` directly to `createOgResponse` it auto-sets Takumi's `lang` option for proper text shaping and RTL handling:
 
 ```tsx
 import { createOgResponse } from "@stdout-design/core/og";
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
       description="Localized OG image"
       siteName="My App"
     />,
-    { locale }
+    { locale },
   );
 }
 ```

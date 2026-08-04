@@ -1,0 +1,141 @@
+---
+title: Configuration
+description: The studio.config.ts reference  templates, presets, locales, fonts, and output.
+---
+
+`studio.config.ts` lives at your project root and declares everything the studio needs: your template registry, output presets, locales, fonts, and output directory. It's a plain TypeScript file validated at runtime with Zod.
+
+```ts
+// studio.config.ts
+import type { StudioConfig } from "@stdout-design/core";
+
+const config: StudioConfig = {
+  defaultPreset: "instagram-square",
+  outDir: "./out",
+  locales: ["en", "ar"],
+  presets: [
+    {
+      id: "instagram-square",
+      width: 1080,
+      height: 1080,
+      platform: "instagram",
+    },
+    { id: "x-card", width: 1200, height: 675, platform: "x" },
+    { id: "og-image", width: 1200, height: 630, platform: "web" },
+  ],
+  templates: {
+    "bento-feature": {
+      componentPath: "./templates/bento-feature",
+      description: "Apple-style bento feature card.",
+    },
+    "stat-card": {
+      componentPath: "./templates/stat-card",
+      description: "A milestone or stat card for social media.",
+    },
+  },
+};
+
+export default config;
+```
+
+## Fields
+
+| Field             | Type                                              | Required | Description                                       |
+| ----------------- | ------------------------------------------------- | -------- | ------------------------------------------------- |
+| `templates`       | `Record<string, { componentPath, description? }>` | **Yes**  | The template registry (see below)                 |
+| `presets`         | `Array<{ id, width, height, platform }>`          | **Yes**  | Output sizes (see below)                          |
+| `defaultPreset`   | `string`                                          | No       | Preset ID used by default                         |
+| `locales`         | `string[]`                                        | No       | Supported locale codes, e.g. `["en", "ar"]`       |
+| `outDir`          | `string`                                          | No       | Output directory (default `./out`)                |
+| `fonts`           | `Record<locale, FontConfig[]>`                    | No       | Per-locale font config (see Internationalization) |
+| `scaffoldVersion` | `string`                                          | No       | Written by `init`/`update`; not for manual edits  |
+
+### `templates`
+
+Maps a **template ID** to its component file. The ID is what you pass to `studio render`, and the key used in locale files.
+
+```ts
+templates: {
+  "stat-card": {
+    componentPath: "./templates/stat-card", // .tsx added automatically
+    description: "A milestone or stat card for social media.",
+  },
+},
+```
+
+`componentPath` is required and points at the `.tsx` file **without** the extension.
+
+### `presets`
+
+Presets are fully user-defined there's no fixed built-in set. Each one is `{ id, width, height, platform }`, where `platform` is informational (shown in the studio) and `width`/`height` are the output dimensions in pixels.
+
+Rendering without `--preset` produces one image **per preset**. Common platform sizes you can use:
+
+| Preset ID          | Size      | Use                       |
+| ------------------ | --------- | ------------------------- |
+| `og`               | 1200×630  | Open Graph / social cards |
+| `x-card`           | 1200×675  | X (Twitter) cards         |
+| `linkedin`         | 1200×627  | LinkedIn link previews    |
+| `instagram`        | 1080×1080 | Instagram feed posts      |
+| `instagram-square` | 1080×1080 | Instagram feed posts      |
+| `instagram-story`  | 1080×1920 | Instagram stories         |
+| `appstore`         | 1290×2796 | App Store screenshots     |
+| `playstore`        | 1080×1920 | Play Store screenshots    |
+
+These are just sizes name and use them however fits your workflow.
+
+### `defaultPreset`
+
+The preset selected by default in the studio and render fallbacks. If omitted, the first preset in the array is used.
+
+## Validation & errors
+
+`studio.config.ts` is loaded and validated on every command and by the dev server. Failures are reported as clear errors:
+
+- **Missing file** `No studio.config.ts found in <root>.`
+- **Invalid shape** `studio.config.ts is invalid: <path>: <message>; ...` e.g. a missing `componentPath`, or a preset with non-positive dimensions.
+
+`templates` and `presets` are both required; a config missing either fails validation.
+
+## Example: a full multi-platform setup
+
+```ts
+import type { StudioConfig } from "@stdout-design/core";
+
+const config: StudioConfig = {
+  defaultPreset: "instagram-square",
+  outDir: "./out",
+  locales: ["en", "ar"],
+  presets: [
+    {
+      id: "instagram-square",
+      width: 1080,
+      height: 1080,
+      platform: "instagram",
+    },
+    { id: "instagram-story", width: 1080, height: 1920, platform: "instagram" },
+    { id: "x-card", width: 1200, height: 675, platform: "x" },
+    { id: "linkedin", width: 1200, height: 627, platform: "linkedin" },
+    { id: "og-image", width: 1200, height: 630, platform: "web" },
+  ],
+  templates: {
+    "bento-feature": {
+      componentPath: "./templates/bento-feature",
+      description:
+        "Apple-style bento feature card with image, headline, and tag badges.",
+    },
+    "stat-card": {
+      componentPath: "./templates/stat-card",
+      description: "A milestone or stat card for social media.",
+    },
+  },
+};
+
+export default config;
+```
+
+<Cards>
+  <Card title="Writing Templates" href="/docs/templates" />
+  <Card title="Internationalization" href="/docs/internationalization" />
+  <Card title="CLI Reference" href="/docs/cli" />
+</Cards>

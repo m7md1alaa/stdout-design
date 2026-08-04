@@ -1,0 +1,129 @@
+---
+title: Batch Rendering
+description: Render one template per data row  CSV or JSON, across every preset and locale.
+---
+
+Batch rendering turns a data file into a grid of assets: one render per **data row × preset × locale**. This is how you generate "10 milestone cards for the last 10 shipped features" in a single command.
+
+```bash
+studio render stat-card --data data/stats.csv --preset instagram-square,x-card --locale en,ar --out-dir out
+```
+
+## Data files
+
+Pass a CSV or JSON file with `--data`. Each row provides the props for one render.
+
+### CSV
+
+The first row must be a header; every column becomes a prop. Quoted values, empty lines, and surrounding whitespace are handled automatically.
+
+```csv
+title,stat,label,accentColor
+Monthly Active Users,50K,growing fast,#6366f1
+Revenue This Quarter,$2.1M,up 32% YoY,#10b981
+Team Members,42,across 6 countries,#f59e0b
+```
+
+### JSON
+
+Must be an **array of objects**:
+
+```json
+[
+  {
+    "title": "Monthly Active Users",
+    "stat": "50K",
+    "label": "growing fast",
+    "accentColor": "#6366f1"
+  },
+  {
+    "title": "Revenue This Quarter",
+    "stat": "$2.1M",
+    "label": "up 32% YoY",
+    "accentColor": "#10b981"
+  }
+]
+```
+
+Any other file type errors with: `Data file must be .csv or .json.`
+
+## Row keys
+
+Every row gets a key used in the output filename. It's taken from the row's `key`, `id`, or `slug` field if present, and falls back to the row's index (`0`, `1`, …). The `key`/`id`/`slug` field is consumed for naming and is **not** passed to the template as a prop.
+
+## The matrix
+
+For each data row, renders run for **every locale × every preset**:
+
+```
+for row in rows
+  for locale in locales
+    for preset in presets
+      render(template, { ...row, locale }, preset)
+```
+
+- **Locales** come from `--locale` (comma-separated), or `config.locales`, or a single `default` locale if none are configured.
+- **Presets** come from `--preset` (comma-separated), or all presets in `config.presets`.
+
+The current `locale` is injected into each render's props, so templates can adapt (e.g. flip to RTL).
+
+## Output
+
+Files are written to `--out-dir` (or `config.outDir`, or `./out`), named:
+
+```
+<templateId>.<locale>.<presetId>.<rowKey>.png
+```
+
+Example for the CSV above:
+
+```
+out/stat-card.en.instagram-square.0.png
+out/stat-card.en.instagram-square.1.png
+out/stat-card.en.instagram-square.2.png
+out/stat-card.ar.x-card.0.png
+...
+```
+
+### manifest.json
+
+A `manifest.json` is written alongside the images:
+
+```json
+{
+  "status": "completed",
+  "completedCount": 12,
+  "totalCount": 12,
+  "succeeded": [
+    {
+      "rowIndex": 0,
+      "locale": "en",
+      "preset": "instagram-square",
+      "outputPath": "out/stat-card.en.instagram-square.0.png",
+      "cacheHit": false
+    }
+  ],
+  "failed": []
+}
+```
+
+- `status` is `"completed"` normally, `"aborted"` if `--fail-fast` stopped the run early.
+- `cacheHit: true` means the asset was served from the render cache rather than re-rendered.
+- `failed` entries include `rowIndex`, `locale`, `preset`, and an `error` message.
+
+The manifest is the programmatic contract for scripting and AI agents: it tells you exactly where every asset landed.
+
+## Controlling failures
+
+| Flag          | Behavior                                                        |
+| ------------- | --------------------------------------------------------------- |
+| `--fail-fast` | Stop the batch at the first error; `status` becomes `"aborted"` |
+| `--json`      | Print the manifest as JSON instead of the human summary         |
+
+Without `--fail-fast`, failures are collected and reported in the manifest; the command still exits with code `1` if any render failed.
+
+## Tips
+
+- **Validate first.** Use `--preset`/`--locale` to shrink the matrix while iterating, then expand to the full set for the final run.
+- **Renders are cached.** Re-running an unchanged batch is fast unchanged cells report `cacheHit: true` (see [Caching](/docs/caching)).
+- **Agent workflow.** Have an agent write the data file, run the batch, then read `manifest.json` to pipe asset paths into a tweet generator or PR description.

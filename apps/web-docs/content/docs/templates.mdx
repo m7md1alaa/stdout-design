@@ -1,0 +1,187 @@
+---
+title: Writing Templates
+description: The template contract  a plain TSX component with a Zod prop schema.
+---
+
+A template is a plain React component rendered to an image by Takumi no headless browser, no custom DSL. If you can write a React component, you can write a template.
+
+## The template contract
+
+A template file must export:
+
+1. A **default function component** this is what gets rendered.
+2. A **`propsSchema`** a Zod object describing the component's props. It drives CLI validation, the studio's prop panel, and batch data merging.
+
+A `templateId` export is optional (used for naming); the template's registered ID in `studio.config.ts` is what actually identifies it.
+
+```tsx
+// templates/stat-card.tsx
+import { defineSchema } from "@stdout-design/core/schema";
+import { z } from "zod";
+
+export const templateId = "stat-card" as const;
+
+export const propsSchema = defineSchema(
+  z.object({
+    title: z.string().default("Weekly Active Users"),
+    stat: z.string().default("124.5K"),
+    label: z.string().default("vs last 7 days"),
+    accentColor: z.string().default("#8b5cf6").describe("Primary brand color"),
+    theme: z
+      .enum(["light", "dark"])
+      .default("dark")
+      .describe("Color theme mode"),
+  }),
+);
+
+export type Props = z.infer<typeof propsSchema>;
+
+export default function StatCard({
+  title,
+  stat,
+  label,
+  accentColor,
+  theme,
+}: Props) {
+  const isDark = theme === "dark";
+  const bg = isDark ? "#0f172a" : "#ffffff";
+  const text = isDark ? "#f8fafc" : "#0f172a";
+
+  return (
+    <div
+      tw="flex flex-col w-full h-full p-10 justify-between"
+      style={{ backgroundColor: bg, color: text }}
+    >
+      <p tw="text-2xl font-medium m-0">{title}</p>
+      <p tw="text-8xl font-extrabold tracking-tighter leading-none m-0">
+        {stat}
+      </p>
+      <p tw="text-2xl font-medium m-0" style={{ color: accentColor }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+```
+
+`defineSchema` is an identity helper it only exists for TypeScript inference ergonomics. The `propsSchema` is a plain `z.object`.
+
+## Registering a template
+
+A template is only renderable once it's registered in `studio.config.ts`:
+
+```ts
+// studio.config.ts
+import type { StudioConfig } from "@stdout-design/core";
+
+const config: StudioConfig = {
+  templates: {
+    "stat-card": {
+      componentPath: "./templates/stat-card",
+      description: "A milestone or stat card for social media.",
+    },
+  },
+  presets: [
+    {
+      id: "instagram-square",
+      width: 1080,
+      height: 1080,
+      platform: "instagram",
+    },
+  ],
+};
+
+export default config;
+```
+
+- The key (`"stat-card"`) is the template ID you pass to `render`.
+- `componentPath` points at the `.tsx` file **without** the extension.
+- `description` is optional and shows up in the studio's template dropdown.
+
+If a template fails to load, other templates keep working errors surface per-template in the studio and on the CLI.
+
+## Supported prop types
+
+Because the schema is plain Zod, you get the whole validation toolbox. The studio prop panel maps types to editors automatically:
+
+| Zod type                                           | Studio control                                | CLI flag value          |
+| -------------------------------------------------- | --------------------------------------------- | ----------------------- |
+| `z.string()`                                       | Text input (textarea if `describe` is long)   | string                  |
+| `z.string()` + `z.url()`                           | Text input                                    | string                  |
+| `z.string().default("#…")` (name contains "color") | Color picker                                  | `#hex` string           |
+| `z.enum([...])`                                    | Dropdown                                      | one of the options      |
+| `z.number()`                                       | Number input (or slider when `min`/`max` set) | number                  |
+| `z.boolean()`                                      | Toggle switch                                 | `true` / `false`        |
+| `z.array(z.number())`                              | Chip list editor                              | comma-separated or JSON |
+| `z.array(z.string())` / `z.url()`                  | Tag editor                                    | comma-separated or JSON |
+| `z.object({...})`                                  | Nested fields, flattened into `dotted.path`   | JSON (or per-key)       |
+
+Other rules that matter:
+
+- **Defaults.** Give every prop a `.default(...)` so templates render with zero required arguments. The studio seeds these defaults automatically; the CLI merges them before rendering.
+- **Descriptions.** `.describe("…")` becomes the field label/tooltip in the studio. It also surfaces in CLI validation errors.
+- **Validation.** Invalid props fail the render with a structured `PropValidationError` useful for agents to self-correct (see [AI Agents](/docs/agents)).
+
+## Styling
+
+Templates use Tailwind-style utilities via the `tw` attribute, plus regular inline `style` for anything dynamic:
+
+```tsx
+<div
+  tw="flex items-center justify-between w-full h-full p-10"
+  style={{ backgroundColor: "#0a0a0b", color: "#ffffff" }}
+>
+```
+
+The scaffold's `types.d.ts` augments React's `DOMAttributes` with the `tw?: string` prop, so `tw=` type-checks out of the box.
+
+Supported styling features include flexbox, grid, absolute positioning, `z-index`, border-radius, background images (including gradients), SVG, and dynamic values computed inside the component (see the sparkline example below).
+
+## Working with data
+
+Templates are full React components, so you can map over arrays, compute styles, and render conditionally:
+
+```tsx
+{
+  sparkline.map((val, i) => {
+    const heightPct = (val / Math.max(...sparkline)) * 100;
+    return (
+      <div
+        key={i}
+        tw="w-12 rounded-t-md"
+        style={{ height: `${heightPct}%`, backgroundColor: accentColor }}
+      />
+    );
+  });
+}
+```
+
+## Images
+
+Reference remote images with a regular `<img>` element. A `src` prop typed as `z.url()` renders an image field in the studio:
+
+```tsx
+<img src={avatarUrl} alt="" tw="w-12 h-12 rounded-full" />
+```
+
+Images are fetched at render time, so they must be reachable from wherever you render (locally, or in CI).
+
+## Locale & RTL
+
+Templates receive the current `locale` as a prop. A common pattern is flipping `dir` for right-to-left locales:
+
+```tsx
+export default function BentoFeature({ headline, description, locale }: Props) {
+  const isRtl = locale?.startsWith("ar");
+
+  return (
+    <div dir={isRtl ? "rtl" : "ltr"} ...>
+```
+
+Locale translation data is merged into props automatically see [Internationalization](/docs/internationalization).
+
+<Cards>
+  <Card title="CLI Reference" href="/docs/cli" />
+  <Card title="Configuration" href="/docs/configuration" />
+  <Card title="Internationalization" href="/docs/internationalization" />
+</Cards>
