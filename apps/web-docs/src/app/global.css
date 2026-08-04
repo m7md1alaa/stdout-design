@@ -180,7 +180,10 @@ html.light:has(#nd-docs-layout) ::selection {
   }
 }
 
-/* Blinking terminal cursor, used once in the hero. */
+/* ============================================================
+   BLINKING TERMINAL CURSOR
+   Used in hero headline: <span aria-hidden="true" className="caret text-accent">_</span>
+   ============================================================ */
 @keyframes caret-blink {
   0%,
   49% {
@@ -194,4 +197,119 @@ html.light:has(#nd-docs-layout) ::selection {
 
 .caret {
   animation: caret-blink 1s step-end infinite;
+}
+
+/* ============================================================
+   TITLE GLOW
+   Apply to a sibling div with aria-hidden="true" layered behind
+   the real heading. Wrap both in a relative container.
+   Example:
+     <div className="relative">
+       <h1 className="font-mono text-4xl ...">Your text<span className="caret text-accent">_</span></h1>
+       <div aria-hidden="true" className="title-glow font-mono text-4xl ...">Your text_</div>
+     </div>
+   ============================================================ */
+.title-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  filter: blur(14px);
+  opacity: 0.3;
+  color: var(--accent);
+}
+
+/* ============================================================
+   PULSE SHIMMER — animated edge lines on InstallCommand + connectors
+   Usage: wrap a line div with overflow-hidden, put .pulse-shimmer inside
+   ============================================================ */
+@keyframes pulse-right {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+@keyframes pulse-left {
+  0% {
+    transform: translateX(350%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.pulse-shimmer {
+  position: absolute;
+  inset-block: 0;
+  width: 35%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 55%, transparent) 50%,
+    transparent 100%
+  );
+  animation: pulse-right 2s linear infinite;
+}
+
+.pulse-shimmer-left {
+  position: absolute;
+  inset-block: 0;
+  width: 35%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 55%, transparent) 50%,
+    transparent 100%
+  );
+  animation: pulse-left 2s linear infinite;
+}
+
+/* ============================================================
+   TERMINAL CONTAINER — glowing border glass effect (from evlog)
+   Apply .terminal-container to the outer wrapper of the TerminalPane.
+   ============================================================ */
+.terminal-container {
+  background-clip: padding-box, border-box;
+  background-image:
+    linear-gradient(var(--background), var(--background)),
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%);
+  background-origin: border-box;
+  border: 1px solid transparent;
+}
+
+/* ============================================================
+   TERMINAL DOTS — subtle dot-grid texture for terminal pane background
+   Apply .terminal-dots to the inner content area of the TerminalPane.
+   ============================================================ */
+.terminal-dots {
+  background-image: radial-gradient(
+    circle,
+    hsla(0, 0%, 100%, 0.015) 1px,
+    transparent 0
+  );
+  background-size: 20px 20px;
+}
+
+/* ============================================================
+   TERMINAL LINE HIGHLIGHTS — row-level accent glows
+   Apply .terminal-latest-line to the currently active output row.
+   Apply .terminal-error-line to error output rows.
+   ============================================================ */
+.terminal-latest-line {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 6%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.terminal-error-line {
+  background: linear-gradient(
+    90deg,
+    rgba(248, 113, 113, 0.05) 0%,
+    transparent 70%
+  );
 }

@@ -7,9 +7,19 @@ export function FeaturesGrid() {
         <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-fg-faint">
           {features.eyebrow}
         </p>
-        <h2 className="mb-12 max-w-2xl text-2xl font-medium leading-snug text-foreground sm:text-3xl">
-          {features.headline}
-        </h2>
+
+        {/* Heading with glow */}
+        <div className="relative mb-12 inline-block">
+          <h2 className="max-w-2xl text-2xl font-medium leading-snug text-foreground sm:text-3xl">
+            {features.headline}
+          </h2>
+          <div
+            aria-hidden="true"
+            className="title-glow max-w-2xl text-2xl font-medium leading-snug sm:text-3xl"
+          >
+            {features.headline}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
           {features.items.map((feature) => (

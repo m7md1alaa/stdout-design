@@ -58,6 +58,7 @@ export function CodePane({
     <figure className="overflow-hidden rounded-xl border border-border bg-black/80">
       <figcaption className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
         <span className="flex min-w-0 items-center gap-2 font-mono text-xs text-fg-muted">
+          {/* Accent dot — signals active/live state */}
           <span
             aria-hidden="true"
             className="size-1.5 shrink-0 rounded-full bg-accent"
