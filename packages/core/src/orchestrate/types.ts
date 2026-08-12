@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 
 import type { FontResolutionResult } from "../assets/assets-resolver.js";
+import type { ImagePolicy } from "../assets/image-resolver.js";
 import type { RenderCache } from "../cache/render-cache.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import type { Font, RenderOptions } from "../engine/takumi-types-shim.js";
@@ -43,6 +44,13 @@ export interface OrchestrateRenderInput {
   fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
   fonts?: Font[];
   fontFamilies?: string[];
+  /**
+   * Fetch policy for external images/emoji this template's node tree
+   * references. Source this from a trusted, non-request-influenced place
+   * (studio.config.ts / OgResponseOptions) -- never from `props`. Unset
+   * denies every URL (see ADR-0018 and `assets/image-resolver.ts`).
+   */
+  images?: ImagePolicy;
   width: number;
   height: number;
   cache: RenderCache;
@@ -69,6 +77,8 @@ export interface OrchestrateMeasureInput {
   locale?: string;
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
   fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
+  /** See `OrchestrateRenderInput.images`. */
+  images?: ImagePolicy;
   cache: RenderCache;
   signal?: AbortSignal;
 }

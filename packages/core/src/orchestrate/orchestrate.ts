@@ -2,6 +2,11 @@ import { createElement } from "react";
 
 import type { FontResolutionResult } from "../assets/assets-resolver.js";
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
+import type {
+  ImagePolicy,
+  ImageSourceEntry,
+} from "../assets/image-resolver.js";
+import { resolveImages } from "../assets/image-resolver.js";
 import { RenderCache } from "../cache/render-cache.js";
 import { compileTemplate } from "../engine/render.js";
 import type { CompiledTemplate } from "../engine/render.js";
@@ -19,6 +24,15 @@ import type {
 
 interface PrepResult {
   compiled: CompiledTemplate;
+  /**
+   * The template ready to hand to `renderToPixels`/`measureTemplate`:
+   * identical to `compiled` unless emoji extraction changed its node (see
+   * `assets/image-resolver.ts`). Never written to the compile cache --
+   * image/emoji resolution is policy-dependent per call, while `compiled`
+   * is reusable across any policy.
+   */
+  renderReady: CompiledTemplate;
+  resolvedImages: ImageSourceEntry[];
   mergedProps: Record<string, unknown>;
   propsJSON: string;
   compileKey: string;
@@ -43,6 +57,7 @@ const prepPipeline = async (input: {
   fetchFonts:
     | ((localeId: string) => Promise<FontResolutionResult | null>)
     | undefined;
+  images: ImagePolicy | undefined;
   cache: RenderCache;
 }): Promise<PrepResult> => {
   const {
@@ -57,6 +72,7 @@ const prepPipeline = async (input: {
     preResolvedFonts,
     preResolvedFontFamilies,
     fetchFonts,
+    images,
     cache,
   } = input;
 
@@ -111,13 +127,24 @@ const prepPipeline = async (input: {
     }
   }
 
+  const { node: resolvedNode, images: resolvedImages } = await resolveImages(
+    compiled.node,
+    images
+  );
+  const renderReady: CompiledTemplate =
+    resolvedNode === compiled.node
+      ? compiled
+      : { ...compiled, node: resolvedNode };
+
   return {
     compileKey,
     compiled,
     mergedProps: merged,
     propsJSON,
+    renderReady,
     resolvedFontFamilies,
     resolvedFonts,
+    resolvedImages,
     resolvedLang,
   };
 };
@@ -138,6 +165,7 @@ export const orchestrateRender = async (
     fetchFonts,
     fonts: preResolvedFonts,
     fontFamilies: preResolvedFontFamilies,
+    images,
     width,
     height,
     cache,
@@ -152,6 +180,7 @@ export const orchestrateRender = async (
     compiledTemplate,
     component,
     fetchFonts,
+    images,
     loadLocaleData,
     locale: resolvedLocale,
     preResolvedFontFamilies,
@@ -183,7 +212,7 @@ export const orchestrateRender = async (
   }
 
   const output = await renderToPixels(
-    prep.compiled,
+    prep.renderReady,
     { height, width },
     {
       fontFamilies:
@@ -192,6 +221,7 @@ export const orchestrateRender = async (
           : undefined,
       fonts: prep.resolvedFonts.length > 0 ? prep.resolvedFonts : undefined,
       format,
+      images: prep.resolvedImages.length > 0 ? prep.resolvedImages : undefined,
       lang: prep.resolvedLang,
     },
     signal
@@ -230,6 +260,7 @@ export const orchestrateMeasure = async (
     locale: localeId,
     loadLocaleData,
     fetchFonts,
+    images,
     cache,
     signal,
   } = input;
@@ -241,6 +272,7 @@ export const orchestrateMeasure = async (
     compiledTemplate,
     component,
     fetchFonts,
+    images,
     loadLocaleData,
     locale: resolvedLocale,
     preResolvedFontFamilies: undefined,
@@ -252,13 +284,14 @@ export const orchestrateMeasure = async (
   });
 
   const measured = await measureTemplate(
-    prep.compiled,
+    prep.renderReady,
     {
       fontFamilies:
         (prep.resolvedFontFamilies ?? []).length > 0
           ? prep.resolvedFontFamilies
           : undefined,
       fonts: prep.resolvedFonts.length > 0 ? prep.resolvedFonts : undefined,
+      images: prep.resolvedImages.length > 0 ? prep.resolvedImages : undefined,
       lang: prep.resolvedLang,
     },
     signal
