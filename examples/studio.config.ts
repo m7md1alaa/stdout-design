@@ -45,6 +45,11 @@ const config: StudioConfig = {
       description:
         "A quote card with attribution, avatar, and customizable background.",
     },
+    "docs-og": {
+      componentPath: "./templates/docs-og",
+      description:
+        "web-docs' OG card for doc pages — title/description/siteName, posterized glow.",
+    },
     "features-showcase": {
       componentPath: "./templates/features-showcase",
       description:
