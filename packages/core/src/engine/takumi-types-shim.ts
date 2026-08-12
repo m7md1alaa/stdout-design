@@ -17,18 +17,28 @@
  * upstream repo: https://github.com/kane50613/takumi
  *
  * v2 breaking changes reflected below (see /docs/upgrade/v2):
- * - `new Renderer(options)` -> `new Renderer()`. The constructor takes no
- *   arguments; fonts and images are now per-render options instead of
- *   construction-time state.
+ * - `new Renderer()` -> `new Renderer(options?)`. The constructor takes an
+ *   optional `RendererOptions` (currently just `cacheMaxBytes`, the byte
+ *   budget shared by every cached resource -- decoded images, SVG rasters,
+ *   parsed stylesheets -- default 16 MiB). Fonts and per-render images are
+ *   still per-render options, not construction-time state.
  * - `loadFont` / `loadFonts` / `loadFontSync` -> `registerFont`. Use this
  *   only to preload a font once and reuse it across many renders; most
  *   callers should just pass `fonts` on the render/measure call instead.
  * - The persistent image store and `GlobalContext` are gone.
  *   `putPersistentImage` / `clearImageStore` no longer exist. Every image
  *   a render needs must be passed through `images`, keyed by `src`.
- * - `fetchedResources` -> `images`. `images` also accepts a group form
- *   (`{ sources, fetch, fetchCache }`) that combines pre-fetched entries,
- *   a custom fetch implementation, and a shared byte cache.
+ * - `fetchedResources` -> `images`. IMPORTANT: at *this* layer (the native
+ *   `@takumi-rs/core` binding) `images` is `Array<ImageSource>` --
+ *   pre-fetched `{ src, data, cache? }` entries only. There is no fetch
+ *   mechanism here. The fetch-capable "group form" (`{ sources, fetch,
+ *   timeout, fetchCache, allowUrl, maxBytes }`) documented for Takumi is a
+ *   `@takumi-rs/helpers` concept (`prepareImages()`, and the managed
+ *   `takumi-js` `render()`/`ImageResponse`), not something this renderer's
+ *   `RenderOptions.images` accepts directly -- passing that shape here
+ *   type-checks against nothing (see `ImagesOption` below) and would fail
+ *   at the native boundary. `packages/core/src/assets/image-resolver.ts`
+ *   is where the fetch step actually happens, upstream of this shim.
  * - `format` stays a string, but `quality` (jpeg / lossy webp) and
  *   `lossless` (webp) are now separate optional fields instead of one
  *   combined quality argument.
@@ -58,26 +68,24 @@ export interface FontDescriptor {
 /** A font supplied to a render/measure call: a loaded descriptor, raw bytes, or a bare URL fetched on demand. */
 export type Font = FontDescriptor | Uint8Array | ArrayBuffer | Buffer | string;
 
+/** Cache policy for a decoded image, applied against the renderer's shared `cacheMaxBytes` budget. Defaults to `"auto"`. */
+type ImageCacheMode = "auto" | "none";
+
 interface ImageSourceEntry {
   src: string;
   data: Uint8Array | ArrayBuffer;
+  cache?: ImageCacheMode;
 }
 
-/** Shared byte cache across renders -- dedupes concurrent fetches of the same URL. */
-type ImageFetchCache = Map<string, Promise<ArrayBuffer>>;
-
-type ImageFetchFn = (url: string, signal?: AbortSignal) => Promise<ArrayBuffer>;
-
-interface ImageResourcesGroup {
-  /** Pre-fetched entries, keyed by src. Not re-fetched. */
-  sources?: ImageSourceEntry[];
-  fetch?: ImageFetchFn;
-  timeout?: number;
-  fetchCache?: ImageFetchCache;
-}
-
-/** Either a flat list of pre-fetched images, or the group form with fetch behavior + a shared cache. */
-type ImagesOption = ImageSourceEntry[] | ImageResourcesGroup;
+/**
+ * Pre-fetched images only -- this is the real native `RenderOptions.images`
+ * shape. There is no fetch-capable group form at this layer; resolve
+ * `src`/`backgroundImage`/`maskImage` URLs to bytes upstream (see
+ * `packages/core/src/assets/image-resolver.ts`, which wraps
+ * `@takumi-rs/helpers`'s `prepareImages`/`extractEmojis`) before they reach
+ * `RenderOptions.images`.
+ */
+type ImagesOption = ImageSourceEntry[];
 
 type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
 type DitheringAlgorithm = "none" | "ordered-bayer" | "floyd-steinberg";
@@ -145,8 +153,17 @@ export interface Renderer {
   ) => Promise<MeasuredNode>;
 }
 
-/** v2: the constructor takes no arguments. Fonts/images are per-render options now. */
-type RendererConstructor = new () => Renderer;
+export interface RendererOptions {
+  /**
+   * Byte budget shared by every cached resource -- decoded images, SVG
+   * rasters, parsed stylesheets. `0` disables caching.
+   * @default 16 MiB (16 * 1024 * 1024)
+   */
+  cacheMaxBytes?: number;
+}
+
+/** v2: fonts/per-render images are per-render options; only the shared cache budget is construction-time. */
+type RendererConstructor = new (options?: RendererOptions) => Renderer;
 
 // Cast through `unknown` rather than asserting the runtime class directly
 // implements `RendererConstructor` -- see the file header TODO for why
