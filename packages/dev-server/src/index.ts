@@ -240,6 +240,7 @@ export const createDevServer = async (options: DevServerOptions) => {
         >,
         fetchFonts,
         height: preset.height,
+        images: config.images,
         loadLocaleData:
           locale && !autoDetected
             ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
@@ -319,6 +320,7 @@ export const createDevServer = async (options: DevServerOptions) => {
           Record<string, unknown>
         >,
         fetchFonts,
+        images: config.images,
         loadLocaleData:
           locale && !autoDetected
             ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
