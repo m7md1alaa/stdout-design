@@ -3,67 +3,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   consumeShareParam,
   loadPersistedState,
-  mergeWithDefaults,
   savePersistedState,
 } from "../lib/persistence";
 import type { PersistedAppState } from "../lib/persistence";
 import type { ValidationIssue } from "../lib/renderer";
-import { resolveLocale, setNestedValue } from "../lib/utils";
+import {
+  computeDefaultProps,
+  mergeWithDefaults,
+  setNestedValue,
+} from "../lib/template-props";
+import { resolveLocale } from "../lib/utils";
 import type { SSEReloadEvent } from "./use-sse";
 import { useSSE } from "./use-sse";
 import type { PresetData, TemplateSchema } from "./use-templates";
 
 const PERSIST_DEBOUNCE_MS = 300;
-
-interface PropDef {
-  type?: string;
-  default?: unknown;
-  properties?: Record<string, PropDef>;
-}
-
-const computeDefaultProps = (
-  template: TemplateSchema | undefined
-): Record<string, unknown> => {
-  const defaults: Record<string, unknown> = {};
-  const properties = (
-    template?.propsSchema as {
-      properties?: Record<string, PropDef>;
-    }
-  )?.properties;
-  if (!properties) {
-    return defaults;
-  }
-
-  for (const key of Object.keys(properties)) {
-    const prop = properties[key];
-    if (!prop) {
-      continue;
-    }
-
-    if (prop.type === "object" && prop.properties) {
-      const nested = computeDefaultProps({
-        contentHash: "",
-        description: "",
-        id: "",
-        propsSchema: { properties: prop.properties },
-      });
-      if (Object.keys(nested).length > 0) {
-        defaults[key] = nested;
-      }
-    } else if ("default" in prop && prop.default !== undefined) {
-      defaults[key] = prop.default;
-    } else if (prop.type === "string") {
-      defaults[key] = "";
-    } else if (prop.type === "number") {
-      defaults[key] = 0;
-    } else if (prop.type === "boolean") {
-      defaults[key] = false;
-    } else if (prop.type === "array") {
-      defaults[key] = [];
-    }
-  }
-  return defaults;
-};
 
 // Read once, outside any hook, so `consumeShareParam`'s URL-stripping side
 // effect can't run twice across the several pieces of state that need it.
@@ -130,8 +84,9 @@ export const useStudioState = ({
   const defaultPropsCache = useRef<Record<string, Record<string, unknown>>>({});
   const propValues = effectiveTemplateId
     ? mergeWithDefaults(
-        (defaultPropsCache.current[effectiveTemplateId] ??=
-          computeDefaultProps(currentTemplate)),
+        (defaultPropsCache.current[effectiveTemplateId] ??= computeDefaultProps(
+          currentTemplate?.propsSchema
+        )),
         propStore[effectiveTemplateId]
       )
     : {};

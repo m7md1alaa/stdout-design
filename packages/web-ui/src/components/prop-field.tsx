@@ -7,6 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { resolveFieldKind } from "@/lib/resolve-field-kind";
 import { cn } from "@/lib/utils";
 
 interface PropFieldProps {
@@ -16,18 +17,6 @@ interface PropFieldProps {
   error?: string;
   onChange: (value: unknown) => void;
 }
-
-const isColorField = (
-  name: string,
-  schema: Record<string, unknown>
-): boolean => {
-  const nameLower = name.toLowerCase();
-  return (
-    (nameLower.includes("color") || nameLower.includes("colour")) &&
-    typeof schema.default === "string" &&
-    (schema.default as string).startsWith("#")
-  );
-};
 
 const resolveValue = (
   value: unknown,
@@ -441,89 +430,95 @@ export const PropField = ({
   onChange,
 }: PropFieldProps) => {
   const label = (schema.description as string) ?? name;
-  const type = schema.type as string;
   const currentValue = resolveValue(value, schema);
-  const enumValues = schema.enum as string[] | undefined;
+  const fieldKind = resolveFieldKind(name, schema);
 
-  if (isColorField(name, schema)) {
-    return (
-      <ColorField
-        name={name}
-        label={label}
-        value={(currentValue ?? "#000000") as string}
-        onChange={onChange as (value: string) => void}
-      />
-    );
-  }
-
-  if (type === "string" && enumValues?.length) {
-    return (
-      <EnumField
-        name={name}
-        label={label}
-        value={String(currentValue ?? enumValues[0])}
-        options={enumValues}
-        onChange={onChange as (value: string) => void}
-      />
-    );
-  }
-
-  if (type === "number") {
-    return (
-      <NumberField
-        name={name}
-        label={label}
-        value={currentValue}
-        schema={schema}
-        error={error}
-        onChange={onChange as (value: number) => void}
-      />
-    );
-  }
-
-  if (type === "boolean") {
-    return (
-      <BooleanField
-        name={name}
-        label={label}
-        value={Boolean(currentValue)}
-        onChange={onChange as (value: boolean) => void}
-      />
-    );
-  }
-
-  if (type === "array") {
-    return (
-      <ArrayField
-        label={label}
-        value={currentValue}
-        schema={schema}
-        onChange={onChange}
-      />
-    );
-  }
-
-  const isLongText = ((schema.description as string) ?? "").length > 60;
-
-  return (
-    <FieldWrapper name={name} label={label} error={error}>
-      {isLongText ? (
-        <textarea
-          id={`prop-${name}`}
-          value={(currentValue as string) ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          className={cn("field-input resize-y", error && "border-danger")}
+  switch (fieldKind.kind) {
+    case "color": {
+      return (
+        <ColorField
+          name={name}
+          label={label}
+          value={(currentValue ?? "#000000") as string}
+          onChange={onChange as (value: string) => void}
         />
-      ) : (
-        <Input
-          id={`prop-${name}`}
-          type="text"
-          value={(currentValue as string) ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(error && "border-danger")}
+      );
+    }
+
+    case "enum": {
+      return (
+        <EnumField
+          name={name}
+          label={label}
+          value={String(currentValue ?? fieldKind.options[0])}
+          options={fieldKind.options}
+          onChange={onChange as (value: string) => void}
         />
-      )}
-    </FieldWrapper>
-  );
+      );
+    }
+
+    case "number": {
+      return (
+        <NumberField
+          name={name}
+          label={label}
+          value={currentValue}
+          schema={schema}
+          error={error}
+          onChange={onChange as (value: number) => void}
+        />
+      );
+    }
+
+    case "boolean": {
+      return (
+        <BooleanField
+          name={name}
+          label={label}
+          value={Boolean(currentValue)}
+          onChange={onChange as (value: boolean) => void}
+        />
+      );
+    }
+
+    case "array": {
+      return (
+        <ArrayField
+          label={label}
+          value={currentValue}
+          schema={schema}
+          onChange={onChange}
+        />
+      );
+    }
+
+    case "text": {
+      return (
+        <FieldWrapper name={name} label={label} error={error}>
+          {fieldKind.multiline ? (
+            <textarea
+              id={`prop-${name}`}
+              value={(currentValue as string) ?? ""}
+              onChange={(e) => onChange(e.target.value)}
+              rows={3}
+              className={cn("field-input resize-y", error && "border-danger")}
+            />
+          ) : (
+            <Input
+              id={`prop-${name}`}
+              type="text"
+              value={(currentValue as string) ?? ""}
+              onChange={(e) => onChange(e.target.value)}
+              className={cn(error && "border-danger")}
+            />
+          )}
+        </FieldWrapper>
+      );
+    }
+
+    default: {
+      const exhaustive: never = fieldKind;
+      return exhaustive;
+    }
+  }
 };

@@ -11,10 +11,22 @@ interface TemplateOption {
   description: string;
 }
 
+/** What this panel actually reads off StudioState — narrower than the full shape. */
+type SidebarStudio = Pick<
+  StudioState,
+  | "currentPreset"
+  | "currentTemplate"
+  | "effectiveTemplateId"
+  | "handlePropChange"
+  | "handleTemplateChange"
+  | "propValues"
+  | "validationErrors"
+>;
+
 interface StudioSidebarProps {
   templates: TemplateOption[];
   reloading: boolean;
-  studio: StudioState;
+  studio: SidebarStudio;
   exportFlow: ExportState;
   shortcuts: AppCommandsState;
 }

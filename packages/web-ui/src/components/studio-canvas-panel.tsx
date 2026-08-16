@@ -5,11 +5,26 @@ import type { RenderAdapter } from "@/lib/renderer";
 import { Canvas } from "./canvas";
 import { LocaleBar } from "./locale-bar";
 
+/** What this panel actually reads off StudioState — narrower than the full shape. */
+type CanvasPanelStudio = Pick<
+  StudioState,
+  | "autoDetected"
+  | "currentPreset"
+  | "effectiveLocale"
+  | "effectivePresetId"
+  | "effectiveTemplateId"
+  | "handleLocaleChange"
+  | "handleRenderIssues"
+  | "propValues"
+  | "reloadToken"
+  | "setSelectedPreset"
+>;
+
 interface StudioCanvasPanelProps {
   locales: string[];
   presets: PresetData[];
   renderAdapter: RenderAdapter;
-  studio: StudioState;
+  studio: CanvasPanelStudio;
 }
 
 /** The main panel: locale switcher, preset tabs, and the live render preview. */

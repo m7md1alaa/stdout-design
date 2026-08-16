@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 
+import { flattenSchema, getNestedValue } from "@/lib/template-props";
+
 import { PropField } from "./prop-field";
 
 interface PropPanelProps {
@@ -9,63 +11,13 @@ interface PropPanelProps {
   onChange: (path: string, value: unknown) => void;
 }
 
-interface FlattenedProp {
-  name: string;
-  path: string;
-  schema: Record<string, unknown>;
-}
-
-const getProperties = (
-  schema: Record<string, unknown>
-): Record<string, unknown> | undefined => {
-  const props = "properties" in schema ? schema.properties : undefined;
-  return props as Record<string, unknown> | undefined;
-};
-
-const flattenSchema = (
-  properties: Record<string, unknown>,
-  prefix = ""
-): FlattenedProp[] => {
-  const result: FlattenedProp[] = [];
-
-  for (const [key, propSchema] of Object.entries(properties)) {
-    const typed = propSchema as Record<string, unknown>;
-    const path = prefix ? `${prefix}.${key}` : key;
-
-    if (typed.type === "object" && typed.properties) {
-      result.push(
-        ...flattenSchema(typed.properties as Record<string, unknown>, path)
-      );
-    } else {
-      result.push({ name: key, path, schema: typed });
-    }
-  }
-
-  return result;
-};
-
-const getNestedValue = (
-  obj: Record<string, unknown>,
-  path: string
-): unknown => {
-  const parts = path.split(".");
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
-};
-
 export const PropPanel = ({
   schema,
   values,
   errors,
   onChange,
 }: PropPanelProps) => {
-  const properties = getProperties(schema);
+  const flattened = flattenSchema(schema);
 
   const handleChange = useCallback(
     (path: string) => (value: unknown) => {
@@ -74,15 +26,13 @@ export const PropPanel = ({
     [onChange]
   );
 
-  if (!properties || Object.keys(properties).length === 0) {
+  if (flattened.length === 0) {
     return (
       <div className="px-5 py-10 text-center text-content-tertiary">
         <p>This template has no editable props</p>
       </div>
     );
   }
-
-  const flattened = flattenSchema(properties);
 
   return (
     <div className="flex-1 overflow-y-auto">

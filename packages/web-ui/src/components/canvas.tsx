@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-
+import type { RenderPreviewState } from "../hooks/use-render-preview";
+import { useRenderPreview } from "../hooks/use-render-preview";
 import type { RenderAdapter, ValidationIssue } from "../lib/renderer";
 
 interface CanvasProps {
@@ -18,14 +18,7 @@ interface CanvasProps {
   onRenderIssues: (issues: ValidationIssue[]) => void;
 }
 
-interface RenderState {
-  url: string;
-  status: "loading" | "loaded" | "error";
-  issues?: ValidationIssue[];
-  message?: string;
-}
-
-const RenderContent = ({ state }: { state: RenderState | null }) => {
+const RenderContent = ({ state }: { state: RenderPreviewState | null }) => {
   if (!state) {
     return null;
   }
@@ -76,87 +69,10 @@ export const Canvas = ({
   renderAdapter,
   onRenderIssues,
 }: CanvasProps) => {
-  const [render, setRender] = useState<RenderState | null>(null);
-  const lastKeyRef = useRef("");
-  const currentUrlRef = useRef<string | null>(null);
-  const onRenderIssuesRef = useRef(onRenderIssues);
-
-  useEffect(() => {
-    onRenderIssuesRef.current = onRenderIssues;
-  }, [onRenderIssues]);
-
-  useEffect(() => {
-    if (!(templateId && preset)) {
-      return;
-    }
-
-    const controller = new AbortController();
-    const key = `${templateId}-${JSON.stringify(props)}-${preset.id}-${locale ?? "none"}-${autoDetected}-${reloadToken}`;
-
-    if (key === lastKeyRef.current) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      lastKeyRef.current = key;
-      setRender({ status: "loading", url: "" });
-      onRenderIssuesRef.current([]);
-
-      const result = await renderAdapter.render(templateId, props, {
-        autoDetected,
-        locale: locale ?? undefined,
-        preset: preset.id,
-        signal: controller.signal,
-      });
-
-      if (!result.ok) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setRender({
-          issues: result.issues,
-          message: result.error,
-          status: "error",
-          url: "",
-        });
-        if (result.issues) {
-          onRenderIssuesRef.current(result.issues);
-        }
-        return;
-      }
-
-      const url = URL.createObjectURL(result.blob);
-
-      if (currentUrlRef.current) {
-        URL.revokeObjectURL(currentUrlRef.current);
-      }
-      currentUrlRef.current = url;
-
-      setRender({ status: "loaded", url });
-    }, 200);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [
-    templateId,
-    props,
-    preset,
-    locale,
-    autoDetected,
-    reloadToken,
+  const render = useRenderPreview(
+    { autoDetected, locale, preset, props, reloadToken, templateId },
     renderAdapter,
-  ]);
-
-  useEffect(
-    () => () => {
-      if (currentUrlRef.current) {
-        URL.revokeObjectURL(currentUrlRef.current);
-        currentUrlRef.current = null;
-      }
-    },
-    []
+    onRenderIssues
   );
 
   if (!(templateId && preset)) {

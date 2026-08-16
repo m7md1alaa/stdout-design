@@ -53,41 +53,6 @@ export const savePersistedState = (state: PersistedAppState): void => {
   }
 };
 
-/**
- * Layers persisted prop values onto freshly-computed schema defaults,
- * keeping only keys the current schema still defines. Guards against a
- * template's propsSchema changing between sessions (fields renamed, removed,
- * or retyped) reintroducing stale/invalid values from localStorage or an
- * old shared link.
- */
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  v !== null && typeof v === "object" && !Array.isArray(v);
-
-export const mergeWithDefaults = (
-  defaults: Record<string, unknown>,
-  persisted: Record<string, unknown> | undefined
-): Record<string, unknown> => {
-  if (!persisted) {
-    return defaults;
-  }
-
-  const result: Record<string, unknown> = { ...defaults };
-  for (const key of Object.keys(defaults)) {
-    const defaultValue = defaults[key];
-    const persistedValue = persisted[key];
-    if (persistedValue === undefined) {
-      continue;
-    }
-
-    if (isPlainObject(defaultValue) && isPlainObject(persistedValue)) {
-      result[key] = mergeWithDefaults(defaultValue, persistedValue);
-    } else if (typeof persistedValue === typeof defaultValue) {
-      result[key] = persistedValue;
-    }
-  }
-  return result;
-};
-
 export interface SharePayload {
   templateId: string;
   presetId: string | null;

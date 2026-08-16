@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 
 import { logWarn } from "../lib/logger";
 import { buildShareUrl } from "../lib/persistence";
+import { buildRenderOptions } from "../lib/renderer";
 import type { RenderAdapter, ValidationIssue } from "../lib/renderer";
 
 const COPY_FEEDBACK_MS = 2500;
@@ -38,11 +39,15 @@ export const useExport = ({
 
     setExportError(null);
 
-    const result = await renderAdapter.render(effectiveTemplateId, propValues, {
-      autoDetected,
-      locale: effectiveLocale ?? undefined,
-      preset: effectivePresetId,
-    });
+    const result = await renderAdapter.render(
+      effectiveTemplateId,
+      propValues,
+      buildRenderOptions({
+        autoDetected,
+        locale: effectiveLocale,
+        preset: effectivePresetId,
+      })
+    );
 
     if (!result.ok) {
       setExportError(result.error);
