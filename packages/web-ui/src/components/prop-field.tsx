@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -220,52 +220,36 @@ const BooleanField = ({
   label: string;
   value: boolean;
   onChange: (value: boolean) => void;
-}) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [visualState, setVisualState] = useState(value);
-
-  return (
-    <div className="mb-3 flex items-center justify-between">
-      <label
-        htmlFor={`prop-${name}`}
-        className="text-xs font-medium text-content-secondary"
-      >
-        {label}
-      </label>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={value}
-        aria-label={label}
+}) => (
+  <div className="mb-3 flex items-center justify-between">
+    <label
+      htmlFor={`prop-${name}`}
+      className="text-xs font-medium text-content-secondary"
+    >
+      {label}
+    </label>
+    <button
+      id={`prop-${name}`}
+      type="button"
+      role="switch"
+      aria-checked={value}
+      aria-label={label}
+      className={cn(
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+        value ? "bg-accent" : "bg-surface-hover hover:bg-surface-tertiary"
+      )}
+      onClick={() => onChange(!value)}
+      data-state={value ? "checked" : "unchecked"}
+    >
+      <span
         className={cn(
-          "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-          value ? "bg-accent" : "bg-surface-hover hover:bg-surface-tertiary"
+          "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+          value ? "translate-x-4" : "translate-x-0"
         )}
-        onClick={() => {
-          const next = !value;
-          setVisualState(next);
-          onChange(next);
-        }}
-        data-state={value ? "checked" : "unchecked"}
-      >
-        <span
-          className={cn(
-            "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
-            value ? "translate-x-4" : "translate-x-0"
-          )}
-        />
-      </button>
-      <input
-        ref={inputRef}
-        id={`prop-${name}`}
-        type="checkbox"
-        checked={visualState}
-        onChange={(e) => onChange(e.target.checked)}
-        className="sr-only"
       />
-    </div>
-  );
-};
+    </button>
+  </div>
+);
 
 const parseNumericInput = (raw: string): number[] => {
   const trimmed = raw.trim();

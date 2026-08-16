@@ -1,7 +1,9 @@
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./app";
+import { CommandScopeProvider } from "./commands/command-scope";
 
 import "./index.css";
 
@@ -12,6 +14,15 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <HotkeysProvider
+      defaultOptions={{
+        hotkey: { preventDefault: true },
+        hotkeySequence: { timeout: 1200 },
+      }}
+    >
+      <CommandScopeProvider>
+        <App />
+      </CommandScopeProvider>
+    </HotkeysProvider>
   </StrictMode>
 );

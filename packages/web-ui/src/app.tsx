@@ -1,9 +1,13 @@
-import { useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useAppCommands } from "./commands/use-app-commands";
 import { Canvas } from "./components/canvas";
+import { CommandPalette } from "./components/command-palette";
 import { ErrorBoundary } from "./components/error-boundary";
 import { LocaleBar } from "./components/locale-bar";
 import { PropPanel } from "./components/prop-panel";
+import { ShortcutHints } from "./components/shortcut-hints";
+import { ShortcutsDialog } from "./components/shortcuts-dialog";
 import { TemplateSelector } from "./components/template-selector";
 import { API_BASE } from "./constants";
 import { useSSE } from "./hooks/use-sse";
@@ -105,18 +109,24 @@ const App = () => {
     reload,
   } = useTemplates();
 
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-  const [selectedLocale, setSelectedLocale] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(
+    initialState.selectedTemplate
+  );
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(
+    initialState.selectedPreset
+  );
+  const [selectedLocale, setSelectedLocale] = useState<string | null>(
+    initialState.selectedLocale
+  );
   const [propStore, setPropStore] = useState<
     Record<string, Record<string, unknown>>
-  >({});
+  >(initialState.propStore);
   const [reloadToken, setReloadToken] = useState(0);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
-
   const effectiveTemplateId = selectedTemplate ?? templates[0]?.id ?? null;
   const effectivePresetId =
     selectedPreset ?? defaultPreset ?? presets[0]?.id ?? null;
@@ -126,9 +136,11 @@ const App = () => {
 
   const defaultPropsCache = useRef<Record<string, Record<string, unknown>>>({});
   const propValues = effectiveTemplateId
-    ? (propStore[effectiveTemplateId] ??
-      (defaultPropsCache.current[effectiveTemplateId] ??=
-        computeDefaultProps(currentTemplate)))
+    ? mergeWithDefaults(
+        (defaultPropsCache.current[effectiveTemplateId] ??=
+          computeDefaultProps(currentTemplate)),
+        propStore[effectiveTemplateId]
+      )
     : {};
 
   const { locale: effectiveLocale, autoDetected } = resolveLocale(
@@ -194,6 +206,17 @@ const App = () => {
     [effectiveTemplateId]
   );
 
+  const handleResetProps = useCallback(() => {
+    if (!effectiveTemplateId) {
+      return;
+    }
+    setPropStore((prev) => {
+      const { [effectiveTemplateId]: _removed, ...rest } = prev;
+      return rest;
+    });
+    setValidationErrors({});
+  }, [effectiveTemplateId]);
+
   const handleRenderIssues = useCallback((issues: ValidationIssue[]) => {
     const errorMap: Record<string, string> = {};
     for (const issue of issues) {
@@ -230,6 +253,36 @@ const App = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleCopyShareLink = async () => {
+    if (!effectiveTemplateId) {
+      return;
+    }
+    const url = buildShareUrl({
+      localeId: selectedLocale,
+      presetId: effectivePresetId,
+      props: propValues,
+      templateId: effectiveTemplateId,
+    });
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyFeedback("Link copied to clipboard");
+    } catch (copyError) {
+      logWarn("Failed to copy share link", { error: String(copyError) });
+      setCopyFeedback("Couldn't copy — copy it from the address bar instead");
+    }
+    setTimeout(() => setCopyFeedback(null), COPY_FEEDBACK_MS);
+  };
+
+  const shortcuts = useAppCommands({
+    canCopyShareLink: () => Boolean(effectiveTemplateId),
+    canExport: () => Boolean(effectiveTemplateId && currentPreset),
+    canResetProps: () =>
+      Boolean(effectiveTemplateId && propStore[effectiveTemplateId]),
+    copyShareLink: handleCopyShareLink,
+    exportPng: handleExport,
+    resetProps: handleResetProps,
+  });
 
   if (initialLoading) {
     return (
@@ -298,6 +351,11 @@ const App = () => {
             >
               Export PNG
             </button>
+            <ShortcutHints
+              commands={shortcuts.commands}
+              ids={["export-png", "copy-share-link", "reset-props"]}
+              resolveBinding={shortcuts.bindings.resolve}
+            />
             {exportError ? (
               <div className="mt-2 flex items-start gap-2 rounded-sm border border-red-500/30 bg-red-500/10 p-2">
                 <p className="flex-1 text-sm text-danger">{exportError}</p>
@@ -310,6 +368,25 @@ const App = () => {
                 </button>
               </div>
             ) : null}
+            {copyFeedback ? (
+              <p className="mt-2 text-xs text-content-tertiary">
+                {copyFeedback}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="mt-2 flex w-full cursor-pointer items-center justify-between text-[11px] text-content-tertiary hover:text-content-secondary"
+              onClick={() => shortcuts.handleShortcutsOpenChange(true)}
+            >
+              <span className="underline-offset-2 hover:underline">
+                Keyboard shortcuts
+              </span>
+              {shortcuts.shortcutsHelpLabel ? (
+                <kbd className="rounded border border-border bg-surface-tertiary px-1 py-0.5 font-mono text-[10px]">
+                  {shortcuts.shortcutsHelpLabel}
+                </kbd>
+              ) : null}
+            </button>
           </div>
         </aside>
 
@@ -349,6 +426,28 @@ const App = () => {
           />
         </main>
       </div>
+
+      <CommandPalette
+        commands={shortcuts.commands}
+        currentTemplateId={effectiveTemplateId}
+        onOpenChange={shortcuts.handlePaletteOpenChange}
+        onSelectTemplate={handleTemplateChange}
+        open={shortcuts.isPaletteOpen}
+        resolveBinding={shortcuts.bindings.resolve}
+        templates={templates}
+      />
+
+      <ShortcutsDialog
+        commands={shortcuts.commands}
+        isCustomized={shortcuts.bindings.isCustomized}
+        onOpenChange={shortcuts.handleShortcutsOpenChange}
+        open={shortcuts.isShortcutsOpen}
+        recordingIds={shortcuts.recordingIds}
+        resetBinding={shortcuts.bindings.resetBinding}
+        resolveBinding={shortcuts.bindings.resolve}
+        setBinding={shortcuts.bindings.setBinding}
+        setRowRecording={shortcuts.setRowRecording}
+      />
     </ErrorBoundary>
   );
 };
