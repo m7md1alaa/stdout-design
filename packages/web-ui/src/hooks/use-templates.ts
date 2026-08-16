@@ -12,7 +12,7 @@ export interface TemplateSchema {
   errorMessage?: string;
 }
 
-interface PresetData {
+export interface PresetData {
   id: string;
   width: number;
   height: number;

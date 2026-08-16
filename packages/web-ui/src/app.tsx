@@ -1,101 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-
 import { useAppCommands } from "./commands/use-app-commands";
-import { Canvas } from "./components/canvas";
 import { CommandPalette } from "./components/command-palette";
 import { ErrorBoundary } from "./components/error-boundary";
-import { LocaleBar } from "./components/locale-bar";
-import { PropPanel } from "./components/prop-panel";
-import { ShortcutHints } from "./components/shortcut-hints";
 import { ShortcutsDialog } from "./components/shortcuts-dialog";
-import { TemplateSelector } from "./components/template-selector";
+import { StudioCanvasPanel } from "./components/studio-canvas-panel";
+import { StudioSidebar } from "./components/studio-sidebar";
 import { API_BASE } from "./constants";
-import { useSSE } from "./hooks/use-sse";
-import type { SSEReloadEvent } from "./hooks/use-sse";
+import { useExport } from "./hooks/use-export";
+import { useStudioState } from "./hooks/use-studio-state";
 import { useTemplates } from "./hooks/use-templates";
-import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
-import { logWarn } from "./lib/logger";
-import {
-  buildShareUrl,
-  consumeShareParam,
-  loadPersistedState,
-  mergeWithDefaults,
-  savePersistedState,
-} from "./lib/persistence";
-import type { PersistedAppState } from "./lib/persistence";
-import type { RenderAdapter, ValidationIssue } from "./lib/renderer";
-import { resolveLocale, setNestedValue } from "./lib/utils";
-
-interface PropDef {
-  type?: string;
-  default?: unknown;
-  properties?: Record<string, PropDef>;
-}
+import type { RenderAdapter } from "./lib/renderer";
 
 const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
-const PERSIST_DEBOUNCE_MS = 300;
-const COPY_FEEDBACK_MS = 2500;
-
-const computeDefaultProps = (
-  template: TemplateSchema | undefined
-): Record<string, unknown> => {
-  const defaults: Record<string, unknown> = {};
-  const properties = (
-    template?.propsSchema as {
-      properties?: Record<string, PropDef>;
-    }
-  )?.properties;
-  if (!properties) {
-    return defaults;
-  }
-
-  for (const key of Object.keys(properties)) {
-    const prop = properties[key];
-    if (!prop) {
-      continue;
-    }
-
-    if (prop.type === "object" && prop.properties) {
-      const nested = computeDefaultProps({
-        contentHash: "",
-        description: "",
-        id: "",
-        propsSchema: { properties: prop.properties },
-      });
-      if (Object.keys(nested).length > 0) {
-        defaults[key] = nested;
-      }
-    } else if ("default" in prop && prop.default !== undefined) {
-      defaults[key] = prop.default;
-    } else if (prop.type === "string") {
-      defaults[key] = "";
-    } else if (prop.type === "number") {
-      defaults[key] = 0;
-    } else if (prop.type === "boolean") {
-      defaults[key] = false;
-    } else if (prop.type === "array") {
-      defaults[key] = [];
-    }
-  }
-  return defaults;
-};
-
-// Read once, outside any hook, so `consumeShareParam`'s URL-stripping side
-// effect can't run twice across the several pieces of state that need it.
-const initialState: PersistedAppState = (() => {
-  const persisted = loadPersistedState();
-  const share = consumeShareParam();
-  if (!share) {
-    return persisted;
-  }
-  return {
-    propStore: { ...persisted.propStore, [share.templateId]: share.props },
-    selectedLocale: share.localeId,
-    selectedPreset: share.presetId,
-    selectedTemplate: share.templateId,
-  };
-})();
 
 const App = () => {
   const {
@@ -109,179 +25,37 @@ const App = () => {
     reload,
   } = useTemplates();
 
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(
-    initialState.selectedTemplate
-  );
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(
-    initialState.selectedPreset
-  );
-  const [selectedLocale, setSelectedLocale] = useState<string | null>(
-    initialState.selectedLocale
-  );
-  const [propStore, setPropStore] = useState<
-    Record<string, Record<string, unknown>>
-  >(initialState.propStore);
-  const [reloadToken, setReloadToken] = useState(0);
-  const [exportError, setExportError] = useState<string | null>(null);
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
-  const effectiveTemplateId = selectedTemplate ?? templates[0]?.id ?? null;
-  const effectivePresetId =
-    selectedPreset ?? defaultPreset ?? presets[0]?.id ?? null;
+  const studio = useStudioState({
+    defaultPreset,
+    locales,
+    presets,
+    reload,
+    templates,
+  });
 
-  const currentTemplate = templates.find((t) => t.id === effectiveTemplateId);
-  const currentPreset = presets.find((p) => p.id === effectivePresetId) ?? null;
-
-  const defaultPropsCache = useRef<Record<string, Record<string, unknown>>>({});
-  const propValues = effectiveTemplateId
-    ? mergeWithDefaults(
-        (defaultPropsCache.current[effectiveTemplateId] ??=
-          computeDefaultProps(currentTemplate)),
-        propStore[effectiveTemplateId]
-      )
-    : {};
-
-  const { locale: effectiveLocale, autoDetected } = resolveLocale(
-    selectedLocale,
-    propValues,
-    locales
-  );
-
-  useSSE(
-    useCallback(
-      (event: SSEReloadEvent) => {
-        if (event.type === "full") {
-          reload();
-          setReloadToken((t) => t + 1);
-        }
-        if (
-          event.type === "template" &&
-          event.templateId === effectiveTemplateId
-        ) {
-          setReloadToken((t) => t + 1);
-        }
-      },
-      [reload, effectiveTemplateId]
-    )
-  );
-
-  // Autosave: debounced so typing doesn't hammer localStorage on every key.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      savePersistedState({
-        propStore,
-        selectedLocale,
-        selectedPreset,
-        selectedTemplate,
-      });
-    }, PERSIST_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [propStore, selectedLocale, selectedPreset, selectedTemplate]);
-
-  const handleTemplateChange = useCallback((id: string) => {
-    setSelectedTemplate(id);
-    setValidationErrors({});
-  }, []);
-
-  const handlePropChange = useCallback(
-    (path: string, value: unknown) => {
-      if (!effectiveTemplateId) {
-        return;
-      }
-      setPropStore((prev) => ({
-        ...prev,
-        [effectiveTemplateId]: setNestedValue(
-          prev[effectiveTemplateId] ?? {},
-          path,
-          value
-        ),
-      }));
-      setValidationErrors((prev) => {
-        const { [path]: _removed, ...rest } = prev;
-        return rest;
-      });
-    },
-    [effectiveTemplateId]
-  );
-
-  const handleResetProps = useCallback(() => {
-    if (!effectiveTemplateId) {
-      return;
-    }
-    setPropStore((prev) => {
-      const { [effectiveTemplateId]: _removed, ...rest } = prev;
-      return rest;
-    });
-    setValidationErrors({});
-  }, [effectiveTemplateId]);
-
-  const handleRenderIssues = useCallback((issues: ValidationIssue[]) => {
-    const errorMap: Record<string, string> = {};
-    for (const issue of issues) {
-      errorMap[issue.path] = issue.message;
-    }
-    setValidationErrors(errorMap);
-  }, []);
-
-  const handleExport = async () => {
-    if (!(effectiveTemplateId && effectivePresetId)) {
-      return;
-    }
-
-    setExportError(null);
-
-    const result = await renderAdapter.render(effectiveTemplateId, propValues, {
-      autoDetected,
-      locale: effectiveLocale ?? undefined,
-      preset: effectivePresetId,
-    });
-
-    if (!result.ok) {
-      setExportError(result.error);
-      if (result.issues) {
-        handleRenderIssues(result.issues);
-      }
-      return;
-    }
-
-    const url = URL.createObjectURL(result.blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${effectiveTemplateId}-${effectivePresetId}.png`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleCopyShareLink = async () => {
-    if (!effectiveTemplateId) {
-      return;
-    }
-    const url = buildShareUrl({
-      localeId: selectedLocale,
-      presetId: effectivePresetId,
-      props: propValues,
-      templateId: effectiveTemplateId,
-    });
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopyFeedback("Link copied to clipboard");
-    } catch (copyError) {
-      logWarn("Failed to copy share link", { error: String(copyError) });
-      setCopyFeedback("Couldn't copy — copy it from the address bar instead");
-    }
-    setTimeout(() => setCopyFeedback(null), COPY_FEEDBACK_MS);
-  };
+  const exportFlow = useExport({
+    autoDetected: studio.autoDetected,
+    effectiveLocale: studio.effectiveLocale,
+    effectivePresetId: studio.effectivePresetId,
+    effectiveTemplateId: studio.effectiveTemplateId,
+    onRenderIssues: studio.handleRenderIssues,
+    propValues: studio.propValues,
+    renderAdapter,
+    selectedLocale: studio.selectedLocale,
+  });
 
   const shortcuts = useAppCommands({
-    canCopyShareLink: () => Boolean(effectiveTemplateId),
-    canExport: () => Boolean(effectiveTemplateId && currentPreset),
+    canCopyShareLink: () => Boolean(studio.effectiveTemplateId),
+    canExport: () =>
+      Boolean(studio.effectiveTemplateId && studio.currentPreset),
     canResetProps: () =>
-      Boolean(effectiveTemplateId && propStore[effectiveTemplateId]),
-    copyShareLink: handleCopyShareLink,
-    exportPng: handleExport,
-    resetProps: handleResetProps,
+      Boolean(
+        studio.effectiveTemplateId &&
+        studio.propStore[studio.effectiveTemplateId]
+      ),
+    copyShareLink: exportFlow.handleCopyShareLink,
+    exportPng: exportFlow.handleExport,
+    resetProps: studio.handleResetProps,
   });
 
   if (initialLoading) {
@@ -310,128 +84,26 @@ const App = () => {
   return (
     <ErrorBoundary>
       <div className="flex h-screen overflow-hidden">
-        <aside className="flex w-sidebar min-w-sidebar flex-col overflow-y-auto border-r border-border bg-surface-secondary">
-          <div className="flex items-baseline gap-2 border-b border-border px-5 py-5 pb-4">
-            <h1 className="text-lg font-bold tracking-tight text-content">
-              stdout
-            </h1>
-            <span className="text-sm font-normal text-content-tertiary">
-              studio
-            </span>
-            {reloading ? (
-              <span className="ml-auto h-3 w-3 animate-pulse rounded-full bg-accent" />
-            ) : null}
-          </div>
-
-          <TemplateSelector
-            templates={templates}
-            selected={effectiveTemplateId}
-            onChange={handleTemplateChange}
-          />
-
-          {currentTemplate ? (
-            <PropPanel
-              schema={currentTemplate.propsSchema}
-              values={propValues}
-              errors={validationErrors}
-              onChange={handlePropChange}
-            />
-          ) : (
-            <div className="px-5 py-10 text-center text-content-tertiary">
-              Select a template to begin
-            </div>
-          )}
-
-          <div className="border-t border-border px-5 py-4">
-            <button
-              type="button"
-              className="w-full cursor-pointer rounded-sm bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
-              onClick={handleExport}
-              disabled={!effectiveTemplateId || !currentPreset}
-            >
-              Export PNG
-            </button>
-            <ShortcutHints
-              commands={shortcuts.commands}
-              ids={["export-png", "copy-share-link", "reset-props"]}
-              resolveBinding={shortcuts.bindings.resolve}
-            />
-            {exportError ? (
-              <div className="mt-2 flex items-start gap-2 rounded-sm border border-red-500/30 bg-red-500/10 p-2">
-                <p className="flex-1 text-sm text-danger">{exportError}</p>
-                <button
-                  type="button"
-                  className="cursor-pointer border-none bg-none p-0 text-lg leading-none text-danger opacity-60 hover:opacity-100"
-                  onClick={() => setExportError(null)}
-                >
-                  &times;
-                </button>
-              </div>
-            ) : null}
-            {copyFeedback ? (
-              <p className="mt-2 text-xs text-content-tertiary">
-                {copyFeedback}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              className="mt-2 flex w-full cursor-pointer items-center justify-between text-[11px] text-content-tertiary hover:text-content-secondary"
-              onClick={() => shortcuts.handleShortcutsOpenChange(true)}
-            >
-              <span className="underline-offset-2 hover:underline">
-                Keyboard shortcuts
-              </span>
-              {shortcuts.shortcutsHelpLabel ? (
-                <kbd className="rounded border border-border bg-surface-tertiary px-1 py-0.5 font-mono text-[10px]">
-                  {shortcuts.shortcutsHelpLabel}
-                </kbd>
-              ) : null}
-            </button>
-          </div>
-        </aside>
-
-        <main className="flex flex-1 flex-col overflow-hidden">
-          <LocaleBar
-            locales={locales}
-            selected={effectiveLocale}
-            onChange={setSelectedLocale}
-          />
-          <div className="flex overflow-x-auto border-b border-border bg-surface-secondary">
-            {presets.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className={`flex cursor-pointer flex-col items-center gap-0.5 whitespace-nowrap border-none bg-none px-4 py-2.5 text-content-tertiary transition-colors hover:text-content-secondary ${effectivePresetId === preset.id ? "border-b-2 border-accent text-accent" : "border-b-2 border-transparent"}`}
-                onClick={() => {
-                  setSelectedPreset(preset.id);
-                }}
-              >
-                <span className="text-xs font-semibold">{preset.id}</span>
-                <span className="font-mono text-[10px] text-content-tertiary">
-                  {preset.width}&times;{preset.height}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <Canvas
-            templateId={effectiveTemplateId}
-            props={propValues}
-            preset={currentPreset}
-            locale={effectiveLocale}
-            autoDetected={autoDetected}
-            reloadToken={reloadToken}
-            renderAdapter={renderAdapter}
-            onRenderIssues={handleRenderIssues}
-          />
-        </main>
+        <StudioSidebar
+          exportFlow={exportFlow}
+          reloading={reloading}
+          shortcuts={shortcuts}
+          studio={studio}
+          templates={templates}
+        />
+        <StudioCanvasPanel
+          locales={locales}
+          presets={presets}
+          renderAdapter={renderAdapter}
+          studio={studio}
+        />
       </div>
 
       <CommandPalette
         commands={shortcuts.commands}
-        currentTemplateId={effectiveTemplateId}
+        currentTemplateId={studio.effectiveTemplateId}
         onOpenChange={shortcuts.handlePaletteOpenChange}
-        onSelectTemplate={handleTemplateChange}
+        onSelectTemplate={studio.handleTemplateChange}
         open={shortcuts.isPaletteOpen}
         resolveBinding={shortcuts.bindings.resolve}
         templates={templates}

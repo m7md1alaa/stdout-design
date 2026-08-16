@@ -70,3 +70,5 @@ export const useAppCommands = (callbacks: AppCommandActionCallbacks) => {
     shortcutsHelpLabel,
   };
 };
+
+export type AppCommandsState = ReturnType<typeof useAppCommands>;
