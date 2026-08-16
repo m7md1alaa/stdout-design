@@ -11,6 +11,15 @@ import type { SSEReloadEvent } from "./hooks/use-sse";
 import { useTemplates } from "./hooks/use-templates";
 import type { TemplateSchema } from "./hooks/use-templates";
 import { createHttpRenderAdapter } from "./lib/http-render-adapter";
+import { logWarn } from "./lib/logger";
+import {
+  buildShareUrl,
+  consumeShareParam,
+  loadPersistedState,
+  mergeWithDefaults,
+  savePersistedState,
+} from "./lib/persistence";
+import type { PersistedAppState } from "./lib/persistence";
 import type { RenderAdapter, ValidationIssue } from "./lib/renderer";
 import { resolveLocale, setNestedValue } from "./lib/utils";
 
@@ -21,6 +30,8 @@ interface PropDef {
 }
 
 const renderAdapter: RenderAdapter = createHttpRenderAdapter(API_BASE);
+const PERSIST_DEBOUNCE_MS = 300;
+const COPY_FEEDBACK_MS = 2500;
 
 const computeDefaultProps = (
   template: TemplateSchema | undefined
@@ -65,6 +76,22 @@ const computeDefaultProps = (
   }
   return defaults;
 };
+
+// Read once, outside any hook, so `consumeShareParam`'s URL-stripping side
+// effect can't run twice across the several pieces of state that need it.
+const initialState: PersistedAppState = (() => {
+  const persisted = loadPersistedState();
+  const share = consumeShareParam();
+  if (!share) {
+    return persisted;
+  }
+  return {
+    propStore: { ...persisted.propStore, [share.templateId]: share.props },
+    selectedLocale: share.localeId,
+    selectedPreset: share.presetId,
+    selectedTemplate: share.templateId,
+  };
+})();
 
 const App = () => {
   const {
@@ -128,26 +155,23 @@ const App = () => {
     )
   );
 
-  const handleTemplateChange = (id: string) => {
-    if (effectiveTemplateId) {
-      setPropStore((prev) => ({
-        ...prev,
-        [effectiveTemplateId]:
-          prev[effectiveTemplateId] ?? ({} as Record<string, unknown>),
-      }));
-    }
+  // Autosave: debounced so typing doesn't hammer localStorage on every key.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      savePersistedState({
+        propStore,
+        selectedLocale,
+        selectedPreset,
+        selectedTemplate,
+      });
+    }, PERSIST_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [propStore, selectedLocale, selectedPreset, selectedTemplate]);
 
+  const handleTemplateChange = useCallback((id: string) => {
     setSelectedTemplate(id);
     setValidationErrors({});
-
-    if (!propStore[id]) {
-      const template = templates.find((t) => t.id === id);
-      setPropStore((prev) => ({
-        ...prev,
-        [id]: computeDefaultProps(template),
-      }));
-    }
-  };
+  }, []);
 
   const handlePropChange = useCallback(
     (path: string, value: unknown) => {
