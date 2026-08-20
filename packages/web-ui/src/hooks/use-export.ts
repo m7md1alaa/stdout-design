@@ -1,11 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+
+import { toastManager } from "@/components/ui/toast";
 
 import { logWarn } from "../lib/logger";
 import { buildShareUrl } from "../lib/persistence";
 import { buildRenderOptions } from "../lib/renderer";
 import type { RenderAdapter, ValidationIssue } from "../lib/renderer";
-
-const COPY_FEEDBACK_MS = 2500;
 
 interface UseExportArgs {
   effectiveTemplateId: string | null;
@@ -29,15 +29,10 @@ export const useExport = ({
   renderAdapter,
   onRenderIssues,
 }: UseExportArgs) => {
-  const [exportError, setExportError] = useState<string | null>(null);
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
-
   const handleExport = useCallback(async () => {
     if (!(effectiveTemplateId && effectivePresetId)) {
       return;
     }
-
-    setExportError(null);
 
     const result = await renderAdapter.render(
       effectiveTemplateId,
@@ -50,7 +45,11 @@ export const useExport = ({
     );
 
     if (!result.ok) {
-      setExportError(result.error);
+      toastManager.add({
+        description: result.error,
+        title: "Export failed",
+        type: "error",
+      });
       if (result.issues) {
         onRenderIssues(result.issues);
       }
@@ -85,21 +84,19 @@ export const useExport = ({
     });
     try {
       await navigator.clipboard.writeText(url);
-      setCopyFeedback("Link copied to clipboard");
+      toastManager.add({ title: "Link copied to clipboard", type: "success" });
     } catch (copyError) {
       logWarn("Failed to copy share link", { error: String(copyError) });
-      setCopyFeedback("Couldn't copy — copy it from the address bar instead");
+      toastManager.add({
+        description: "Copy it from the address bar instead.",
+        title: "Couldn't copy link",
+        type: "error",
+      });
     }
-    setTimeout(() => setCopyFeedback(null), COPY_FEEDBACK_MS);
   }, [effectivePresetId, effectiveTemplateId, propValues, selectedLocale]);
 
-  const handleDismissExportError = useCallback(() => setExportError(null), []);
-
   return {
-    copyFeedback,
-    exportError,
     handleCopyShareLink,
-    handleDismissExportError,
     handleExport,
   };
 };

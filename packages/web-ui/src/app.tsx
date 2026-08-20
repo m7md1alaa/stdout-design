@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { ToastProvider } from "@/components/ui/toast";
+
 import { useAppCommands } from "./commands/use-app-commands";
 import { CommandPalette } from "./components/command-palette";
 import { ErrorBoundary } from "./components/error-boundary";
@@ -70,57 +73,55 @@ const App = () => {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 text-content-tertiary">
         <p>Couldn&apos;t load the studio: {error}</p>
-        <button
-          type="button"
-          className="cursor-pointer text-accent hover:text-accent-hover"
-          onClick={() => reload()}
-        >
+        <Button onClick={() => reload()} variant="link">
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <ErrorBoundary>
-      <div className="flex h-screen overflow-hidden">
-        <StudioSidebar
-          exportFlow={exportFlow}
-          reloading={reloading}
-          shortcuts={shortcuts}
-          studio={studio}
+    <ToastProvider>
+      <ErrorBoundary>
+        <div className="flex h-screen overflow-hidden">
+          <StudioSidebar
+            exportFlow={exportFlow}
+            reloading={reloading}
+            shortcuts={shortcuts}
+            studio={studio}
+            templates={templates}
+          />
+          <StudioCanvasPanel
+            locales={locales}
+            presets={presets}
+            renderAdapter={renderAdapter}
+            studio={studio}
+          />
+        </div>
+
+        <CommandPalette
+          commands={shortcuts.commands}
+          currentTemplateId={studio.effectiveTemplateId}
+          onOpenChange={shortcuts.handlePaletteOpenChange}
+          onSelectTemplate={studio.handleTemplateChange}
+          open={shortcuts.isPaletteOpen}
+          resolveBinding={shortcuts.bindings.resolve}
           templates={templates}
         />
-        <StudioCanvasPanel
-          locales={locales}
-          presets={presets}
-          renderAdapter={renderAdapter}
-          studio={studio}
+
+        <ShortcutsDialog
+          commands={shortcuts.commands}
+          isCustomized={shortcuts.bindings.isCustomized}
+          onOpenChange={shortcuts.handleShortcutsOpenChange}
+          open={shortcuts.isShortcutsOpen}
+          recordingIds={shortcuts.recordingIds}
+          resetBinding={shortcuts.bindings.resetBinding}
+          resolveBinding={shortcuts.bindings.resolve}
+          setBinding={shortcuts.bindings.setBinding}
+          setRowRecording={shortcuts.setRowRecording}
         />
-      </div>
-
-      <CommandPalette
-        commands={shortcuts.commands}
-        currentTemplateId={studio.effectiveTemplateId}
-        onOpenChange={shortcuts.handlePaletteOpenChange}
-        onSelectTemplate={studio.handleTemplateChange}
-        open={shortcuts.isPaletteOpen}
-        resolveBinding={shortcuts.bindings.resolve}
-        templates={templates}
-      />
-
-      <ShortcutsDialog
-        commands={shortcuts.commands}
-        isCustomized={shortcuts.bindings.isCustomized}
-        onOpenChange={shortcuts.handleShortcutsOpenChange}
-        open={shortcuts.isShortcutsOpen}
-        recordingIds={shortcuts.recordingIds}
-        resetBinding={shortcuts.bindings.resetBinding}
-        resolveBinding={shortcuts.bindings.resolve}
-        setBinding={shortcuts.bindings.setBinding}
-        setRowRecording={shortcuts.setRowRecording}
-      />
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </ToastProvider>
   );
 };
 

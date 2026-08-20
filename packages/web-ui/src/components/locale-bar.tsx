@@ -1,3 +1,5 @@
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 interface LocaleBarProps {
   locales: string[];
   selected: string | null;
@@ -10,19 +12,26 @@ export const LocaleBar = ({ locales, selected, onChange }: LocaleBarProps) => {
   }
 
   return (
-    <div className="flex overflow-x-auto border-b border-border bg-surface-secondary">
-      {locales.map((locale) => (
-        <button
-          key={locale}
-          type="button"
-          className={`cursor-pointer whitespace-nowrap border-none bg-none px-4 py-2.5 text-xs font-semibold text-content-tertiary transition-colors hover:text-content-secondary ${selected === locale ? "border-b-2 border-accent text-accent" : "border-b-2 border-transparent"}`}
-          onClick={() => {
-            onChange(locale);
-          }}
+    <div className="overflow-x-auto border-b border-border bg-surface-secondary">
+      <Tabs
+        onValueChange={(next) => onChange(next as string)}
+        value={selected ?? undefined}
+      >
+        <TabsList
+          className="w-full justify-start gap-0 rounded-none bg-transparent p-0 *:data-[slot=tabs-tab]:hover:bg-surface-hover"
+          variant="underline"
         >
-          {locale}
-        </button>
-      ))}
+          {locales.map((locale) => (
+            <TabsTrigger
+              className="rounded-none px-4 py-2.5 text-xs font-semibold"
+              key={locale}
+              value={locale}
+            >
+              {locale}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
     </div>
   );
 };

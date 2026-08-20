@@ -8,6 +8,7 @@ import { useEffect } from "react";
 
 import { deserializeSequence } from "@/commands/bindings";
 import type { CommandDefinition } from "@/commands/types";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -35,16 +36,14 @@ const RecordButton = ({
   isRecording: boolean;
   onStart: () => void;
 }) => (
-  <button
-    className={cn(
-      "cursor-pointer rounded-sm border border-border px-2 py-1 text-[11px] font-medium text-content-secondary transition-colors hover:border-accent hover:text-accent",
-      isRecording && "border-accent text-accent"
-    )}
+  <Button
+    className={cn(isRecording && "border-primary text-primary")}
     onClick={onStart}
-    type="button"
+    size="xs"
+    variant="outline"
   >
     {isRecording ? "Press keys… (Esc to cancel)" : "Edit"}
-  </button>
+  </Button>
 );
 
 const ResetButton = ({
@@ -54,14 +53,15 @@ const ResetButton = ({
   label: string;
   onReset: () => void;
 }) => (
-  <button
+  <Button
     aria-label={`Reset ${label} to default`}
-    className="cursor-pointer text-content-tertiary transition-colors hover:text-content"
+    className="text-content-tertiary hover:bg-transparent hover:text-content"
     onClick={onReset}
-    type="button"
+    size="icon-xs"
+    variant="ghost"
   >
     <RotateCcw size={13} />
-  </button>
+  </Button>
 );
 
 const RowShell = ({

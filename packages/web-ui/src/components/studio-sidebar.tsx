@@ -1,4 +1,5 @@
 import type { AppCommandsState } from "@/commands/use-app-commands";
+import { Button } from "@/components/ui/button";
 import type { ExportState } from "@/hooks/use-export";
 import type { StudioState } from "@/hooks/use-studio-state";
 
@@ -68,40 +69,22 @@ export const StudioSidebar = ({
     )}
 
     <div className="border-t border-border px-5 py-4">
-      <button
-        type="button"
-        className="w-full cursor-pointer rounded-sm bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
-        onClick={exportFlow.handleExport}
+      <Button
+        className="w-full"
         disabled={!studio.effectiveTemplateId || !studio.currentPreset}
+        onClick={exportFlow.handleExport}
       >
         Export PNG
-      </button>
+      </Button>
       <ShortcutHints
         commands={shortcuts.commands}
         ids={["export-png", "copy-share-link", "reset-props"]}
         resolveBinding={shortcuts.bindings.resolve}
       />
-      {exportFlow.exportError ? (
-        <div className="mt-2 flex items-start gap-2 rounded-sm border border-red-500/30 bg-red-500/10 p-2">
-          <p className="flex-1 text-sm text-danger">{exportFlow.exportError}</p>
-          <button
-            type="button"
-            className="cursor-pointer border-none bg-none p-0 text-lg leading-none text-danger opacity-60 hover:opacity-100"
-            onClick={exportFlow.handleDismissExportError}
-          >
-            &times;
-          </button>
-        </div>
-      ) : null}
-      {exportFlow.copyFeedback ? (
-        <p className="mt-2 text-xs text-content-tertiary">
-          {exportFlow.copyFeedback}
-        </p>
-      ) : null}
-      <button
-        type="button"
-        className="mt-2 flex w-full cursor-pointer items-center justify-between text-[11px] text-content-tertiary hover:text-content-secondary"
+      <Button
+        className="mt-2 h-auto w-full justify-between p-0 text-[11px] text-content-tertiary hover:bg-transparent hover:text-content-secondary"
         onClick={() => shortcuts.handleShortcutsOpenChange(true)}
+        variant="ghost"
       >
         <span className="underline-offset-2 hover:underline">
           Keyboard shortcuts
@@ -111,7 +94,7 @@ export const StudioSidebar = ({
             {shortcuts.shortcutsHelpLabel}
           </kbd>
         ) : null}
-      </button>
+      </Button>
     </div>
   </aside>
 );

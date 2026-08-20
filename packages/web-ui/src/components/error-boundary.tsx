@@ -1,6 +1,8 @@
 import { Component, createElement } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
+
 import { logError } from "../lib/logger";
 
 interface ErrorBoundaryProps {
@@ -24,13 +26,7 @@ const DefaultFallback = ({
     <pre className="max-w-md overflow-auto rounded-sm bg-surface-tertiary p-4 text-xs text-content-tertiary">
       {error.message}
     </pre>
-    <button
-      type="button"
-      className="cursor-pointer rounded-sm bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
-      onClick={onReset}
-    >
-      Retry
-    </button>
+    <Button onClick={onReset}>Retry</Button>
   </div>
 );
 

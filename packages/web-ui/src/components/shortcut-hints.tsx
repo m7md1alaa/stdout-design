@@ -1,5 +1,5 @@
 import { findHotkeyCommand, formatCommandBinding } from "@/commands/bindings";
-import type { CommandDefinition } from "@/commands/types";
+import type { CommandDefinition, HotkeyCommandDefinition } from "@/commands/types";
 import { useModKeyHeld } from "@/commands/use-mod-key-held";
 
 interface ShortcutHintsProps {
@@ -22,7 +22,7 @@ export const ShortcutHints = ({
 
   const items = ids
     .map((id) => findHotkeyCommand(commands, id))
-    .filter((cmd): cmd is CommandDefinition => cmd !== undefined);
+    .filter((cmd): cmd is HotkeyCommandDefinition => cmd !== undefined);
 
   if (items.length === 0) {
     return null;

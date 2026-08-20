@@ -1,3 +1,12 @@
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 interface TemplateOption {
   id: string;
   description: string;
@@ -24,24 +33,27 @@ export const TemplateSelector = ({
 
   return (
     <div className="border-b border-border px-5 py-4">
-      <label
-        htmlFor="template-select"
+      <Label
         className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-content-tertiary"
+        htmlFor="template-select"
       >
         Template
-      </label>
-      <select
-        id="template-select"
-        value={selected ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full cursor-pointer appearance-none rounded-sm border border-border bg-surface-tertiary select-chevron px-2.5 py-2 text-sm text-content focus:border-accent focus:outline-none"
+      </Label>
+      <Select
+        onValueChange={(next) => onChange(next as string)}
+        value={selected ?? undefined}
       >
-        {templates.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.id}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="w-full" id="template-select">
+          <SelectValue placeholder="Select a template" />
+        </SelectTrigger>
+        <SelectPopup>
+          {templates.map((t) => (
+            <SelectItem key={t.id} value={t.id}>
+              {t.id}
+            </SelectItem>
+          ))}
+        </SelectPopup>
+      </Select>
     </div>
   );
 };

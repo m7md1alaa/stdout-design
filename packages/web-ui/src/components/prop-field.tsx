@@ -1,12 +1,31 @@
-import { X } from "lucide-react";
+import { PipetteIcon, X } from "lucide-react";
 import { useCallback, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import {
+  hexToHsl,
+  hslToHex,
+  isValidHex,
+  pickColorFromScreen,
+  supportsEyeDropper,
+} from "@/lib/color";
 import { resolveFieldKind } from "@/lib/resolve-field-kind";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +47,15 @@ const resolveValue = (
   return schema.default;
 };
 
+const FieldLabel = ({ name, label }: { name: string; label: string }) => (
+  <Label
+    className="mb-1.5 block text-xs font-medium text-content-secondary"
+    htmlFor={`prop-${name}`}
+  >
+    {label}
+  </Label>
+);
+
 const FieldWrapper = ({
   name,
   label,
@@ -40,16 +68,53 @@ const FieldWrapper = ({
   children: React.ReactNode;
 }) => (
   <div className="mb-3">
-    <label
-      htmlFor={`prop-${name}`}
-      className="mb-1 block text-xs font-medium text-content-secondary"
-    >
-      {label}
-    </label>
+    <FieldLabel label={label} name={name} />
     {children}
     {error ? (
       <p className="mt-1 text-[11px] leading-tight text-danger">{error}</p>
     ) : null}
+  </div>
+);
+
+/** Our Slider wrapper types onValueChange as `number | readonly number[]`
+ * regardless of what's passed in (it's not generic over its own props) —
+ * every usage here is a single-thumb slider, so normalize back to a number. */
+const asSingleValue = (value: number | readonly number[]): number =>
+  Array.isArray(value) ? value[0] : (value as number);
+
+const HUE_TRACK_GRADIENT =
+  "[&_[data-slot=slider-track]]:bg-[linear-gradient(to_right,red,#ff0,lime,cyan,blue,magenta,red)] [&_[data-slot=slider-indicator]]:bg-transparent";
+
+const HslSliderRow = ({
+  axis,
+  value,
+  max,
+  suffix,
+  className,
+  onChange,
+}: {
+  axis: string;
+  value: number;
+  max: number;
+  suffix?: string;
+  className?: string;
+  onChange: (value: number) => void;
+}) => (
+  <div className="flex items-center gap-2">
+    <span className="w-3.5 text-[10px] font-semibold uppercase text-content-tertiary">
+      {axis}
+    </span>
+    <Slider
+      className={cn("flex-1", className)}
+      max={max}
+      min={0}
+      onValueChange={(next) => onChange(asSingleValue(next))}
+      value={value}
+    />
+    <span className="w-9 text-right font-mono text-[10px] text-content-tertiary">
+      {Math.round(value)}
+      {suffix}
+    </span>
   </div>
 );
 
@@ -63,51 +128,95 @@ const ColorField = ({
   label: string;
   value: string;
   onChange: (value: string) => void;
-}) => (
-  <div className="mb-3">
-    <label
-      htmlFor={`prop-${name}`}
-      className="mb-1 block text-xs font-medium text-content-secondary"
-    >
-      {label}
-    </label>
-    <div className="flex items-center gap-2">
-      <Popover>
-        <PopoverTrigger
-          className="h-8 w-8 cursor-pointer rounded-sm border border-border p-0"
-          style={{ backgroundColor: value }}
-          title={value}
+}) => {
+  const hex = isValidHex(value) ? value : "#000000";
+  const { h, s, l } = hexToHsl(hex);
+  const eyeDropperAvailable = supportsEyeDropper();
+
+  const setHsl = useCallback(
+    (next: Partial<{ h: number; s: number; l: number }>) => {
+      onChange(hslToHex(next.h ?? h, next.s ?? s, next.l ?? l));
+    },
+    [h, s, l, onChange]
+  );
+
+  const handleEyeDropper = useCallback(async () => {
+    const picked = await pickColorFromScreen();
+    if (picked) {
+      onChange(picked);
+    }
+  }, [onChange]);
+
+  return (
+    <div className="mb-3">
+      <FieldLabel label={label} name={name} />
+      <div className="flex items-center gap-2">
+        <Popover>
+          <PopoverTrigger
+            className="h-8 w-8 shrink-0 cursor-pointer rounded-sm border border-border p-0"
+            style={{ backgroundColor: hex }}
+            title={hex}
+          />
+          <PopoverContent
+            align="start"
+            className="flex w-64 flex-col gap-3 p-3"
+            side="left"
+            sideOffset={8}
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className="h-8 flex-1 rounded-sm border border-border"
+                style={{ backgroundColor: hex }}
+              />
+              {eyeDropperAvailable ? (
+                <Button
+                  aria-label="Pick color from screen"
+                  onClick={handleEyeDropper}
+                  size="icon-sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <PipetteIcon />
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-2">
+              <HslSliderRow
+                axis="H"
+                className={HUE_TRACK_GRADIENT}
+                max={360}
+                onChange={(next) => setHsl({ h: next })}
+                value={h}
+              />
+              <HslSliderRow
+                axis="S"
+                max={100}
+                onChange={(next) => setHsl({ s: next })}
+                suffix="%"
+                value={s}
+              />
+              <HslSliderRow
+                axis="L"
+                max={100}
+                onChange={(next) => setHsl({ l: next })}
+                suffix="%"
+                value={l}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+        <Input
+          aria-label={`${label} hex value`}
+          className="flex-1 font-mono"
+          id={`prop-${name}`}
+          onChange={(e) => onChange(e.target.value)}
+          type="text"
+          value={value}
         />
-        <PopoverContent
-          side="left"
-          align="start"
-          sideOffset={8}
-          className="flex w-auto flex-col gap-3 p-3"
-        >
-          <input
-            type="color"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-40 w-40 cursor-pointer rounded-sm border-0 p-0"
-          />
-          <Input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="font-mono text-xs"
-            placeholder="#000000"
-          />
-        </PopoverContent>
-      </Popover>
-      <Input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="flex-1 font-mono"
-      />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EnumField = ({
   name,
@@ -122,20 +231,21 @@ const EnumField = ({
   options: string[];
   onChange: (value: string) => void;
 }) => (
-  <FieldWrapper name={name} label={label}>
-    <select
-      id={`prop-${name}`}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="field-input cursor-pointer appearance-none select-chevron"
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
-  </FieldWrapper>
+  <div className="mb-3">
+    <FieldLabel label={label} name={name} />
+    <Select onValueChange={(next) => onChange(next as string)} value={value}>
+      <SelectTrigger className="w-full" id={`prop-${name}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectPopup>
+        {options.map((opt) => (
+          <SelectItem key={opt} value={opt}>
+            {opt}
+          </SelectItem>
+        ))}
+      </SelectPopup>
+    </Select>
+  </div>
 );
 
 const NumberField = ({
@@ -159,22 +269,17 @@ const NumberField = ({
   const numValue = (value as number | undefined) ?? min ?? 0;
 
   if (hasRange) {
-    const pct = ((numValue - min) / (max - min)) * 100;
     return (
-      <FieldWrapper name={name} label={label} error={error}>
-        <div className="flex items-center gap-2">
-          <input
-            id={`prop-${name}`}
-            type="range"
-            min={min}
+      <FieldWrapper error={error} label={label} name={name}>
+        <div className="flex items-center gap-3">
+          <Slider
+            aria-label={label}
+            className="flex-1"
             max={max}
-            step="1"
+            min={min}
+            onValueChange={(next) => onChange(asSingleValue(next))}
+            step={1}
             value={numValue}
-            onChange={(e) => onChange(Number(e.target.value))}
-            className="range-slider flex-1"
-            style={{
-              backgroundSize: `${pct}% 100%`,
-            }}
           />
           <span className="min-w-[32px] text-right font-mono text-xs text-content-tertiary">
             {String(numValue)}
@@ -185,15 +290,14 @@ const NumberField = ({
   }
 
   return (
-    <FieldWrapper name={name} label={label} error={error}>
-      <input
+    <FieldWrapper error={error} label={label} name={name}>
+      <Input
         id={`prop-${name}`}
-        type="number"
-        min={min}
         max={max}
-        value={numValue}
+        min={min}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="field-input"
+        type="number"
+        value={numValue}
       />
     </FieldWrapper>
   );
@@ -211,32 +315,13 @@ const BooleanField = ({
   onChange: (value: boolean) => void;
 }) => (
   <div className="mb-3 flex items-center justify-between">
-    <label
-      htmlFor={`prop-${name}`}
+    <Label
       className="text-xs font-medium text-content-secondary"
+      htmlFor={`prop-${name}`}
     >
       {label}
-    </label>
-    <button
-      id={`prop-${name}`}
-      type="button"
-      role="switch"
-      aria-checked={value}
-      aria-label={label}
-      className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-        value ? "bg-accent" : "bg-surface-hover hover:bg-surface-tertiary"
-      )}
-      onClick={() => onChange(!value)}
-      data-state={value ? "checked" : "unchecked"}
-    >
-      <span
-        className={cn(
-          "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
-          value ? "translate-x-4" : "translate-x-0"
-        )}
-      />
-    </button>
+    </Label>
+    <Switch checked={value} id={`prop-${name}`} onCheckedChange={onChange} />
   </div>
 );
 
@@ -258,6 +343,37 @@ const parseNumericInput = (raw: string): number[] => {
     .map(Number)
     .filter((n) => !Number.isNaN(n));
 };
+
+/** Shared chip row for the numeric/string array fields — the one part of
+ * those two fields that was ever actually identical. */
+const TagList = ({
+  items,
+  onRemove,
+}: {
+  items: string[];
+  onRemove: (index: number) => void;
+}) =>
+  items.length === 0 ? null : (
+    <div className="mb-1.5 flex flex-wrap gap-1">
+      {items.map((item, i) => (
+        <Badge
+          className="gap-1 rounded-full bg-accent-muted pr-1 text-[11px] text-accent-hover hover:bg-accent-muted"
+          key={`${item}-${i}`}
+          variant="secondary"
+        >
+          {item}
+          <button
+            aria-label={`Remove ${item}`}
+            className="flex size-3.5 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-accent-hover/60 transition-colors hover:text-danger"
+            onClick={() => onRemove(i)}
+            type="button"
+          >
+            <X size={10} />
+          </button>
+        </Badge>
+      ))}
+    </div>
+  );
 
 const NumericArrayField = ({
   label,
@@ -284,37 +400,23 @@ const NumericArrayField = ({
 
   return (
     <div className="mb-3">
-      <label className="mb-1 block text-xs font-medium text-content-secondary">
+      <Label className="mb-1 block text-xs font-medium text-content-secondary">
         {label}
-      </label>
-      {currentValue.length > 0 ? (
-        <div className="mb-1.5 flex flex-wrap gap-1">
-          {currentValue.map((n, i) => (
-            <span
-              key={`${String(n)}-${i}`}
-              className="inline-flex items-center gap-1 rounded-[10px] bg-accent-muted px-2 py-0.5 text-[11px] font-medium text-accent-hover"
-            >
-              {String(n)}
-              <button
-                type="button"
-                aria-label={`Remove ${String(n)}`}
-                className="ml-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-accent-hover/60 transition-colors hover:text-danger"
-                onClick={() => {
-                  const next = [...currentValue];
-                  next.splice(i, 1);
-                  onChange(next);
-                }}
-              >
-                <X size={10} />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      </Label>
+      <TagList
+        items={currentValue.map(String)}
+        onRemove={(i) => {
+          const next = [...currentValue];
+          next.splice(i, 1);
+          onChange(next);
+        }}
+      />
       <Input
-        type="text"
-        placeholder="e.g. 30, 45, 25, 60..."
-        value={raw}
+        onBlur={() => {
+          if (raw.trim()) {
+            commitRaw(raw);
+          }
+        }}
         onChange={(e) => setRaw(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -322,11 +424,9 @@ const NumericArrayField = ({
             commitRaw(e.currentTarget.value);
           }
         }}
-        onBlur={() => {
-          if (raw.trim()) {
-            commitRaw(raw);
-          }
-        }}
+        placeholder="e.g. 30, 45, 25, 60..."
+        type="text"
+        value={raw}
       />
     </div>
   );
@@ -345,36 +445,18 @@ const StringArrayField = ({
 
   return (
     <div className="mb-3">
-      <label className="mb-1 block text-xs font-medium text-content-secondary">
+      <Label className="mb-1 block text-xs font-medium text-content-secondary">
         {label}
-      </label>
-      {currentValue.length > 0 ? (
-        <div className="mb-1.5 flex flex-wrap gap-1">
-          {currentValue.map((tag, i) => (
-            <span
-              key={`${tag}-${i}`}
-              className="inline-flex items-center gap-1 rounded-[10px] bg-accent-muted px-2 py-0.5 text-[11px] font-medium text-accent-hover"
-            >
-              {tag}
-              <button
-                type="button"
-                aria-label={`Remove ${tag}`}
-                className="ml-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-accent-hover/60 transition-colors hover:text-danger"
-                onClick={() => {
-                  const next = [...currentValue];
-                  next.splice(i, 1);
-                  onChange(next);
-                }}
-              >
-                <X size={10} />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      </Label>
+      <TagList
+        items={currentValue}
+        onRemove={(i) => {
+          const next = [...currentValue];
+          next.splice(i, 1);
+          onChange(next);
+        }}
+      />
       <Input
-        type="text"
-        placeholder="Add item and press Enter..."
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             const input = e.currentTarget;
@@ -385,6 +467,8 @@ const StringArrayField = ({
             }
           }
         }}
+        placeholder="Add item and press Enter..."
+        type="text"
       />
     </div>
   );
@@ -407,8 +491,8 @@ const ArrayField = ({
     return (
       <NumericArrayField
         label={label}
-        value={value as number[] | undefined}
         onChange={onChange as (value: number[]) => void}
+        value={value as number[] | undefined}
       />
     );
   }
@@ -416,8 +500,8 @@ const ArrayField = ({
   return (
     <StringArrayField
       label={label}
-      value={value as string[] | undefined}
       onChange={onChange as (value: string[]) => void}
+      value={value as string[] | undefined}
     />
   );
 };
@@ -437,10 +521,10 @@ export const PropField = ({
     case "color": {
       return (
         <ColorField
-          name={name}
           label={label}
-          value={(currentValue ?? "#000000") as string}
+          name={name}
           onChange={onChange as (value: string) => void}
+          value={(currentValue ?? "#000000") as string}
         />
       );
     }
@@ -448,11 +532,11 @@ export const PropField = ({
     case "enum": {
       return (
         <EnumField
-          name={name}
           label={label}
-          value={String(currentValue ?? fieldKind.options[0])}
-          options={fieldKind.options}
+          name={name}
           onChange={onChange as (value: string) => void}
+          options={fieldKind.options}
+          value={String(currentValue ?? fieldKind.options[0])}
         />
       );
     }
@@ -460,12 +544,12 @@ export const PropField = ({
     case "number": {
       return (
         <NumberField
-          name={name}
-          label={label}
-          value={currentValue}
-          schema={schema}
           error={error}
+          label={label}
+          name={name}
           onChange={onChange as (value: number) => void}
+          schema={schema}
+          value={currentValue}
         />
       );
     }
@@ -473,10 +557,10 @@ export const PropField = ({
     case "boolean": {
       return (
         <BooleanField
-          name={name}
           label={label}
-          value={Boolean(currentValue)}
+          name={name}
           onChange={onChange as (value: boolean) => void}
+          value={Boolean(currentValue)}
         />
       );
     }
@@ -485,31 +569,31 @@ export const PropField = ({
       return (
         <ArrayField
           label={label}
-          value={currentValue}
-          schema={schema}
           onChange={onChange}
+          schema={schema}
+          value={currentValue}
         />
       );
     }
 
     case "text": {
       return (
-        <FieldWrapper name={name} label={label} error={error}>
+        <FieldWrapper error={error} label={label} name={name}>
           {fieldKind.multiline ? (
             <textarea
+              className={cn("field-input resize-y", error && "border-danger")}
               id={`prop-${name}`}
-              value={(currentValue as string) ?? ""}
               onChange={(e) => onChange(e.target.value)}
               rows={3}
-              className={cn("field-input resize-y", error && "border-danger")}
+              value={(currentValue as string) ?? ""}
             />
           ) : (
             <Input
+              className={cn(error && "border-danger")}
               id={`prop-${name}`}
+              onChange={(e) => onChange(e.target.value)}
               type="text"
               value={(currentValue as string) ?? ""}
-              onChange={(e) => onChange(e.target.value)}
-              className={cn(error && "border-danger")}
             />
           )}
         </FieldWrapper>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   consumeShareParam,
@@ -81,15 +81,24 @@ export const useStudioState = ({
   const currentTemplate = templates.find((t) => t.id === effectiveTemplateId);
   const currentPreset = presets.find((p) => p.id === effectivePresetId) ?? null;
 
+  const effectiveTemplateSchema = currentTemplate?.propsSchema;
+  const effectivePropStore = effectiveTemplateId
+    ? propStore[effectiveTemplateId]
+    : undefined;
+
   const defaultPropsCache = useRef<Record<string, Record<string, unknown>>>({});
-  const propValues = effectiveTemplateId
-    ? mergeWithDefaults(
-        (defaultPropsCache.current[effectiveTemplateId] ??= computeDefaultProps(
-          currentTemplate?.propsSchema
-        )),
-        propStore[effectiveTemplateId]
-      )
-    : {};
+  const propValues = useMemo(() => {
+    if (!effectiveTemplateId) {
+      return {};
+    }
+    return mergeWithDefaults(
+      (defaultPropsCache.current[effectiveTemplateId] ??= computeDefaultProps(
+        effectiveTemplateSchema
+      )),
+      effectivePropStore
+    );
+    // oxlint-disable-next-line react-compiler/MemoDependencies react/react-compiler
+  }, [effectivePropStore, effectiveTemplateId, effectiveTemplateSchema]);
 
   const { locale: effectiveLocale, autoDetected } = resolveLocale(
     selectedLocale,
@@ -166,6 +175,12 @@ export const useStudioState = ({
   }, [effectiveTemplateId]);
 
   const handleRenderIssues = useCallback((issues: ValidationIssue[]) => {
+    if (issues.length === 0) {
+      setValidationErrors((prev) =>
+        Object.keys(prev).length === 0 ? prev : {}
+      );
+      return;
+    }
     const errorMap: Record<string, string> = {};
     for (const issue of issues) {
       errorMap[issue.path] = issue.message;

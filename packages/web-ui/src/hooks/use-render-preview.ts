@@ -92,10 +92,11 @@ export const useRenderPreview = (
         })
       );
 
+      if (controller.signal.aborted) {
+        return;
+      }
+
       if (!result.ok) {
-        if (controller.signal.aborted) {
-          return;
-        }
         setRender({
           issues: result.issues,
           message: result.error,
