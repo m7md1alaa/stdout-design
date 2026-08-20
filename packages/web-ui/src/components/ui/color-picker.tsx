@@ -5,6 +5,7 @@
 import { Menu } from "@base-ui/react/menu";
 import { NumberField } from "@base-ui/react/number-field";
 import { Popover } from "@base-ui/react/popover";
+import { Slider as SliderPrimitive } from "@base-ui/react/slider";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   createContext,
@@ -18,8 +19,7 @@ import {
 } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
-import { Slider } from "@/components/ui/slider";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProximityHover } from "@/hooks/use-proximity-hover";
 import { Elevated } from "@/lib/elevated";
 import { fontWeights } from "@/lib/font-weight";
@@ -367,7 +367,7 @@ const parseHex = (
   input: string
 ): { r: number; g: number; b: number; a: number } | null => {
   const m = input.trim().match(/^(?<hex>[0-9a-fA-F]{3,8})$/u);
-  if (!m) {
+  if (!m?.groups?.hex) {
     return null;
   }
   let h = m.groups.hex;
@@ -404,17 +404,18 @@ const parseColor = (
     return parseHex(s);
   }
   const rgbM = s.match(/^rgba?\(\s*(?<channels>[^)]+)\)$/iu);
-  if (rgbM) {
+  if (rgbM?.groups?.channels) {
     const parts = rgbM.groups.channels.split(/[\s,/]+/u).filter(Boolean);
     if (parts.length < 3) {
       return null;
     }
-    const r = Number(parts[0]);
-    const g = Number(parts[1]);
-    const b = Number(parts[2]);
+    const [rPart, gPart, bPart, alphaPart] = parts;
+    const r = Number(rPart);
+    const g = Number(gPart);
+    const b = Number(bPart);
     let a = 1;
-    if (parts[3] !== undefined) {
-      a = parts[3].endsWith("%") ? Number(parts[3]) / 100 : Number(parts[3]);
+    if (alphaPart !== undefined) {
+      a = alphaPart.endsWith("%") ? Number(alphaPart) / 100 : Number(alphaPart);
     }
     if ([r, g, b, a].some(Number.isNaN)) {
       return null;
@@ -422,21 +423,23 @@ const parseColor = (
     return { a: clamp01(a), b: clamp255(b), g: clamp255(g), r: clamp255(r) };
   }
   const hslM = s.match(/^hsla?\(\s*(?<channels>[^)]+)\)$/iu);
-  if (hslM) {
+  if (hslM?.groups?.channels) {
     const parts = hslM.groups.channels.split(/[\s,/]+/u).filter(Boolean);
     if (parts.length < 3) {
       return null;
     }
-    const h = Number(parts[0]);
-    const sat = parts[1].endsWith("%")
-      ? Number(parts[1]) / 100
-      : Number(parts[1]);
-    const l = parts[2].endsWith("%")
-      ? Number(parts[2]) / 100
-      : Number(parts[2]);
+    const [hPart, satPart, lPart, alphaPart] = parts;
+    if (satPart === undefined || lPart === undefined) {
+      return null;
+    }
+    const h = Number(hPart);
+    const sat = satPart.endsWith("%")
+      ? Number(satPart) / 100
+      : Number(satPart);
+    const l = lPart.endsWith("%") ? Number(lPart) / 100 : Number(lPart);
     let a = 1;
-    if (parts[3] !== undefined) {
-      a = parts[3].endsWith("%") ? Number(parts[3]) / 100 : Number(parts[3]);
+    if (alphaPart !== undefined) {
+      a = alphaPart.endsWith("%") ? Number(alphaPart) / 100 : Number(alphaPart);
     }
     if ([h, sat, l, a].some(Number.isNaN)) {
       return null;
@@ -450,19 +453,21 @@ const parseColor = (
     };
   }
   const oklchM = s.match(/^oklch\(\s*(?<channels>[^)]+)\)$/iu);
-  if (oklchM) {
+  if (oklchM?.groups?.channels) {
     const parts = oklchM.groups.channels.split(/[\s,/]+/u).filter(Boolean);
     if (parts.length < 3) {
       return null;
     }
-    const L = parts[0].endsWith("%")
-      ? Number(parts[0]) / 100
-      : Number(parts[0]);
-    const C = Number(parts[1]);
-    const H = Number(parts[2]);
+    const [lPart, cPart, hPart, alphaPart] = parts;
+    if (lPart === undefined) {
+      return null;
+    }
+    const L = lPart.endsWith("%") ? Number(lPart) / 100 : Number(lPart);
+    const C = Number(cPart);
+    const H = Number(hPart);
     let a = 1;
-    if (parts[3] !== undefined) {
-      a = parts[3].endsWith("%") ? Number(parts[3]) / 100 : Number(parts[3]);
+    if (alphaPart !== undefined) {
+      a = alphaPart.endsWith("%") ? Number(alphaPart) / 100 : Number(alphaPart);
     }
     if ([L, C, H, a].some(Number.isNaN)) {
       return null;
@@ -766,6 +771,67 @@ const SaturationSquare = ({ h, s, v, onChange }: SaturationSquareProps) => {
 };
 
 // ---------------------------------------------------------------------------
+// ColorPickerSlider
+//
+// A single-thumb slider built directly on Base UI's Slider primitive (rather
+// than the shared `ui/slider` wrapper, which hardcodes its own track/thumb
+// classes and has no seam for a custom gradient track or thumb color). Used
+// by both HueSlider and AlphaSlider below, which each just supply the track
+// background and thumb color. No fill indicator is rendered — the gradient
+// track itself communicates the value.
+// ---------------------------------------------------------------------------
+
+interface ColorPickerSliderProps {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step: number;
+  thumbColor: string;
+  thumbBorderColor: string;
+  trackStyle: CSSProperties;
+  "aria-label": string;
+}
+
+const ColorPickerSlider = ({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  thumbColor,
+  thumbBorderColor,
+  trackStyle,
+  "aria-label": ariaLabel,
+}: ColorPickerSliderProps) => (
+  <SliderPrimitive.Root
+    aria-label={ariaLabel}
+    className="relative flex w-full touch-none select-none items-center"
+    max={max}
+    min={min}
+    onValueChange={(next) => onChange(next)}
+    step={step}
+    thumbAlignment="edge"
+    value={value}
+  >
+    <SliderPrimitive.Control className="flex w-full min-w-44 touch-none select-none">
+      <SliderPrimitive.Track
+        className="relative h-1.5 w-full rounded-full"
+        style={trackStyle}
+      >
+        <SliderPrimitive.Thumb
+          className="block size-4 shrink-0 select-none rounded-full shadow-sm outline-none transition-[box-shadow,scale] focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring,#6B97FF)] data-dragging:scale-110"
+          style={{
+            backgroundColor: thumbColor,
+            border: `1px solid ${thumbBorderColor}`,
+          }}
+        />
+      </SliderPrimitive.Track>
+    </SliderPrimitive.Control>
+  </SliderPrimitive.Root>
+);
+
+// ---------------------------------------------------------------------------
 // HueSlider
 // ---------------------------------------------------------------------------
 
@@ -778,22 +844,20 @@ const HueSlider = ({
 }) => {
   const hueColor = `hsl(${h}, 100%, 50%)`;
   return (
-    <Slider
-      value={h}
-      onChange={(v) => onChange(typeof v === "number" ? v : v[0])}
-      min={0}
+    <ColorPickerSlider
+      aria-label="Hue"
       max={360}
+      min={0}
+      onChange={onChange}
       step={1}
-      showValue={false}
-      hideFill
-      thumbColor={hueColor}
       thumbBorderColor="rgba(255,255,255,0.9)"
+      thumbColor={hueColor}
       trackStyle={{
         background:
           "linear-gradient(to right, hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%))",
         borderColor: "transparent",
       }}
-      aria-label="Hue"
+      value={h}
     />
   );
 };
@@ -821,22 +885,20 @@ const AlphaSlider = ({
   // chromatically consistent and reaches fully opaque at 100% with no edge gap.
   const transparentColor = `rgba(${solidR}, ${solidG}, ${solidB}, 0)`;
   return (
-    <Slider
-      value={Math.round(a * 100)}
-      onChange={(v) => onChange((typeof v === "number" ? v : v[0]) / 100)}
-      min={0}
+    <ColorPickerSlider
+      aria-label="Alpha"
       max={100}
+      min={0}
+      onChange={(v) => onChange(v / 100)}
       step={1}
-      showValue={false}
-      hideFill
-      thumbColor={solidColor}
       thumbBorderColor="rgba(255,255,255,0.9)"
+      thumbColor={solidColor}
       trackStyle={{
         backgroundImage: `linear-gradient(to right, ${transparentColor} 0%, ${solidColor} 98%), conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0)`,
         backgroundSize: "100% 100%, 8px 8px",
         borderWidth: 0,
       }}
-      aria-label="Alpha"
+      value={Math.round(a * 100)}
     />
   );
 };
@@ -1098,10 +1160,11 @@ const FormatDropdown = ({
                 onMouseMove={handlers.onMouseMove}
                 onMouseLeave={handlers.onMouseLeave}
                 onFocus={(e) => {
-                  const indexAttr = (e.target as HTMLElement).closest(
-                    "[data-proximity-index]"
-                  )?.dataset.proximityIndex;
-                  if (indexAttr !== null) {
+                  const indexAttr = (
+                    e.target as HTMLElement
+                  ).closest<HTMLElement>("[data-proximity-index]")?.dataset
+                    .proximityIndex;
+                  if (indexAttr !== undefined) {
                     const idx = Number(indexAttr);
                     setActiveIndex(idx);
                     setFocusedIndex(
@@ -1287,18 +1350,18 @@ const TextColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
     }, [value]);
 
     const formatNumber = (n: number) =>
-      decimals === null ? String(Math.round(n)) : n.toFixed(decimals);
+      decimals === undefined ? String(Math.round(n)) : n.toFixed(decimals);
 
     const commitNumber = (n: number) => {
       let bounded = n;
-      if (wrap && min !== null && max !== null) {
+      if (wrap && min !== undefined && max !== undefined) {
         const range = max - min;
         bounded = ((((bounded - min) % range) + range) % range) + min;
       } else {
-        if (min !== null) {
+        if (min !== undefined) {
           bounded = Math.max(min, bounded);
         }
-        if (max !== null) {
+        if (max !== undefined) {
           bounded = Math.min(max, bounded);
         }
       }
@@ -1351,7 +1414,10 @@ const TextColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
               setDraft(value);
             } else {
               const numeric = Number(draft.replace("%", ""));
-              if (!Number.isNaN(numeric) && (min !== null || max !== null)) {
+              if (
+                !Number.isNaN(numeric) &&
+                (min !== undefined || max !== undefined)
+              ) {
                 commitNumber(numeric);
               } else {
                 onCommit(draft);
@@ -1365,7 +1431,7 @@ const TextColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
               setDraft(value);
               (e.currentTarget as HTMLInputElement).blur();
             } else if (
-              (nudgeStep !== null || nudgeShiftStep !== null) &&
+              (nudgeStep !== undefined || nudgeShiftStep !== undefined) &&
               (e.key === "ArrowUp" || e.key === "ArrowDown")
             ) {
               e.preventDefault();
@@ -1427,7 +1493,7 @@ const ScrubColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
 
     const format = useMemo(() => {
       const f: Intl.NumberFormatOptions = { useGrouping: false };
-      if (decimals === null) {
+      if (decimals === undefined) {
         f.maximumFractionDigits = 0;
       } else {
         f.minimumFractionDigits = decimals;
@@ -1458,7 +1524,7 @@ const ScrubColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
     const commit = useCallback(
       (n: number) => {
         let bounded = n;
-        if (wrap && min !== null && max !== null) {
+        if (wrap && min !== undefined && max !== undefined) {
           // Hue-style wrap: NumberField won't wrap natively, so shim it here
           // (361 → 1, -1 → 359; exactly `max` stays put).
           if (bounded < min || bounded > max) {
@@ -1466,15 +1532,15 @@ const ScrubColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
             bounded = ((((bounded - min) % range) + range) % range) + min;
           }
         } else {
-          if (min !== null) {
+          if (min !== undefined) {
             bounded = Math.max(min, bounded);
           }
-          if (max !== null) {
+          if (max !== undefined) {
             bounded = Math.min(max, bounded);
           }
         }
         const formatted =
-          decimals === null
+          decimals === undefined
             ? String(Math.round(bounded))
             : bounded.toFixed(decimals);
         onCommit(hasPercent ? `${formatted}%` : formatted);
@@ -1604,7 +1670,7 @@ const ScrubColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
                 )?.set;
                 if (setter && fieldValue !== null) {
                   const restored =
-                    decimals === null
+                    decimals === undefined
                       ? String(Math.round(fieldValue))
                       : fieldValue.toFixed(decimals);
                   setter.call(input, hasPercent ? `${restored}%` : restored);
@@ -1814,8 +1880,11 @@ const ChannelTooltip = ({
   label: string;
   children: ReactNode;
 }) => (
-  <Tooltip content={label} delayDuration={300}>
-    <div>{children}</div>
+  <Tooltip>
+    <TooltipTrigger delay={300} render={<div />}>
+      {children}
+    </TooltipTrigger>
+    <TooltipPopup>{label}</TooltipPopup>
   </Tooltip>
 );
 

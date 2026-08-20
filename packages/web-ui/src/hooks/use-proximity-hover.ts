@@ -61,7 +61,7 @@ interface UseProximityHoverReturn {
  */
 const measurementAttempts = 3;
 
-export const useProximityHover = (
+export const useProximityHover = <T extends HTMLElement = HTMLElement>(
   containerRef: RefObject<T | null>,
   options: UseProximityHoverOptions = {}
 ): UseProximityHoverReturn => {
