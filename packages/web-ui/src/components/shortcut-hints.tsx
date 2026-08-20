@@ -1,5 +1,8 @@
 import { findHotkeyCommand, formatCommandBinding } from "@/commands/bindings";
-import type { CommandDefinition, HotkeyCommandDefinition } from "@/commands/types";
+import type {
+  CommandDefinition,
+  HotkeyCommandDefinition,
+} from "@/commands/types";
 import { useModKeyHeld } from "@/commands/use-mod-key-held";
 
 interface ShortcutHintsProps {

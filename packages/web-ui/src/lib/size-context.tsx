@@ -6,8 +6,8 @@ import {
   useState,
   useCallback,
   useMemo,
-  type ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 
 type SizeVariant = "default" | "compact";
 
@@ -45,34 +45,34 @@ interface SizeClasses {
 }
 
 const sizeMap: Record<SizeVariant, SizeClasses> = {
-  // 36px — the default control height. Matches a 13px label with comfortable
-  // breathing room and keeps controls a workable pointer target.
-  default: {
-    variant: "default",
-    control: "h-9",
-    controlHeight: 36,
-    segmentItem: "h-7",
-    segmentPad: "p-1",
-    text: "text-[13px]",
-    px: "px-3",
-    itemPx: "px-2",
-    gap: "gap-2",
-    icon: 16,
-  },
   // 28px — the compact height for dense surfaces: filter bars, toolbars,
   // table headers, sidebars. One step down in text (12px) and icon (14px)
   // so the whole control shrinks together, not just its box.
   compact: {
-    variant: "compact",
     control: "h-7",
     controlHeight: 28,
+    gap: "gap-1",
+    icon: 14,
+    itemPx: "px-1.5",
+    px: "px-2.5",
     segmentItem: "h-6",
     segmentPad: "p-0.5",
     text: "text-[12px]",
-    px: "px-2.5",
-    itemPx: "px-1.5",
-    gap: "gap-1",
-    icon: 14,
+    variant: "compact",
+  },
+  // 36px — the default control height. Matches a 13px label with comfortable
+  // breathing room and keeps controls a workable pointer target.
+  default: {
+    control: "h-9",
+    controlHeight: 36,
+    gap: "gap-2",
+    icon: 16,
+    itemPx: "px-2",
+    px: "px-3",
+    segmentItem: "h-7",
+    segmentPad: "p-1",
+    text: "text-[13px]",
+    variant: "default",
   },
 };
 
@@ -93,35 +93,20 @@ interface TypeScaleStep {
  * for consumers composing their own screens.
  */
 const typeScale = {
-  /** Page titles. */
-  display: { default: 28, compact: 24 },
-  /** Section headings, dialog titles. */
-  title: { default: 16, compact: 15 },
-  /** Card titles, chat bubbles, emphasized rows. */
-  subtitle: { default: 14, compact: 13 },
   /** Control labels and body copy — `SizeClasses.text`. */
-  body: { default: 13, compact: 12 },
+  body: { compact: 12, default: 13 },
   /** Secondary text: descriptions, meta rows, errors, eyebrows and group
    *  labels (the former overline role — an uppercase or muted caption). */
-  caption: { default: 12, compact: 11 },
+  caption: { compact: 11, default: 12 },
+  /** Page titles. */
+  display: { compact: 24, default: 28 },
+  /** Card titles, chat bubbles, emphasized rows. */
+  subtitle: { compact: 13, default: 14 },
+  /** Section headings, dialog titles. */
+  title: { compact: 15, default: 16 },
 } as const satisfies Record<string, TypeScaleStep>;
 
 type TypeScaleRole = keyof typeof typeScale;
-
-/** The type scale resolved for the active ladder step (px per role):
- *  explicit override > surrounding SizeProvider > "default". */
-function useTypeScale(
-  override?: SizeVariant | null
-): Record<TypeScaleRole, number> {
-  const variant = useSizeVariant(override);
-  return {
-    display: typeScale.display[variant],
-    title: typeScale.title[variant],
-    subtitle: typeScale.subtitle[variant],
-    body: typeScale.body[variant],
-    caption: typeScale.caption[variant],
-  };
-}
 
 interface SizeContextValue {
   size: SizeVariant;
@@ -132,23 +117,39 @@ interface SizeContextValue {
 const SizeContext = createContext<SizeContextValue | null>(null);
 
 /** Resolve the active size variant: explicit prop > provider > "default". */
-function useSizeVariant(override?: SizeVariant | null): SizeVariant {
+const useSizeVariant = (override?: SizeVariant | null): SizeVariant => {
   const ctx = useContext(SizeContext);
   return override ?? ctx?.size ?? "default";
-}
+};
+
+/** The type scale resolved for the active ladder step (px per role):
+ *  explicit override > surrounding SizeProvider > "default". */
+const useTypeScale = (
+  override?: SizeVariant | null
+): Record<TypeScaleRole, number> => {
+  const variant = useSizeVariant(override);
+  return {
+    body: typeScale.body[variant],
+    caption: typeScale.caption[variant],
+    display: typeScale.display[variant],
+    subtitle: typeScale.subtitle[variant],
+    title: typeScale.title[variant],
+  };
+};
 
 /** Resolve size classes: explicit prop > provider > "default". */
-function useSize(override?: SizeVariant | null): SizeClasses {
-  return sizeMap[useSizeVariant(override)];
-}
+const useSize = (override?: SizeVariant | null): SizeClasses =>
+  sizeMap[useSizeVariant(override)];
 
-function useSizeContext() {
+const useSizeContext = () => {
   const ctx = useContext(SizeContext);
-  if (!ctx) throw new Error("useSizeContext must be used within a SizeProvider");
+  if (!ctx) {
+    throw new Error("useSizeContext must be used within a SizeProvider");
+  }
   return ctx;
-}
+};
 
-function SizeProvider({
+const SizeProvider = ({
   children,
   size,
   defaultSize = "default",
@@ -158,7 +159,7 @@ function SizeProvider({
    *  filter bar). Overrides internal state. */
   size?: SizeVariant;
   defaultSize?: SizeVariant;
-}) {
+}) => {
   const [internalSize, setInternalSize] = useState<SizeVariant>(defaultSize);
   const isControlled = size !== undefined;
   const resolved = size ?? internalSize;
@@ -168,19 +169,21 @@ function SizeProvider({
   // removed.
   const setSize = useCallback(
     (next: SizeVariant) => {
-      if (isControlled) return;
+      if (isControlled) {
+        return;
+      }
       setInternalSize(next);
     },
     [isControlled]
   );
 
   const value = useMemo(
-    () => ({ size: resolved, setSize, classes: sizeMap[resolved] }),
+    () => ({ classes: sizeMap[resolved], setSize, size: resolved }),
     [resolved, setSize]
   );
 
   return <SizeContext.Provider value={value}>{children}</SizeContext.Provider>;
-}
+};
 
 export {
   SizeProvider,

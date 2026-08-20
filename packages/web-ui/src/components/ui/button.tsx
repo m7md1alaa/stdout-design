@@ -2,8 +2,8 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cva } from 'class-variance-authority';
-import type { VariantProps } from 'class-variance-authority';
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -56,7 +56,7 @@ export interface ButtonProps extends useRender.ComponentProps<"button"> {
   loading?: boolean;
 }
 
-export function Button({
+export const Button = ({
   className,
   variant,
   size,
@@ -65,10 +65,9 @@ export function Button({
   loading = false,
   disabled: disabledProp,
   ...props
-}: ButtonProps): React.ReactElement {
-  const isDisabled: boolean = Boolean(loading || disabledProp);
-  const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] =
-    render ? undefined : "button";
+}: ButtonProps): React.ReactElement => {
+  const isDisabled = Boolean(loading || disabledProp);
+  const typeValue = render ? undefined : "button";
 
   const defaultProps = {
     "aria-disabled": loading || undefined,
@@ -95,4 +94,4 @@ export function Button({
     props: mergeProps<"button">(defaultProps, props),
     render,
   });
-}
+};

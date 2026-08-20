@@ -1,7 +1,5 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ComponentType, type ReactNode } from "react";
-
 import {
   ChevronRight,
   ChevronDown,
@@ -54,6 +52,8 @@ import {
   CornerDownRight,
   CornerDownLeft,
 } from "lucide-react";
+import { createContext, useContext, useMemo } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 export interface IconComponentProps {
   size?: number;
@@ -64,70 +64,108 @@ export interface IconComponentProps {
 export type IconComponent = ComponentType<IconComponentProps>;
 
 export type IconName =
-  | "chevron-right" | "chevron-down" | "x" | "copy" | "menu" | "dot"
-  | "monitor" | "sun" | "moon" | "rectangle-horizontal" | "circle"
-  | "square-library" | "clock" | "star" | "settings"
-  | "plus" | "arrow-left" | "arrow-right" | "arrow-up" | "arrow-down"
-  | "search" | "loader"
-  | "users" | "lock" | "mail" | "bell" | "shield" | "palette"
-  | "lightbulb" | "rocket" | "heart" | "paintbrush" | "brain"
-  | "globe" | "user"
-  | "image" | "link" | "check" | "rotate-ccw"
-  | "play" | "pause" | "pipette"
-  | "home" | "message-circle" | "inbox"
-  | "pencil" | "scaling" | "skip-forward" | "corner-down-right" | "corner-down-left";
+  | "chevron-right"
+  | "chevron-down"
+  | "x"
+  | "copy"
+  | "menu"
+  | "dot"
+  | "monitor"
+  | "sun"
+  | "moon"
+  | "rectangle-horizontal"
+  | "circle"
+  | "square-library"
+  | "clock"
+  | "star"
+  | "settings"
+  | "plus"
+  | "arrow-left"
+  | "arrow-right"
+  | "arrow-up"
+  | "arrow-down"
+  | "search"
+  | "loader"
+  | "users"
+  | "lock"
+  | "mail"
+  | "bell"
+  | "shield"
+  | "palette"
+  | "lightbulb"
+  | "rocket"
+  | "heart"
+  | "paintbrush"
+  | "brain"
+  | "globe"
+  | "user"
+  | "image"
+  | "link"
+  | "check"
+  | "rotate-ccw"
+  | "play"
+  | "pause"
+  | "pipette"
+  | "home"
+  | "message-circle"
+  | "inbox"
+  | "pencil"
+  | "scaling"
+  | "skip-forward"
+  | "corner-down-right"
+  | "corner-down-left";
 
 export const defaultIcons: Record<IconName, IconComponent> = {
-  "chevron-right": ChevronRight,
-  "chevron-down": ChevronDown,
-  "pipette": Pipette,
-  "x": X,
-  "copy": Copy,
-  "menu": Menu,
-  "dot": Dot,
-  "monitor": Monitor,
-  "sun": Sun,
-  "moon": Moon,
-  "rectangle-horizontal": RectangleHorizontal,
-  "circle": Circle,
-  "square-library": SquareLibrary,
-  "clock": Clock,
-  "star": Star,
-  "settings": Settings,
-  "plus": Plus,
+  "arrow-down": ArrowDown,
   "arrow-left": ArrowLeft,
   "arrow-right": ArrowRight,
   "arrow-up": ArrowUp,
-  "arrow-down": ArrowDown,
-  "search": Search,
-  "loader": Loader,
-  "users": Users,
-  "lock": Lock,
-  "mail": Mail,
-  "bell": Bell,
-  "shield": Shield,
-  "palette": Palette,
-  "lightbulb": Lightbulb,
-  "rocket": Rocket,
-  "heart": Heart,
-  "paintbrush": Paintbrush,
-  "brain": Brain,
-  "globe": Globe,
-  "user": User,
-  "image": ImageIcon,
-  "link": Link,
-  "check": Check,
-  "rotate-ccw": RotateCcw,
-  "play": Play,
-  "pause": Pause,
-  "home": Home,
-  "message-circle": MessageCircle,
-  "inbox": Inbox,
-  "pencil": Pencil,
-  "scaling": Scaling,
-  "skip-forward": SkipForward,
-  "corner-down-right": CornerDownRight,
+  bell: Bell,
+  brain: Brain,
+  check: Check,
+  "chevron-down": ChevronDown,
+  "chevron-right": ChevronRight,
+  circle: Circle,
+  clock: Clock,
+  copy: Copy,
   "corner-down-left": CornerDownLeft,
+  "corner-down-right": CornerDownRight,
+  dot: Dot,
+  globe: Globe,
+  heart: Heart,
+  home: Home,
+  image: ImageIcon,
+  inbox: Inbox,
+  lightbulb: Lightbulb,
+  link: Link,
+  loader: Loader,
+  lock: Lock,
+  mail: Mail,
+  menu: Menu,
+  "message-circle": MessageCircle,
+  monitor: Monitor,
+  moon: Moon,
+  paintbrush: Paintbrush,
+  palette: Palette,
+  pause: Pause,
+  pencil: Pencil,
+  pipette: Pipette,
+  play: Play,
+  plus: Plus,
+  "rectangle-horizontal": RectangleHorizontal,
+  rocket: Rocket,
+  "rotate-ccw": RotateCcw,
+  scaling: Scaling,
+  search: Search,
+  settings: Settings,
+  shield: Shield,
+  "skip-forward": SkipForward,
+  "square-library": SquareLibrary,
+  star: Star,
+  sun: Sun,
+  user: User,
+  users: Users,
+  x: X,
 };
 
 const IconContext = createContext<Record<IconName, IconComponent> | null>(null);
@@ -136,33 +174,33 @@ const IconContext = createContext<Record<IconName, IconComponent> | null>(null);
  * Returns a single icon component for the given name.
  * Falls back to the default (Lucide) set if no provider is present.
  */
-function useIcon(name: IconName): IconComponent {
+const useIcon = (name: IconName): IconComponent => {
   const icons = useContext(IconContext);
   return (icons ?? defaultIcons)[name];
-}
+};
 
 /**
  * Returns the full icon map.
  * Falls back to the default (Lucide) set if no provider is present.
  */
-function useIcons(): Record<IconName, IconComponent> {
+const useIcons = (): Record<IconName, IconComponent> => {
   const icons = useContext(IconContext);
   return icons ?? defaultIcons;
-}
+};
 
 /**
  * Swap some or all icons for components from another library.
  * Names left out of `icons` keep their default (Lucide) component.
  */
-function IconProvider({
+const IconProvider = ({
   children,
   icons,
 }: {
   children: ReactNode;
   icons?: Partial<Record<IconName, IconComponent>>;
-}) {
+}) => {
   const value = useMemo(() => ({ ...defaultIcons, ...icons }), [icons]);
   return <IconContext.Provider value={value}>{children}</IconContext.Provider>;
-}
+};
 
 export { IconProvider, useIcon, useIcons };

@@ -8,8 +8,8 @@ import {
   useRef,
   useCallback,
   useMemo,
-  type ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 
 type ShapeVariant = "pill" | "rounded";
 
@@ -30,28 +30,28 @@ interface ShapeClasses {
 
 const shapeMap: Record<ShapeVariant, ShapeClasses> = {
   pill: {
-    item: "rounded-[20px]",
     bg: "rounded-[20px]",
+    bgRadius: 20,
+    button: "rounded-[20px]",
+    container: "rounded-3xl",
+    focusRing: "rounded-[22px]",
+    input: "rounded-[20px]",
+    item: "rounded-[20px]",
+    mergedBg: "rounded-2xl",
     // +2px over `item` because the focus ring sits 2px outside the element
     // (top/left -2, width/height +4); this keeps the corners concentric so a
     // pill element gets a pill ring (matches the rounded-mode 8px→10px bump).
-    focusRing: "rounded-[22px]",
-    mergedBg: "rounded-2xl",
-    container: "rounded-3xl",
-    button: "rounded-[20px]",
-    input: "rounded-[20px]",
-    bgRadius: 20,
     mergedRadius: 16,
   },
   rounded: {
-    item: "rounded-lg",
     bg: "rounded-lg",
-    focusRing: "rounded-[10px]",
-    mergedBg: "rounded-lg",
-    container: "rounded-xl",
-    button: "rounded-lg",
-    input: "rounded-lg",
     bgRadius: 8,
+    button: "rounded-lg",
+    container: "rounded-xl",
+    focusRing: "rounded-[10px]",
+    input: "rounded-lg",
+    item: "rounded-lg",
+    mergedBg: "rounded-lg",
     mergedRadius: 8,
   },
 };
@@ -64,37 +64,45 @@ interface ShapeContextValue {
 
 const ShapeContext = createContext<ShapeContextValue | null>(null);
 
-function useShape(): ShapeClasses {
+const useShape = (): ShapeClasses => {
   const ctx = useContext(ShapeContext);
-  if (!ctx) return shapeMap.pill;
+  if (!ctx) {
+    return shapeMap.pill;
+  }
   return ctx.classes;
-}
+};
 
-function useShapeContext() {
+const useShapeContext = () => {
   const ctx = useContext(ShapeContext);
-  if (!ctx) throw new Error("useShapeContext must be used within a ShapeProvider");
+  if (!ctx) {
+    throw new Error("useShapeContext must be used within a ShapeProvider");
+  }
   return ctx;
-}
+};
 
-function ShapeProvider({
+const ShapeProvider = ({
   children,
   defaultShape = "pill",
 }: {
   children: ReactNode;
   defaultShape?: ShapeVariant;
-}) {
-  const [shape, setShapeState] = useState<ShapeVariant>(defaultShape);
-  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+}) => {
+  const [activeShape, setActiveShape] = useState<ShapeVariant>(defaultShape);
+  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   // Run a state change under the `.transitioning` guard (added + reflow-flushed
   // first so the 180ms border-radius cross-fade applies). Clearing the previous
   // timeout first keeps a double-press from removing the class mid-fade.
-  const transitionShape = useCallback((callback: () => void) => {
+  const transitionShape = useCallback((action: () => void) => {
     const root = document.documentElement;
     root.classList.add("transitioning");
     void root.offsetHeight;
-    callback();
-    if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    action();
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
     transitionTimeoutRef.current = setTimeout(
       () => root.classList.remove("transitioning"),
       200
@@ -103,7 +111,7 @@ function ShapeProvider({
 
   const setShape = useCallback(
     (next: ShapeVariant) => {
-      transitionShape(() => setShapeState(next));
+      transitionShape(() => setActiveShape(next));
     },
     [transitionShape]
   );
@@ -115,21 +123,19 @@ function ShapeProvider({
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--shape-input-radius",
-      `${shapeMap[shape].bgRadius}px`
+      `${shapeMap[activeShape].bgRadius}px`
     );
-  }, [shape]);
+  }, [activeShape]);
 
   const value = useMemo(
-    () => ({ shape, setShape, classes: shapeMap[shape] }),
-    [shape, setShape]
+    () => ({ classes: shapeMap[activeShape], setShape, shape: activeShape }),
+    [activeShape, setShape]
   );
 
   return (
-    <ShapeContext.Provider value={value}>
-      {children}
-    </ShapeContext.Provider>
+    <ShapeContext.Provider value={value}>{children}</ShapeContext.Provider>
   );
-}
+};
 
 export { ShapeProvider, useShape, useShapeContext, shapeMap };
 export type { ShapeVariant, ShapeClasses };

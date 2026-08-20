@@ -5,7 +5,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export function Slider({
+export const Slider = ({
   className,
   children,
   defaultValue,
@@ -13,7 +13,7 @@ export function Slider({
   min = 0,
   max = 100,
   ...props
-}: SliderPrimitive.Root.Props): React.ReactElement {
+}: SliderPrimitive.Root.Props): React.ReactElement => {
   const _values = React.useMemo(() => {
     if (value !== undefined) {
       return Array.isArray(value) ? value : [value];
@@ -59,19 +59,17 @@ export function Slider({
       </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   );
-}
+};
 
-export function SliderValue({
+export const SliderValue = ({
   className,
   ...props
-}: SliderPrimitive.Value.Props): React.ReactElement {
-  return (
-    <SliderPrimitive.Value
-      className={cn("flex justify-end text-sm", className)}
-      data-slot="slider-value"
-      {...props}
-    />
-  );
-}
+}: SliderPrimitive.Value.Props): React.ReactElement => (
+  <SliderPrimitive.Value
+    className={cn("flex justify-end text-sm", className)}
+    data-slot="slider-value"
+    {...props}
+  />
+);
 
-export { SliderPrimitive };
+export { Slider as SliderPrimitive } from "@base-ui/react/slider";

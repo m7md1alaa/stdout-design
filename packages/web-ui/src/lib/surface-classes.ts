@@ -20,10 +20,13 @@ export const SURFACE_SHADOW: Record<number, string> = {
   8: "shadow-surface-8",
 };
 
-export function surfaceClasses(bgLevel: number, shadowLevel: number = bgLevel): string {
+export const surfaceClasses = (
+  bgLevel: number,
+  shadowLevel: number = bgLevel
+): string => {
   // Round after clamping so a fractional level can't index out of the lookup
   // tables (which would render "undefined undefined").
   const bg = Math.round(Math.max(1, Math.min(8, bgLevel)));
   const shadow = Math.round(Math.max(1, Math.min(8, shadowLevel)));
   return `${SURFACE_BG[bg]} ${SURFACE_SHADOW[shadow]}`;
-}
+};
