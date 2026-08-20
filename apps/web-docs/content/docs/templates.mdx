@@ -158,13 +158,27 @@ Templates are full React components, so you can map over arrays, compute styles,
 
 ## Images
 
-Reference remote images with a regular `<img>` element. A `src` prop typed as `z.url()` renders an image field in the studio:
+Reference remote images with a regular `<img>` element (also works for `backgroundImage`/`maskImage` URLs in `style`). A `src` prop typed as `z.url()` renders an image field in the studio:
 
 ```tsx
 <img src={avatarUrl} alt="" tw="w-12 h-12 rounded-full" />
 ```
 
 Images are fetched at render time, so they must be reachable from wherever you render (locally, or in CI).
+
+**Remote images don't load until you allow them.** By default, any `<img src>`, `backgroundImage`, or `maskImage` pointing at a URL is blocked add an `allowUrl` check to `studio.config.ts` for the domains you use:
+
+```ts
+// studio.config.ts
+const config: StudioConfig = {
+  images: {
+    allowUrl: (url) => url.startsWith("https://cdn.example.com/"),
+  },
+  // ...
+};
+```
+
+See [Configuration → `images`](/docs/configuration#images) for every option (`maxBytes`, `timeout`, custom `fetch`, `emoji`).
 
 ## Locale & RTL
 

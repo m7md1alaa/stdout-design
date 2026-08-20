@@ -433,9 +433,7 @@ const parseColor = (
       return null;
     }
     const h = Number(hPart);
-    const sat = satPart.endsWith("%")
-      ? Number(satPart) / 100
-      : Number(satPart);
+    const sat = satPart.endsWith("%") ? Number(satPart) / 100 : Number(satPart);
     const l = lPart.endsWith("%") ? Number(lPart) / 100 : Number(lPart);
     let a = 1;
     if (alphaPart !== undefined) {
@@ -722,7 +720,7 @@ const SaturationSquare = ({ h, s, v, onChange }: SaturationSquareProps) => {
         shape.bg
       )}
       style={{
-        boxShadow: focused ? "0 0 0 2px var(--focus-ring, #6B97FF)" : undefined,
+        boxShadow: focused ? "0 0 0 2px var(--ring)" : undefined,
         height: SQUARE_HEIGHT,
       }}
     >
@@ -747,8 +745,8 @@ const SaturationSquare = ({ h, s, v, onChange }: SaturationSquareProps) => {
         transition={{ duration: 0 }}
         style={{
           backgroundColor: thumbColor,
-          border: "1px solid white",
-          boxShadow: "0 0 0 1px rgba(0,0,0,1)",
+          border: "1px solid var(--foreground)",
+          boxShadow: "0 0 0 1px var(--background)",
           transform: "translate(-50%, -50%)",
         }}
       />
@@ -756,8 +754,10 @@ const SaturationSquare = ({ h, s, v, onChange }: SaturationSquareProps) => {
         <div
           className="absolute pointer-events-none rounded-full"
           style={{
-            border: "2px solid rgba(255, 255, 255, 0.55)",
-            boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.2)",
+            border:
+              "2px solid color-mix(in oklab, var(--foreground) 55%, transparent)",
+            boxShadow:
+              "0 0 0 1px color-mix(in oklab, var(--background) 60%, transparent)",
             height: 18,
             left: `${cursorPos.x}%`,
             top: `${cursorPos.y}%`,
@@ -820,7 +820,7 @@ const ColorPickerSlider = ({
         style={trackStyle}
       >
         <SliderPrimitive.Thumb
-          className="block size-4 shrink-0 select-none rounded-full shadow-sm outline-none transition-[box-shadow,scale] focus-visible:ring-2 focus-visible:ring-[color:var(--focus-ring,#6B97FF)] data-dragging:scale-110"
+          className="block size-4 shrink-0 select-none rounded-full shadow-sm outline-none transition-[box-shadow,scale] focus-visible:ring-2 focus-visible:ring-ring data-dragging:scale-110"
           style={{
             backgroundColor: thumbColor,
             border: `1px solid ${thumbBorderColor}`,
@@ -850,7 +850,7 @@ const HueSlider = ({
       min={0}
       onChange={onChange}
       step={1}
-      thumbBorderColor="rgba(255,255,255,0.9)"
+      thumbBorderColor="var(--background)"
       thumbColor={hueColor}
       trackStyle={{
         background:
@@ -891,7 +891,7 @@ const AlphaSlider = ({
       min={0}
       onChange={(v) => onChange(v / 100)}
       step={1}
-      thumbBorderColor="rgba(255,255,255,0.9)"
+      thumbBorderColor="var(--background)"
       thumbColor={solidColor}
       trackStyle={{
         backgroundImage: `linear-gradient(to right, ${transparentColor} 0%, ${solidColor} 98%), conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0)`,
@@ -1094,7 +1094,7 @@ const FormatDropdown = ({
     >
       <Menu.Trigger
         className={cn(
-          "flex items-center justify-between bg-transparent hover:bg-hover hover:text-foreground transition-colors duration-80 outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)] cursor-pointer",
+          "flex items-center justify-between bg-transparent hover:bg-hover hover:text-foreground transition-colors duration-80 outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer",
           sizeClasses.gap,
           sizeClasses.control,
           sizeClasses.px,
@@ -1240,7 +1240,7 @@ const FormatDropdown = ({
                 <AnimatePresence>
                   {focusRect && (
                     <motion.div
-                      className={`absolute ${menuShape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring,#6B97FF)]`}
+                      className={`absolute ${menuShape.focusRing} pointer-events-none z-20 border border-ring`}
                       initial={false}
                       animate={{
                         height: focusRect.height + 4,
@@ -1383,7 +1383,7 @@ const TextColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
     return (
       <div
         className={cn(
-          "flex items-center px-2 bg-transparent hover:bg-hover active:bg-active transition-colors duration-80 focus-within:ring-1 focus-within:ring-[color:var(--focus-ring,#6B97FF)] select-none",
+          "flex items-center px-2 bg-transparent hover:bg-hover active:bg-active transition-colors duration-80 focus-within:ring-1 focus-within:ring-ring select-none",
           sizeClasses.control,
           shape.input,
           className
@@ -1584,7 +1584,7 @@ const ScrubColorInput = forwardRef<HTMLInputElement, ColorInputProps>(
         largeStep={nudgeShiftStep ?? 10}
         format={format}
         className={cn(
-          "flex items-center bg-transparent hover:bg-hover active:bg-active transition-colors duration-80 focus-within:ring-1 focus-within:ring-[color:var(--focus-ring,#6B97FF)] select-none",
+          "flex items-center bg-transparent hover:bg-hover active:bg-active transition-colors duration-80 focus-within:ring-1 focus-within:ring-ring select-none",
           sizeClasses.control,
           shape.input,
           className
@@ -1749,7 +1749,7 @@ const EyeDropperButton = ({ onPick }: { onPick: (hex: string) => void }) => {
       onClick={handleClick}
       aria-label="Pick color from screen"
       className={cn(
-        "flex items-center justify-center text-muted-foreground bg-transparent hover:bg-hover hover:text-foreground active:bg-active transition-colors duration-80 outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)] cursor-pointer",
+        "flex items-center justify-center text-muted-foreground bg-transparent hover:bg-hover hover:text-foreground active:bg-active transition-colors duration-80 outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer",
         sizeClasses.control,
         sizeClasses.px,
         shape.input
@@ -1815,7 +1815,7 @@ const ColorSwatch = forwardRef<HTMLButtonElement, ColorSwatchProps>(
     let ring: string;
     if (selected) {
       ring =
-        "inset 0 0 0 1px rgba(127,127,127,0.25), 0 0 0 2px var(--background), 0 0 0 4px #6B97FF";
+        "inset 0 0 0 1px rgba(127,127,127,0.25), 0 0 0 2px var(--background), 0 0 0 4px var(--ring)";
     } else if (hovered) {
       ring =
         "inset 0 0 0 1px rgba(127,127,127,0.25), 0 0 0 2px var(--background), 0 0 0 4px rgba(127,127,127,0.4)";
@@ -2198,7 +2198,7 @@ const ColorPicker = forwardRef<HTMLDivElement, ColorPickerProps>(
   (
     {
       value,
-      defaultValue = "#6B97FF",
+      defaultValue = "#6366f1",
       onValueChange,
       format,
       defaultFormat = "hex",
@@ -2553,7 +2553,7 @@ const ColorPickerPopover = forwardRef<HTMLDivElement, ColorPickerPopoverProps>(
 
     const isControlled = pickerProps.value !== undefined;
     const [internalValue, setInternalValue] = useState(
-      pickerProps.value ?? pickerProps.defaultValue ?? "#6B97FF"
+      pickerProps.value ?? pickerProps.defaultValue ?? "#6366f1"
     );
     const currentValue = isControlled
       ? (pickerProps.value as string)
@@ -2607,7 +2607,7 @@ const ColorPickerPopover = forwardRef<HTMLDivElement, ColorPickerPopoverProps>(
         <div ref={ref} className="inline-flex">
           <Popover.Trigger
             className={cn(
-              "flex items-center border border-border bg-transparent hover:bg-hover transition-colors duration-80 outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)] cursor-pointer",
+              "flex items-center border border-border bg-transparent hover:bg-hover transition-colors duration-80 outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer",
               sizeClasses.gap,
               sizeClasses.control,
               compact ? "px-1.5" : "px-2",

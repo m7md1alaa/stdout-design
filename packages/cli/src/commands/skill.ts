@@ -16,6 +16,7 @@ export const skillInstall = async (options?: {
   const installed = await maybeInstallSkill({
     packageManager,
     quiet: options?.yes ?? false,
+    shouldInstall: options?.yes ? true : undefined,
   });
 
   if (installed) {

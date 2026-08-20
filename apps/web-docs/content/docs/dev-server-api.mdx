@@ -1,0 +1,136 @@
+---
+title: Dev Server API
+description: The HTTP API behind studio dev — script it, or wire it into an agent.
+---
+
+`studio dev` starts an HTTP server (the same one the [Live Studio](/docs/dev-studio) UI talks to) at `http://localhost:3030` by default. Every endpoint below is plain JSON/HTTP no auth, no client library needed so you can script renders, build your own UI on top, or give an agent direct render/measure tool calls.
+
+```bash
+studio dev --port 3030
+```
+
+## Render a template
+
+```
+POST /render
+Content-Type: application/json
+```
+
+```json
+{
+  "templateId": "stat-card",
+  "props": { "title": "Weekly Active Users", "stat": "124.5K" },
+  "preset": "instagram-square",
+  "locale": "en"
+}
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `templateId` | Yes | A template ID from `studio.config.ts` |
+| `props` | Yes | Raw prop values (validated server-side against the template's schema) |
+| `preset` | No | Preset ID defaults to `config.defaultPreset` |
+| `locale` | No | Locale code merges that locale's translation data into props |
+| `autoDetected` | No | Set `true` to skip locale-file lookup (used by the studio's RTL auto-detect) |
+
+Response is the raw image bytes (`Content-Type: image/png`), with:
+
+| Header          | Meaning                               |
+| --------------- | ------------------------------------- |
+| `X-Cache`       | `hit` or `miss`                       |
+| `Cache-Control` | `public, max-age=31536000, immutable` |
+
+```bash
+curl -X POST http://localhost:3030/render \
+  -H "Content-Type: application/json" \
+  -d '{"templateId":"stat-card","props":{"title":"Hello","stat":"10K"}}' \
+  -o out.png
+```
+
+## Measure a template
+
+Same request shape as `/render` (minus `preset`, since no image is produced), returns just the natural dimensions instead of pixels useful for auto-sizing UI or checking a layout without paying for a full render.
+
+```
+POST /measure
+```
+
+```json
+{ "templateId": "stat-card", "props": { "title": "Hello" } }
+```
+
+```json
+{ "width": 1080, "height": 640 }
+```
+
+## List templates, presets, and locales
+
+```
+GET /templates   → every registered template, with its JSON-Schema propsSchema and load status
+GET /presets     → the configured presets array
+GET /locales     → the configured locale codes
+GET /config      → { defaultPreset, locales, outDir, presets }
+```
+
+`/templates` is the one to poll (or subscribe to via `/events`, below) if you're building a prop-editing UI it gives you everything needed to render a form per template:
+
+```json
+[
+  {
+    "id": "stat-card",
+    "description": "A milestone or stat card for social media.",
+    "status": "ok",
+    "propsSchema": { "type": "object", "properties": { "...": "..." } }
+  }
+]
+```
+
+A template that failed to load still appears, with `"status": "error"` and an `errorMessage` other templates keep working.
+
+## Live reload events
+
+```
+GET /events
+```
+
+A Server-Sent Events stream. The studio UI uses this to hot-reload the canvas when you edit a template, config, or locale file — subscribe to it yourself to trigger your own rebuilds/refreshes on the same changes:
+
+```ts
+const events = new EventSource("http://localhost:3030/events");
+
+events.addEventListener("reload", (e) => {
+  const event = JSON.parse(e.data);
+  // event.type: "template" (one template changed) or "full" (config/shared file changed)
+});
+```
+
+A `connected` event fires once on open; a keepalive comment is sent every 15s so the connection doesn't idle-timeout behind a proxy.
+
+## Cache management
+
+```
+GET /cache/stats   → { compiled: { entries }, pixels: { entries, sizeBytes, maxSizeBytes }, cacheDir }
+POST /cache/clean  → evicts everything, returns a summary of what was freed
+```
+
+Same cache the CLI's `studio cache stats`/`studio cache clean` report on — see [Caching](/docs/caching).
+
+## Errors
+
+Validation and render/measure errors come back as JSON with a 4xx status, not a generic 500:
+
+| Status | Body | When |
+| --- | --- | --- |
+| `400` | `{ "error": "Invalid request body", "issues": [...] }` | Malformed request (missing `templateId`, etc.) |
+| `400` | `{ "error": "Invalid props", "issues": [...] }` | Props failed the template's Zod schema `issues` is the same structured shape as `PropValidationError` in [the core API](/docs/core#validating-props) |
+| `404` | `{ "error": "Template \"x\" not found" }` | Unknown `templateId` |
+| `404` | `{ "error": "Preset \"x\" not found" }` | Unknown `preset` |
+| `422` | `{ "error": "Template \"x\" failed to load: ..." }` | Template exists but has a load error (bad export, syntax error) |
+
+`issues` entries include a human-readable `message` and often a `suggestion` designed to be useful directly in an agent's retry loop, not just for display.
+
+<Cards>
+  <Card title="Live Studio" href="/docs/dev-studio" />
+  <Card title="Core Package API" href="/docs/core" />
+  <Card title="AI Agents" href="/docs/agents" />
+</Cards>

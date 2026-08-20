@@ -68,6 +68,34 @@ The **Export PNG** button renders the current template, props, preset, and local
 
 > Batch and data-driven output, `manifest.json`, and CLI flags live in the terminal see [Batch Rendering](/docs/batch-rendering) and the [CLI Reference](/docs/cli).
 
+## Keyboard shortcuts
+
+Press <kbd>Mod</kbd>+<kbd>/</kbd> at any time to open the in-app shortcuts reference (`Mod` is `Cmd` on macOS, `Ctrl` elsewhere).
+
+| Shortcut | Action |
+| --- | --- |
+| `Mod+K` | Open the command palette |
+| `Mod+/` | Show this shortcuts reference |
+| `Mod+E` | Export the current render as a PNG |
+| `Mod+Shift+C` | Copy a shareable link (see below) |
+| `Mod+Backspace` | Reset the current template's props to their schema defaults |
+| `G` then `T` | Jump focus to the template selector |
+| `G` then `P` | Jump focus to the props panel |
+
+Notes:
+
+- `G T` / `G P` are two-key **sequences** (press `G`, release, then press the second key) similar to Gmail/Linear/Vim-style navigation, not a chord.
+- `Mod+Backspace` is destructive (discards prop edits), so unlike the other shortcuts it does **not** fire while a text input or textarea is focused avoiding a collision with the native "delete previous word" behavior.
+- Shortcuts that act on the current render (export, share, reset) are disabled — and show as such in the palette — when there's nothing to export/share/reset.
+
+### Rebinding shortcuts
+
+Every shortcut above can be rebound to a key combo you prefer. Open the command palette (`Mod+K`) to run any command by name, or to change its binding. Your custom bindings are remembered in your browser and survive a reload they're local to you, not shared with teammates.
+
+### Shareable links
+
+**Copy shareable link** (`Mod+Shift+C`) copies a URL that reopens the studio with the exact template, preset, locale, and props you're currently looking at a quick way to hand a teammate (or an agent) a specific state instead of describing it. Opening a shared link loads that state once; after that, your own edits autosave locally as usual.
+
 ## Tips
 
 - **Give every prop a default** so templates render the moment you select them.

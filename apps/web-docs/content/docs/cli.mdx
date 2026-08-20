@@ -33,6 +33,10 @@ studio init [projectDir] [options]
 
 Skips scaffolding if a `studio.config.ts` already exists. See [Getting Started](/docs/getting-started).
 
+### Non-interactive / CI mode
+
+`init` skips every prompt and uses defaults (project name `studio-project`, the `bento-feature` template, `en`+`ar` locales, dependencies installed) when `-y`/`--yes` is passed, **or automatically** when it detects a CI environment: `CI=true`/`CI=1`, `CIRCLECI=true`, `GITHUB_ACTIONS`, or `GITLAB_CI` is set. Useful for scaffolding a project from a script or agent without wiring `--yes` explicitly.
+
 ## `studio update`
 
 Update an existing studio project to the latest CLI version adds the CLI dependency if missing and merges default config values into `studio.config.ts`.
@@ -44,6 +48,29 @@ studio update [projectDir] [options]
 | Option      | Description               |
 | ----------- | ------------------------- |
 | `-y, --yes` | Skip confirmation prompts |
+
+### Version gate
+
+`update` compares your **installed** CLI version (from your own `package.json`) against the **latest published** version before doing anything. If a newer CLI is available, it refuses to proceed:
+
+```
+CLI v0.3.0 is installed, but v0.4.0 is available.
+Run `npm install @stdout-design/cli@latest` first, then re-run `studio update`.
+```
+
+Upgrade the CLI first, then run `studio update` again.
+
+### What gets merged
+
+`update` diffs your `studio.config.ts` against the scaffold defaults for your installed version and:
+
+- Adds any new default presets/templates you don't already have (existing entries with the same ID are left untouched).
+- Flags presets whose IDs are deprecated (none currently).
+- Bumps `scaffoldVersion`.
+- Overwrites the static scaffold assets (`tsconfig.json`, `.gitignore`, `types.d.ts`).
+- Bumps the `@stdout-design/cli` dependency in `package.json` to match.
+
+If nothing would change, it prints "Project is already up to date." and exits without touching any files. Otherwise it prints a diff-style summary and asks for confirmation (skipped with `--yes`).
 
 ## `studio render`
 
@@ -122,6 +149,8 @@ studio dev [rootDir] [options]
 
 `--open` is accepted but currently a no-op open `http://localhost:3030` manually.
 
+`-p`/`--port` always wins over any environment variable if you're starting the dev server yourself (not through `studio dev`) rather than importing `startStandaloneServer`, it also reads a `PORT` environment variable when no port argument is given.
+
 ## `studio cache stats`
 
 Show cache statistics location, compiled/pixel entry counts, disk usage, and the size limit.
@@ -170,3 +199,8 @@ See [AI Agents](/docs/agents).
 
 - `0` success (including a cancelled `init`).
 - `1` any error, or any failed render in a batch.
+
+<Cards>
+  <Card title="Dev Server API" href="/docs/dev-server-api" />
+  <Card title="Core Package API" href="/docs/core" />
+</Cards>

@@ -48,6 +48,7 @@ export default config;
 | `locales` | `string[]` | No | Supported locale codes, e.g. `["en", "ar"]` |
 | `outDir` | `string` | No | Output directory (default `./out`) |
 | `fonts` | `Record<locale, FontConfig[]>` | No | Per-locale font config (see Internationalization) |
+| `images` | `ImagePolicy` | No | Remote image/emoji fetch policy (see below) default denies all |
 | `scaffoldVersion` | `string` | No | Written by `init`/`update`; not for manual edits |
 
 ### `templates`
@@ -87,6 +88,30 @@ These are just sizes name and use them however fits your workflow.
 ### `defaultPreset`
 
 The preset selected by default in the studio and render fallbacks. If omitted, the first preset in the array is used.
+
+### `images`
+
+By default, remote images don't render a template's `<img src>`, `backgroundImage`, and `maskImage` URLs are **blocked until you allow them**. To load images from a CDN or your own domain, add an `allowUrl` check:
+
+```ts
+images: {
+  allowUrl: (url) => url.startsWith("https://cdn.example.com/"),
+  maxBytes: 5 * 1024 * 1024, // 5 MiB, optional
+  timeout: 8000,             // ms, optional
+  fetch: myCustomFetch,      // optional, defaults to globalThis.fetch
+  emoji: "twemoji",          // optional emoji provider, or "from-font"
+},
+```
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `allowUrl` | `(url: string) => boolean` | blocks every URL | Return `true` for URLs you want fetched. |
+| `maxBytes` | `number` | 32 MiB | Reject an image body larger than this. |
+| `timeout` | `number` (ms) | 5000 | Give up fetching an image after this long. |
+| `fetch` | `typeof fetch` | `globalThis.fetch` | Use a custom fetch e.g. to add auth headers or go through a proxy. |
+| `emoji` | `EmojiType \| "from-font"` | off | Turn emoji into rendered glyphs. `"from-font"` uses a color emoji font you've registered instead of fetching. |
+
+A blocked URL shows up as a clear render error naming the URL, so you know to add it to `allowUrl` rather than chasing a mystery failure.
 
 ## Validation & errors
 
