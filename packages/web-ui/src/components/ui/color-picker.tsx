@@ -433,9 +433,7 @@ const parseColor = (
       return null;
     }
     const h = Number(hPart);
-    const sat = satPart.endsWith("%")
-      ? Number(satPart) / 100
-      : Number(satPart);
+    const sat = satPart.endsWith("%") ? Number(satPart) / 100 : Number(satPart);
     const l = lPart.endsWith("%") ? Number(lPart) / 100 : Number(lPart);
     let a = 1;
     if (alphaPart !== undefined) {

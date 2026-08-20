@@ -1,0 +1,216 @@
+---
+title: Core Package API
+description: Use @stdout-design/core directly in your own scripts, servers, or build pipelines.
+---
+
+Everything the CLI and studio do to turn a template into pixels is exposed as a plain library. Reach for `@stdout-design/core` when you want to render outside the CLI a custom script, a queue worker, your own HTTP route, or a build step that needs images without shelling out.
+
+```bash
+npm install @stdout-design/core
+```
+
+## Quick start: render a component
+
+The fastest path from a React component to PNG bytes is `renderComponent`. It validates props, renders, and writes the file for you:
+
+```ts
+import { renderComponent } from "@stdout-design/core";
+import StatCard, { propsSchema } from "./templates/stat-card";
+
+const { outputPath } = await renderComponent({
+  component: StatCard,
+  propsSchema,
+  props: { title: "Weekly Active Users", stat: "124.5K" },
+  preset: { id: "instagram-square", width: 1080, height: 1080 },
+  outDir: "./out",
+  format: "png", // "webp" | "png" | "jpeg" | "ico" | "raw"
+});
+
+console.log(outputPath); // ./out/single.default.instagram-square.0.png
+```
+
+No caching, no locale handling this is the one-shot version. For a template registered in `studio.config.ts` with locales, caching, and font resolution wired up, use `orchestrateRender` (below) or just call `runBatch`/the CLI.
+
+## Rendering a whole project: `runBatch`
+
+`runBatch` is what `studio render --data` runs under the hood: it loads your `studio.config.ts`, resolves the template, expands props × presets × locales × data rows, and writes a `manifest.json` alongside the images.
+
+```ts
+import { runBatch } from "@stdout-design/core";
+
+const { manifest, elapsedMs } = await runBatch({
+  rootDir: process.cwd(),
+  templateId: "stat-card",
+  dataFile: "./data/stats.csv", // or pass `rows` directly as objects
+  presets: ["instagram-square", "x-card"],
+  locales: ["en", "ar"],
+  outDir: "./out",
+  failFast: false,
+});
+
+console.log(`${manifest.succeeded.length}/${manifest.totalCount} rendered`);
+```
+
+Use this when you want the CLI's batch behavior (data-driven rendering, manifest, per-cell error isolation) from inside your own script — a cron job, a CI step, an agent tool call.
+
+## Building a custom pipeline
+
+If `renderComponent`/`runBatch` don't fit for example, you're rendering inside a request handler and want fine control over caching and images the pieces they're built from are all exported.
+
+### `compileTemplate`
+
+Turns a JSX element into the intermediate form the renderer needs.
+
+```ts
+import { compileTemplate } from "@stdout-design/core";
+
+const compiled = await compileTemplate(<StatCard title="Hello" stat="10K" />);
+```
+
+### `renderToPixels` / `measureTemplate` / `renderAutoSized`
+
+```ts
+import {
+  renderToPixels,
+  measureTemplate,
+  renderAutoSized,
+} from "@stdout-design/core";
+
+// Render at explicit dimensions
+const { bytes, width, height } = await renderToPixels(
+  compiled,
+  { width: 1080, height: 1080 },
+  { format: "png" }
+);
+
+// Or find natural size first
+const { width: w, height: h } = await measureTemplate(compiled);
+
+// Or do both in one call — useful when a template has no fixed size
+// (e.g. auto-sizing text-heavy cards)
+const auto = await renderAutoSized(compiled);
+```
+
+### `registerFont`
+
+Preload a font once so you don't re-pass its bytes on every render call:
+
+```ts
+import { registerFont } from "@stdout-design/core";
+
+await registerFont({ name: "Inter", data: interFontBytes, weight: 700 });
+```
+
+### `orchestrateRender` / `orchestrateMeasure`
+
+The layer that ties compile + render + caching + locale data + fonts + image policy together it's what the dev server's `/render` and `/measure` routes call, and what `runBatch` calls per cell. Reach for this when you want caching and locale support but don't want the full batch/CLI machinery:
+
+```ts
+import { orchestrateRender, openCache } from "@stdout-design/core";
+
+const cache = await openCache(process.cwd());
+
+const result = await orchestrateRender({
+  cache,
+  component: StatCard,
+  propsSchema,
+  props: { title: "Hello" },
+  templateId: "stat-card",
+  templateContentHash: "abc123", // any stable string identifying this template version
+  width: 1080,
+  height: 1080,
+  locale: "ar",
+  loadLocaleData: async (locale) => ({ title: "مرحبا" }),
+  images: { allowUrl: (url) => url.startsWith("https://cdn.example.com/") },
+});
+
+console.log(result.cacheHit, result.durationMs);
+```
+
+`orchestrateMeasure` is the same shape without `width`/`height`/`format` it returns just `{ width, height, durationMs }`.
+
+## Loading a project's config
+
+```ts
+import { loadConfig, parseStudioConfig } from "@stdout-design/core";
+
+// Load and validate studio.config.ts from a project root
+const config = await loadConfig("./my-project");
+
+// Or validate a config object you already have in hand
+const result = parseStudioConfig(rawConfigObject);
+if ("issues" in result) {
+  console.error(result.issues); // human-readable validation errors
+} else {
+  console.log(result.config);
+}
+```
+
+## Caching
+
+`RenderCache` backs every render path (dev server, batch, CLI) with a two-tier cache: compiled templates in memory, rendered pixels on disk.
+
+```ts
+import { openCache } from "@stdout-design/core";
+
+const cache = await openCache("./my-project", { cacheDir: "./.studio-cache" });
+
+const stats = await cache.stats();
+// { compiled: { entries }, pixels: { entries, sizeBytes, maxSizeBytes }, cacheDir }
+
+await cache.clean(); // evict everything
+cache.close();
+```
+
+You rarely construct `RenderCache` yourself `openCache` resolves the right cache directory for a project and wires it up. See [Caching](/docs/caching) for how cache keys and eviction work.
+
+## Validating props
+
+The same validation the CLI and studio use for a template's `propsSchema`:
+
+```ts
+import {
+  validateProps,
+  PropValidationError,
+  zodToJsonSchemaShape,
+} from "@stdout-design/core";
+
+try {
+  const props = validateProps(propsSchema, rawProps);
+} catch (error) {
+  if (error instanceof PropValidationError) {
+    // error.issues: { field, message, suggestion?, ... }[]
+    console.error(error.issues);
+  }
+}
+
+// JSON Schema for a prop panel, form builder, or agent tool schema
+const jsonSchema = zodToJsonSchemaShape(propsSchema);
+```
+
+`defineSchema` is a no-op type helper you'll see in templates it exists purely for TypeScript inference at the definition site, not for anything at runtime.
+
+## Errors
+
+Every error the core package throws deliberately (config, template loading, rendering, cache) is an `AppError` with a stable `code` from `ErrorCode`, so you can branch on failure type instead of parsing messages:
+
+```ts
+import { AppError, ErrorCode } from "@stdout-design/core";
+
+try {
+  await loadConfig("./my-project");
+} catch (error) {
+  if (error instanceof AppError && error.code === ErrorCode.CONFIG_NOT_FOUND) {
+    // handle missing config specifically
+  }
+}
+```
+
+Common codes: `CONFIG_NOT_FOUND`, `CONFIG_INVALID`, `TEMPLATE_LOAD_FAILED`, `TEMPLATE_INVALID_EXPORT`, `TEMPLATE_NOT_FOUND`, `PROP_VALIDATION_FAILED`, `RENDER_FAILED`, `CACHE_INIT_FAILED`, `CACHE_WRITE_FAILED`.
+
+<Cards>
+  <Card title="Configuration" href="/docs/configuration" />
+  <Card title="Dev Server API" href="/docs/dev-server-api" />
+  <Card title="OG Image Generation" href="/docs/og" />
+  <Card title="Caching" href="/docs/caching" />
+</Cards>

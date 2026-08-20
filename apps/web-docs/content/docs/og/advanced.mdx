@@ -100,3 +100,29 @@ app.get("/og", (c) => {
 ```
 
 For locale-aware OG images with font resolution and caching, use the full core pipeline via `compileTemplate` + `renderToPixels` documented in the [core package](/docs/core).
+
+## `renderOgResponse`: the studio-native pipeline
+
+`createOgResponse` is the easiest way to get an OG image out of any React component. `@stdout-design/core/og` also exports `renderOgResponse`, a leaner alternative that renders through the same engine as `studio dev`/`studio render`, so output matches what you see in the studio pixel-for-pixel:
+
+```tsx
+import { renderOgResponse } from "@stdout-design/core/og";
+
+export async function GET() {
+  return renderOgResponse(
+    <MyOGCard title="Monthly Active Users" stat="124.5K" />,
+    { width: 1200, height: 630, format: "webp", devicePixelRatio: 2 }
+  );
+}
+```
+
+| Option             | Default  | Description                    |
+| ------------------ | -------- | ------------------------------ |
+| `width`            | `1200`   | Output width                   |
+| `height`           | `630`    | Output height                  |
+| `format`           | `"webp"` | `"webp"`, `"png"`, or `"jpeg"` |
+| `devicePixelRatio` | `1`      | Pixel density multiplier       |
+
+It's intentionally minimal no `fonts`, `locale`, or `images` options. Any failure returns a fallback error image instead of throwing, same as `createOgResponse`.
+
+Reach for `createOgResponse` by default it covers fonts, locale, and images. Reach for `renderOgResponse` when you want OG output that matches the rest of your studio-rendered templates exactly, and you don't need those extra options. For full control (custom fonts, locale, remote images), use the [core package API](/docs/core) directly.

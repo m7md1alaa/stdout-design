@@ -4,6 +4,8 @@
     "getting-started",
     "templates",
     "cli",
+    "core",
+    "dev-server-api",
     "batch-rendering",
     "internationalization",
     "configuration",
