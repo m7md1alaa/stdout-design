@@ -17,13 +17,27 @@ mock.module("takumi-js/helpers/jsx", () => ({
   ),
 }));
 
+const prepareImagesMock = mock(
+  (_options: { allowUrl?: (url: string) => boolean }) =>
+    Promise.resolve<unknown[]>([])
+);
+
 mock.module("@takumi-rs/helpers", () => ({
   googleFonts: mock(() => Promise.resolve([])),
+  prepareImages: prepareImagesMock,
 }));
+
+mock.module("@takumi-rs/helpers/emoji", () => ({
+  extractEmojis: mock((node: unknown) => node),
+}));
+
+const rendererRenderMock = mock(() =>
+  Promise.resolve(Buffer.from("rendered-bytes"))
+);
 
 mock.module("takumi-js/node", () => ({
   Renderer: class {
-    render = mock(() => Promise.resolve(Buffer.from("rendered-bytes")));
+    render = rendererRenderMock;
     measure = mock(() =>
       Promise.resolve({
         children: [] as [],
@@ -333,6 +347,60 @@ describe("orchestrateRender", () => {
     expect(result.bytes).toBeInstanceOf(Buffer);
     expect(result.cacheHit).toBe(false);
     expect(result.format).toBe("png");
+
+    cache.close();
+  });
+
+  it("defaults the image fetch policy to deny-all when no images policy is provided", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+    const cache = new RenderCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    await orchestrateRender({
+      cache,
+      compiledTemplate: compiled,
+      height: 100,
+      props: { name: "no-images-policy" },
+      templateContentHash: "hash-images-default-deny",
+      templateId: "test",
+      width: 100,
+    });
+
+    const call = prepareImagesMock.mock.calls.at(-1)?.[0] as
+      | { allowUrl?: (url: string) => boolean }
+      | undefined;
+    expect(call?.allowUrl?.("https://example.com/a.png")).toBe(false);
+
+    cache.close();
+  });
+
+  it("threads resolved images through to the renderer", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+    const cache = new RenderCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    const stubImage = { data: new ArrayBuffer(1), src: "logo" };
+    prepareImagesMock.mockImplementationOnce(() =>
+      Promise.resolve([stubImage])
+    );
+
+    await orchestrateRender({
+      cache,
+      compiledTemplate: compiled,
+      height: 100,
+      images: { allowUrl: () => true },
+      props: { name: "with-images" },
+      templateContentHash: "hash-images-threaded",
+      templateId: "test",
+      width: 100,
+    });
+
+    const renderCall = rendererRenderMock.mock.calls.at(-1) as
+      | [unknown, { images?: unknown[] }]
+      | undefined;
+    expect(renderCall?.[1]?.images).toEqual([stubImage]);
 
     cache.close();
   });

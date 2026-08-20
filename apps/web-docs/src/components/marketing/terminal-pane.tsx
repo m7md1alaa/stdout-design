@@ -46,7 +46,7 @@ const PAUSE_MS = 2200; // pause at end before reset
 
 export function TerminalPane() {
   const [visibleCount, setVisibleCount] = useState(0);
-  const [isRunning, setIsRunning] = useState(true);
+  const [isRunning] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -84,9 +84,16 @@ Everything an agent needs to generate assets is plain files:
 - **Locale files** write `locales/ar.json` with a template's translations to get localized renders.
 - **Templates** a template is a plain TSX component with a Zod `propsSchema`. Agents can author new templates by pattern-matching the existing ones in your repo, and the studio's per-template error reporting isolates failures.
 
+### Docs as plain text
+
+The docs are readable by agents without scraping HTML:
+
+- **`/llms.txt`** a plain-text index of every docs page, the recommended starting point for discovery.
+- **`.md` suffix** append `.md` to any docs URL to read that page as plain markdown, e.g. `/docs/batch-rendering.md`.
+
 ## A typical agent workflow
 
-1. **Discover** read `studio.config.ts` and the template files to learn template IDs and prop schemas.
+1. **Discover** read `studio.config.ts` and the template files to learn template IDs and prop schemas, and pull `/llms.txt` (or append `.md` to any docs page) for reference material.
 2. **Author** write a data file (or edit a template).
 3. **Render** `studio render stat-card --data data/stats.csv --out-dir out`.
 4. **Verify** read `manifest.json`; check `status`, `failed`, and each `outputPath`.

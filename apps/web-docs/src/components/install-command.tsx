@@ -27,7 +27,10 @@ export function InstallCommand({
 
       {/* Bottom edge — animated shimmer, delayed */}
       <div className="absolute inset-x-0 bottom-0 h-px overflow-hidden">
-        <div className="pulse-shimmer h-full" style={{ animationDelay: "1s" }} />
+        <div
+          className="pulse-shimmer h-full"
+          style={{ animationDelay: "1s" }}
+        />
       </div>
 
       <div

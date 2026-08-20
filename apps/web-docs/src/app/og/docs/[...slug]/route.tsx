@@ -1,7 +1,7 @@
 import { createOgResponse } from "@stdout-design/core/og";
-import { StandardOgTemplate } from "@stdout-design/core/og";
 import { notFound } from "next/navigation";
 
+import { DocsOgTemplate } from "@/components/og/docs-template";
 import { appName } from "@/lib/shared";
 import { source } from "@/lib/source";
 
@@ -16,7 +16,7 @@ export async function GET(
   if (!page) notFound();
 
   return createOgResponse(
-    <StandardOgTemplate
+    <DocsOgTemplate
       title={page.data.title}
       description={page.data.description}
       siteName={appName}

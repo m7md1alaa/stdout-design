@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { API_ROUTES } from "../constants";
+import { logError } from "../lib/logger";
 
 export interface TemplateSchema {
   id: string;
@@ -11,7 +12,7 @@ export interface TemplateSchema {
   errorMessage?: string;
 }
 
-interface PresetData {
+export interface PresetData {
   id: string;
   width: number;
   height: number;
@@ -70,7 +71,7 @@ export const useTemplates = () => {
     } catch (cause) {
       const message =
         cause instanceof Error ? cause.message : "Failed to load studio data";
-      console.error(message);
+      logError("TEMPLATES_FETCH_FAILED", message);
       if (!isReload) {
         setError(message);
       }

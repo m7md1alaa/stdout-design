@@ -63,8 +63,8 @@ export const useSSE = (onReload: (event: SSEReloadEvent) => void) => {
 
         attempt += 1;
         if (attempt > MAX_RECONNECT_ATTEMPTS) {
-          console.warn(
-            `[studio] Lost connection to dev server after ${MAX_RECONNECT_ATTEMPTS} attempts. ` +
+          logWarn(
+            `Lost connection to dev server after ${MAX_RECONNECT_ATTEMPTS} attempts. ` +
               "Hot-reload is paused. Refresh the page once the dev server is back up."
           );
           return;

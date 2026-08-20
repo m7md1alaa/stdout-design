@@ -20,6 +20,19 @@ const config: StudioConfig = {
       },
     ],
   },
+  images: {
+    allowUrl: (url) => {
+      try {
+        return new Set([
+          "i.pravatar.cc",
+          "images.unsplash.com",
+          "placehold.co",
+        ]).has(new URL(url).hostname);
+      } catch {
+        return false;
+      }
+    },
+  },
   locales: ["en", "ar"],
   outDir: "./out",
   presets: [
@@ -44,6 +57,11 @@ const config: StudioConfig = {
       componentPath: "./templates/bento-features",
       description:
         "A quote card with attribution, avatar, and customizable background.",
+    },
+    "docs-og": {
+      componentPath: "./templates/docs-og",
+      description:
+        "web-docs' OG card for doc pages — title/description/siteName, posterized glow.",
     },
     "features-showcase": {
       componentPath: "./templates/features-showcase",

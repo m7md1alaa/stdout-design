@@ -129,6 +129,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
           fetchFonts,
           format: "png",
           height: cell.preset.height,
+          images: config.images,
           loadLocaleData,
           locale: cell.locale,
           props: cell.props,

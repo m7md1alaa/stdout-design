@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 
 import type { ComponentType } from "react";
 
+import type { ImagePolicy } from "../assets/image-resolver.js";
 import { generateOutputFilename } from "../batch/naming.js";
 import type { RenderCache } from "../cache/render-cache.js";
 import type { PropSchema } from "../shared/validation.js";
@@ -15,6 +16,14 @@ export interface SingleInput {
   preset: { id: string; width: number; height: number };
   outDir?: string;
   format?: "webp" | "png" | "jpeg" | "ico" | "raw";
+  /**
+   * `renderComponent` is a direct programmatic API, not a project loaded
+   * from `studio.config.ts` -- there's no config file to source this from.
+   * The caller (trusted code, not request props) is the policy source
+   * here, same tier as `OgResponseOptions.images`. Unset denies every
+   * external image URL. See ADR-0018.
+   */
+  images?: ImagePolicy;
 }
 
 export interface SingleOutput {
@@ -37,6 +46,7 @@ export const renderComponent = async (
   const {
     component,
     format = "png",
+    images,
     outDir = "./out",
     preset,
     props,
@@ -48,6 +58,7 @@ export const renderComponent = async (
     component,
     format,
     height: preset.height,
+    images,
     props,
     propsSchema,
     templateContentHash: "single",

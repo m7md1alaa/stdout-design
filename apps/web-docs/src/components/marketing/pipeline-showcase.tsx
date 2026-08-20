@@ -12,17 +12,16 @@ export function PipelineShowcase() {
   return (
     <section className="border-b border-border px-6 py-20 sm:px-8 overflow-hidden">
       <div className="mx-auto max-w-5xl">
-
         {/* Screen-reader label for the diagram */}
         <p className="sr-only">
-          Pipeline diagram: Your TSX component flows through the CLI renderer and outputs to multiple targets.
+          Pipeline diagram: Your TSX component flows through the CLI renderer
+          and outputs to multiple targets.
         </p>
 
         <div
           className="flex flex-col sm:flex-row items-center justify-center gap-0"
           aria-hidden="true"
         >
-
           {/* ── Node 1: TSX Component ── */}
           <div className="terminal-container rounded-xl bg-black/60 p-5 w-full sm:w-52 flex flex-col gap-2">
             <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-fg-faint">
@@ -32,12 +31,15 @@ export function PipelineShowcase() {
               BentoFeature.tsx
             </p>
             <p className="font-mono text-[11px] text-fg-muted leading-relaxed">
-              Typed props,<br />
+              Typed props,
+              <br />
               React component
             </p>
             <div className="mt-2 flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-accent/70" />
-              <span className="font-mono text-[9px] text-fg-faint">your codebase</span>
+              <span className="font-mono text-[9px] text-fg-faint">
+                your codebase
+              </span>
             </div>
           </div>
 
@@ -69,19 +71,25 @@ export function PipelineShowcase() {
               studio render
             </p>
             <p className="font-mono text-[11px] text-fg-muted leading-relaxed">
-              CLI · Studio · MCP<br />
+              CLI · Studio · MCP
+              <br />
               one render path
             </p>
             <div className="mt-2 flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-              <span className="font-mono text-[9px] text-accent/70">running</span>
+              <span className="font-mono text-[9px] text-accent/70">
+                running
+              </span>
             </div>
           </div>
 
           {/* ── Connector: CLI → outputs ── */}
           <div className="relative flex items-center justify-center">
             <div className="hidden sm:block relative h-px w-16 overflow-hidden">
-              <div className="pulse-shimmer h-full" style={{ animationDelay: "0.5s" }} />
+              <div
+                className="pulse-shimmer h-full"
+                style={{ animationDelay: "0.5s" }}
+              />
             </div>
             <div className="sm:hidden relative w-px h-8 overflow-hidden">
               <div
@@ -122,14 +130,12 @@ export function PipelineShowcase() {
               </li>
             </ul>
           </div>
-
         </div>
 
         {/* Sub-label */}
         <p className="mt-10 text-center font-mono text-xs text-fg-faint uppercase tracking-[0.2em]">
           one command · no drift · local-first
         </p>
-
       </div>
     </section>
   );
