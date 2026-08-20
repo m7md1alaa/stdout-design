@@ -1,15 +1,10 @@
-import { PipetteIcon, X } from "lucide-react";
-import { useCallback, useState } from "react";
+import { X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ColorPickerPopover, parseColor } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectItem,
@@ -19,13 +14,6 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import {
-  hexToHsl,
-  hslToHex,
-  isValidHex,
-  pickColorFromScreen,
-  supportsEyeDropper,
-} from "@/lib/color";
 import { resolveFieldKind } from "@/lib/resolve-field-kind";
 import { cn } from "@/lib/utils";
 
@@ -82,42 +70,6 @@ const FieldWrapper = ({
 const asSingleValue = (value: number | readonly number[]): number =>
   Array.isArray(value) ? value[0] : (value as number);
 
-const HUE_TRACK_GRADIENT =
-  "[&_[data-slot=slider-track]]:bg-[linear-gradient(to_right,red,#ff0,lime,cyan,blue,magenta,red)] [&_[data-slot=slider-indicator]]:bg-transparent";
-
-const HslSliderRow = ({
-  axis,
-  value,
-  max,
-  suffix,
-  className,
-  onChange,
-}: {
-  axis: string;
-  value: number;
-  max: number;
-  suffix?: string;
-  className?: string;
-  onChange: (value: number) => void;
-}) => (
-  <div className="flex items-center gap-2">
-    <span className="w-3.5 text-[10px] font-semibold uppercase text-content-tertiary">
-      {axis}
-    </span>
-    <Slider
-      className={cn("flex-1", className)}
-      max={max}
-      min={0}
-      onValueChange={(next) => onChange(asSingleValue(next))}
-      value={value}
-    />
-    <span className="w-9 text-right font-mono text-[10px] text-content-tertiary">
-      {Math.round(value)}
-      {suffix}
-    </span>
-  </div>
-);
-
 const ColorField = ({
   name,
   label,
@@ -129,89 +81,63 @@ const ColorField = ({
   value: string;
   onChange: (value: string) => void;
 }) => {
-  const hex = isValidHex(value) ? value : "#000000";
-  const { h, s, l } = hexToHsl(hex);
-  const eyeDropperAvailable = supportsEyeDropper();
+  const safeValue = parseColor(value) ? value : "#000000";
 
-  const setHsl = useCallback(
-    (next: Partial<{ h: number; s: number; l: number }>) => {
-      onChange(hslToHex(next.h ?? h, next.s ?? s, next.l ?? l));
-    },
-    [h, s, l, onChange]
-  );
+  // Draft-based, commit-on-blur/Enter — mirrors the picker's own channel
+  // inputs so typing a partial hex ("#ff") doesn't push an invalid value up
+  // to the schema on every keystroke.
+  const [draft, setDraft] = useState(value);
+  const interactingRef = useRef(false);
 
-  const handleEyeDropper = useCallback(async () => {
-    const picked = await pickColorFromScreen();
-    if (picked) {
-      onChange(picked);
+  useEffect(() => {
+    if (!interactingRef.current) {
+      setDraft(value);
     }
-  }, [onChange]);
+  }, [value]);
+
+  const commit = useCallback(
+    (next: string) => {
+      if (parseColor(next)) {
+        onChange(next);
+      } else {
+        setDraft(value);
+      }
+    },
+    [onChange, value]
+  );
 
   return (
     <div className="mb-3">
       <FieldLabel label={label} name={name} />
       <div className="flex items-center gap-2">
-        <Popover>
-          <PopoverTrigger
-            className="h-8 w-8 shrink-0 cursor-pointer rounded-sm border border-border p-0"
-            style={{ backgroundColor: hex }}
-            title={hex}
-          />
-          <PopoverContent
-            align="start"
-            className="flex w-64 flex-col gap-3 p-3"
-            side="left"
-            sideOffset={8}
-          >
-            <div className="flex items-center gap-2">
-              <div
-                className="h-8 flex-1 rounded-sm border border-border"
-                style={{ backgroundColor: hex }}
-              />
-              {eyeDropperAvailable ? (
-                <Button
-                  aria-label="Pick color from screen"
-                  onClick={handleEyeDropper}
-                  size="icon-sm"
-                  type="button"
-                  variant="outline"
-                >
-                  <PipetteIcon />
-                </Button>
-              ) : null}
-            </div>
-            <div className="flex flex-col gap-2">
-              <HslSliderRow
-                axis="H"
-                className={HUE_TRACK_GRADIENT}
-                max={360}
-                onChange={(next) => setHsl({ h: next })}
-                value={h}
-              />
-              <HslSliderRow
-                axis="S"
-                max={100}
-                onChange={(next) => setHsl({ s: next })}
-                suffix="%"
-                value={s}
-              />
-              <HslSliderRow
-                axis="L"
-                max={100}
-                onChange={(next) => setHsl({ l: next })}
-                suffix="%"
-                value={l}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
+        <ColorPickerPopover
+          onValueChange={(next) => onChange(next)}
+          triggerClassName="h-8 w-8 shrink-0 justify-center p-0"
+          triggerShowValue={false}
+          value={safeValue}
+        />
         <Input
           aria-label={`${label} hex value`}
           className="flex-1 font-mono"
           id={`prop-${name}`}
-          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => {
+            interactingRef.current = false;
+            commit(draft);
+          }}
+          onChange={(e) => setDraft(e.target.value)}
+          onFocus={() => {
+            interactingRef.current = true;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              setDraft(value);
+              e.currentTarget.blur();
+            }
+          }}
           type="text"
-          value={value}
+          value={draft}
         />
       </div>
     </div>
