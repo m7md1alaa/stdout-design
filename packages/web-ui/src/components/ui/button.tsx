@@ -67,7 +67,9 @@ export const Button = ({
   ...props
 }: ButtonProps): React.ReactElement => {
   const isDisabled = Boolean(loading || disabledProp);
-  const typeValue = render ? undefined : "button";
+
+  const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] =
+    render ? undefined : "button";
 
   const defaultProps = {
     "aria-disabled": loading || undefined,
