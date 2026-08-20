@@ -5,6 +5,8 @@ description: Use @stdout-design/core directly in your own scripts, servers, or b
 
 Everything the CLI and studio do to turn a template into pixels is exposed as a plain library. Reach for `@stdout-design/core` when you want to render outside the CLI a custom script, a queue worker, your own HTTP route, or a build step that needs images without shelling out.
 
+`@stdout-design/core` builds on [Takumi](https://takumi.kane.tw/docs) for the actual render engine (`renderToPixels`, `measureTemplate`, and the `RenderOptions` you pass to them are Takumi's). For anything below this page fonts, stylesheets, image/emoji handling at the engine level, or an option this page doesn't cover check [Takumi's reference](https://takumi.kane.tw/docs/reference).
+
 ```bash
 npm install @stdout-design/core
 ```
@@ -29,7 +31,7 @@ const { outputPath } = await renderComponent({
 console.log(outputPath); // ./out/single.default.instagram-square.0.png
 ```
 
-No caching, no locale handling this is the one-shot version. For a template registered in `studio.config.ts` with locales, caching, and font resolution wired up, use `orchestrateRender` (below) or just call `runBatch`/the CLI.
+No caching, no locale handling this is the one-shot version. For a template registered in `studio.config.ts` with locales, caching, and font resolution wired up, use `orchestrateRender` (below) or just call `runBatch`/the CLI. For lower-level control over the render itself (fonts, images, stylesheets), see `renderToPixels` below, or go straight to [Takumi's own docs](https://takumi.kane.tw/docs).
 
 ## Rendering a whole project: `runBatch`
 
@@ -90,6 +92,8 @@ const { width: w, height: h } = await measureTemplate(compiled);
 // (e.g. auto-sizing text-heavy cards)
 const auto = await renderAutoSized(compiled);
 ```
+
+The third argument to `renderToPixels`/`measureTemplate` is Takumi's own `RenderOptions` (`fonts`, `fontFamilies`, `lang`, `images`, `stylesheets`, …) see [Takumi's reference](https://takumi.kane.tw/docs/reference) for the full option list.
 
 ### `registerFont`
 
@@ -213,4 +217,5 @@ Common codes: `CONFIG_NOT_FOUND`, `CONFIG_INVALID`, `TEMPLATE_LOAD_FAILED`, `TEM
   <Card title="Dev Server API" href="/docs/dev-server-api" />
   <Card title="OG Image Generation" href="/docs/og" />
   <Card title="Caching" href="/docs/caching" />
+  <Card title="Takumi Reference" href="https://takumi.kane.tw/docs/reference" />
 </Cards>

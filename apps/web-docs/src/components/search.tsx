@@ -43,7 +43,10 @@ export default function DefaultSearchDialog(props: SharedProps) {
       <SearchDialogContent>
         <SearchDialogHeader>
           <SearchDialogIcon />
-          <SearchDialogInput />
+          <span aria-hidden="true" className="font-mono text-accent">
+            $
+          </span>
+          <SearchDialogInput className="font-mono" />
           <SearchDialogClose />
         </SearchDialogHeader>
         <SearchDialogList items={query.data !== "empty" ? query.data : null} />
