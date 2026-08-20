@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { DitherGradient } from "@/components/dither-kit/gradient";
-import { InstallCommand } from "@/components/install-command";
+import { InstallToggle } from "@/components/install-toggle";
 import { TerminalPane } from "@/components/marketing/terminal-pane";
 import { hero } from "@/lib/marketing-copy";
 import { ACCENT_HUE } from "@/lib/theme";
@@ -21,7 +21,6 @@ export function Hero() {
       <div className="relative mx-auto max-w-5xl px-6 sm:px-8 pb-20 pt-32">
         {/* Two-column layout on large screens */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:gap-16">
-
           {/* ── Left column: headline + CTAs + install ── */}
           <div className="flex flex-col items-start lg:max-w-xl">
             <p className="mb-6 font-mono text-xs uppercase tracking-[0.2em] text-accent">
@@ -32,7 +31,9 @@ export function Hero() {
             <div className="relative mb-6">
               <h1 className="font-mono text-4xl font-medium leading-[1.15] tracking-tight text-foreground sm:text-5xl">
                 {hero.headline}
-                <span aria-hidden="true" className="caret text-accent">_</span>
+                <span aria-hidden="true" className="caret text-accent">
+                  _
+                </span>
               </h1>
               {/* Ghost copy layered behind for the CRT phosphor glow */}
               <div
@@ -63,14 +64,13 @@ export function Hero() {
               </Link>
             </div>
 
-            <InstallCommand />
+            <InstallToggle audiences={hero.audiences} />
           </div>
 
           {/* ── Right column: animated terminal pane ── */}
           <div className="mt-14 lg:mt-0 lg:flex-1 lg:min-w-0">
             <TerminalPane />
           </div>
-
         </div>
       </div>
     </section>

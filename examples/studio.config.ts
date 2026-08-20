@@ -20,6 +20,19 @@ const config: StudioConfig = {
       },
     ],
   },
+  images: {
+    allowUrl: (url) => {
+      try {
+        return new Set([
+          "i.pravatar.cc",
+          "images.unsplash.com",
+          "placehold.co",
+        ]).has(new URL(url).hostname);
+      } catch {
+        return false;
+      }
+    },
+  },
   locales: ["en", "ar"],
   outDir: "./out",
   presets: [

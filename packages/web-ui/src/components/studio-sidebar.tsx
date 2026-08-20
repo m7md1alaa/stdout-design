@@ -40,7 +40,7 @@ export const StudioSidebar = ({
   exportFlow,
   shortcuts,
 }: StudioSidebarProps) => (
-  <aside className="flex w-sidebar min-w-sidebar flex-col overflow-y-auto border-r border-border bg-surface-secondary">
+  <aside className="flex w-sidebar min-w-sidebar max-w-sidebar shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border bg-surface-secondary">
     <div className="flex items-baseline gap-2 border-b border-border px-5 py-5 pb-4">
       <h1 className="text-lg font-bold tracking-tight text-content">stdout</h1>
       <span className="text-sm font-normal text-content-tertiary">studio</span>

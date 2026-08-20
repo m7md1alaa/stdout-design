@@ -1,10 +1,10 @@
-export interface DocsOgTemplateProps {
+export interface HomeOgTemplateProps {
   title: string;
   description?: string;
   siteName?: string;
 }
 
-const truncateText = (text: string, maxLength = 130): string => {
+const truncateText = (text: string, maxLength = 180): string => {
   if (text.length <= maxLength) {
     return text;
   }
@@ -14,13 +14,13 @@ const truncateText = (text: string, maxLength = 130): string => {
 const MONO_FONT =
   "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace";
 
-export function DocsOgTemplate({
+export function HomeOgTemplate({
   title,
   description,
   siteName,
-}: DocsOgTemplateProps) {
+}: HomeOgTemplateProps) {
   const truncatedDescription = description
-    ? truncateText(description, 130)
+    ? truncateText(description, 180)
     : null;
 
   return (
@@ -179,7 +179,7 @@ export function DocsOgTemplate({
           }}
         >
           <span>TSX pixels</span>
-          <span>og:docs</span>
+          <span>og:home</span>
         </div>
       </div>
     </div>

@@ -275,7 +275,12 @@ html.light:has(#nd-docs-layout) ::selection {
   background-clip: padding-box, border-box;
   background-image:
     linear-gradient(var(--background), var(--background)),
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%);
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.02) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
   background-origin: border-box;
   border: 1px solid transparent;
 }

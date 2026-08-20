@@ -18,7 +18,6 @@ export function CtaFooter() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-transparent pointer-events-none" />
 
       <div className="relative mx-auto flex max-w-3xl flex-col items-start">
-
         {/* Heading with glow */}
         <div className="relative mb-3">
           <h2 className="max-w-lg text-2xl font-medium leading-snug text-foreground sm:text-3xl">

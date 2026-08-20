@@ -8,6 +8,18 @@ export const hero = {
     href: "https://github.com/m7md1alaa/stdout-design",
     label: "Star on GitHub",
   },
+  audiences: [
+    {
+      id: "humans",
+      label: "For humans",
+      command: "npx @stdout-design/cli init",
+    },
+    {
+      id: "agents",
+      label: "For agents",
+      command: "npx @stdout-design/cli init --install-skill",
+    },
+  ],
 };
 
 export const logos = {

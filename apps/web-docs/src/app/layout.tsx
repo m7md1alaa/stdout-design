@@ -4,12 +4,16 @@ import { Inter, Figtree } from "next/font/google";
 import { Provider } from "@/components/provider";
 
 import "./global.css";
-import { hero } from "@/lib/marketing-copy";
+import { appName } from "@/lib/shared";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  description: hero.subhead,
-  title: hero.headline,
+  description:
+    "Render the TSX you already wrote into App Store screenshots, launch cards, and Open Graph images. One CLI command, no Figma, no drift.",
+  title: {
+    default: appName,
+    template: `%s — ${appName}`,
+  },
   icons: {
     apple: "/apple-touch-icon.png",
     icon: "/icon-512.png",
