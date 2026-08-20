@@ -21,7 +21,7 @@ export const getDefaults = () => ({
       platform: "instagram",
       width: 1080,
     },
-    { height: 1200, id: "x-card", platform: "x", width: 1200 },
+    { height: 675, id: "x-card", platform: "x", width: 1200 },
   ],
   templates: {
     "bento-feature": {
@@ -40,7 +40,7 @@ const config: StudioConfig = {
   outDir: "./out",
   presets: [
     { height: 1080, id: "instagram-square", platform: "instagram", width: 1080 },
-    { height: 1200, id: "x-card", platform: "x", width: 1200 },
+    { height: 675, id: "x-card", platform: "x", width: 1200 },
   ],
   templates: {
     "bento-feature": {
@@ -59,9 +59,8 @@ const getPkgJson = (name: string, version: string) => ({
   private: true,
   type: "module",
   scripts: {
-    build: "studio build",
     dev: "studio dev",
-    export: "studio export",
+    render: "studio render",
   },
   dependencies: {
     "@stdout-design/cli": `^${version}`,

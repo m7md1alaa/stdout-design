@@ -347,7 +347,7 @@ export const createDevServer = async (options: DevServerOptions) => {
   });
 
   // Cache management
-  app.get("/cache/stats", (c) => c.json(renderCache.stats()));
+  app.get("/cache/stats", async (c) => c.json(await renderCache.stats()));
 
   app.post("/cache/clean", async (c) => {
     const result = await renderCache.clean();
