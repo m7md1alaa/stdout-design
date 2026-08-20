@@ -29,21 +29,25 @@ interface ShortcutsDialogProps {
   setRowRecording: (id: string, recording: boolean) => void;
 }
 
-const RecordButton = ({
+const BindingChip = ({
   isRecording,
-  onStart,
+  onToggle,
+  children,
 }: {
   isRecording: boolean;
-  onStart: () => void;
+  onToggle: () => void;
+  children: React.ReactNode;
 }) => (
-  <Button
-    className={cn(isRecording && "border-primary text-primary")}
-    onClick={onStart}
-    size="xs"
-    variant="outline"
+  <button
+    className={cn(
+      "cursor-pointer rounded border border-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[11px] text-content-secondary transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.97] hover:text-content",
+      isRecording && "border-primary/40 text-primary hover:text-primary"
+    )}
+    onClick={onToggle}
+    type="button"
   >
-    {isRecording ? "Press keys… (Esc to cancel)" : "Edit"}
-  </Button>
+    {children}
+  </button>
 );
 
 const ResetButton = ({
@@ -112,15 +116,21 @@ const HotkeyRow = ({
 
   return (
     <RowShell command={command}>
-      {recorder.isRecording ? null : (
-        <kbd className="rounded border border-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[11px] text-content-secondary">
-          {formatForDisplay(binding)}
-        </kbd>
-      )}
-      <RecordButton
+      <BindingChip
         isRecording={recorder.isRecording}
-        onStart={() => recorder.startRecording()}
-      />
+        onToggle={() =>
+          recorder.isRecording
+            ? recorder.cancelRecording()
+            : recorder.startRecording()
+        }
+      >
+        <span
+          className="animate-in fade-in-0 duration-150 ease-out"
+          key={recorder.isRecording ? "recording" : "idle"}
+        >
+          {recorder.isRecording ? "Recording…" : formatForDisplay(binding)}
+        </span>
+      </BindingChip>
       {customized ? (
         <ResetButton label={command.label} onReset={onReset} />
       ) : null}
@@ -160,24 +170,32 @@ const SequenceRow = ({
 
   return (
     <RowShell command={command}>
-      <span className="flex items-center gap-1">
-        {steps.length === 0 ? (
-          <span className="text-[11px] text-content-tertiary">press keys…</span>
-        ) : (
-          steps.map((step, i) => (
-            <kbd
-              className="rounded border border-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[11px] text-content-secondary"
-              key={`${step}-${i}`}
-            >
-              {formatForDisplay(step)}
-            </kbd>
-          ))
-        )}
-      </span>
-      <RecordButton
+      <BindingChip
         isRecording={recorder.isRecording}
-        onStart={() => recorder.startRecording()}
-      />
+        onToggle={() =>
+          recorder.isRecording
+            ? recorder.cancelRecording()
+            : recorder.startRecording()
+        }
+      >
+        {recorder.isRecording ? (
+          <span
+            className="animate-in fade-in-0 duration-150 ease-out"
+            key="recording"
+          >
+            Recording…
+          </span>
+        ) : (
+          <span
+            className="animate-in fade-in-0 duration-150 ease-out"
+            key="steps"
+          >
+            {steps.length === 0
+              ? "Set shortcut"
+              : steps.map((step) => formatForDisplay(step)).join(" ")}
+          </span>
+        )}
+      </BindingChip>
       {customized ? (
         <ResetButton label={command.label} onReset={onReset} />
       ) : null}
@@ -215,7 +233,7 @@ export const ShortcutsDialog = ({
       <div className="border-border border-b px-4 py-3">
         <DialogTitle>Keyboard shortcuts</DialogTitle>
         <DialogDescription>
-          Click Edit and press a new combination to customize any shortcut.
+          Click a shortcut and press a new combination to customize it.
         </DialogDescription>
       </div>
       <ul className="max-h-96 divide-y divide-border overflow-y-auto">
