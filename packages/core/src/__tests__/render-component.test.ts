@@ -7,6 +7,8 @@ import type { ComponentType } from "react";
 import { createElement } from "react";
 import { z } from "zod";
 
+import { prepareImagesMock } from "./test-helpers/takumi-helpers-mock.js";
+
 mock.module("takumi-js/helpers/jsx", () => ({
   fromJsx: mock(() =>
     Promise.resolve({
@@ -18,6 +20,7 @@ mock.module("takumi-js/helpers/jsx", () => ({
 
 mock.module("@takumi-rs/helpers", () => ({
   googleFonts: mock(() => Promise.resolve([])),
+  prepareImages: prepareImagesMock,
 }));
 
 class MockRenderer {

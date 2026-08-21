@@ -83,9 +83,7 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
         onClick={handleCopy}
         className="group flex cursor-copy items-center gap-2 rounded-full border border-border bg-black/60 px-4 py-1.5 shadow-sm shadow-black/30 backdrop-blur-sm transition-[border-color,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-primary/50 active:scale-[0.98]"
         aria-label={
-          active.prompt
-            ? "Copy agent setup prompt"
-            : `Copy ${active.command}`
+          active.prompt ? "Copy agent setup prompt" : `Copy ${active.command}`
         }
       >
         <span

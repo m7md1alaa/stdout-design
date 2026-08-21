@@ -3,6 +3,8 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { prepareImagesMock } from "./test-helpers/takumi-helpers-mock.js";
+
 mock.module("takumi-js/helpers/jsx", () => ({
   fromJsx: mock(() =>
     Promise.resolve({
@@ -41,6 +43,7 @@ mock.module("@takumi-rs/helpers", () => ({
       { data: new Uint8Array([0, 1, 2]), name: "Noto Sans Arabic" },
     ])
   ),
+  prepareImages: prepareImagesMock,
 }));
 
 const { __resetRendererForTesting } = await import("../engine/renderer.js");

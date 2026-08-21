@@ -177,7 +177,11 @@ html.light:has(#nd-docs-layout) ::selection {
   /* fumadocs' default diff-remove is a magenta close enough to the site
      accent that a deleted line could read as "highlighted" instead of
      "removed" — pull it onto the destructive red instead. */
-  --color-fd-diff-remove: color-mix(in oklch, var(--destructive) 14%, transparent);
+  --color-fd-diff-remove: color-mix(
+    in oklch,
+    var(--destructive) 14%,
+    transparent
+  );
   --color-fd-diff-remove-symbol: var(--destructive);
 }
 

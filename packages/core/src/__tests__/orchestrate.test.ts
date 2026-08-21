@@ -7,6 +7,7 @@ import type { ComponentType } from "react";
 import { createElement } from "react";
 
 import type { CompiledTemplate } from "../engine/render.js";
+import { prepareImagesMock } from "./test-helpers/takumi-helpers-mock.js";
 
 mock.module("takumi-js/helpers/jsx", () => ({
   fromJsx: mock(() =>
@@ -16,11 +17,6 @@ mock.module("takumi-js/helpers/jsx", () => ({
     })
   ),
 }));
-
-const prepareImagesMock = mock(
-  (_options: { allowUrl?: (url: string) => boolean }) =>
-    Promise.resolve<unknown[]>([])
-);
 
 mock.module("@takumi-rs/helpers", () => ({
   googleFonts: mock(() => Promise.resolve([])),

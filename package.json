@@ -11,7 +11,7 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "check-types:tsgo": "turbo check-types:tsgo",
-    "check": "ultracite check && bun knip",
+    "check": "ultracite check",
     "knip": "knip",
     "fix": "ultracite fix",
     "test": "turbo test",

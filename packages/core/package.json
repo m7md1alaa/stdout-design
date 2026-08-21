@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Core rendering engine for stdout-design — compile TSX templates to pixel-perfect images via Takumi",
   "keywords": [
     "design",
@@ -44,7 +44,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "bun test",
+    "test": "bun test --isolate",
     "test:integration": "bun test ./src/__tests__/full-pipeline.integration.ts",
     "check-types": "tsc --noEmit",
     "check-types:tsgo": "tsgo --noEmit",

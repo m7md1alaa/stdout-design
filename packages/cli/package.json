@@ -1,6 +1,6 @@
 {
   "name": "@stdout-design/cli",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "stdout-design CLI — shallow front door to @stdout-design/core and @stdout-design/dev-server",
   "keywords": [
     "cli",
@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@stdout-design/core": "workspace:*",
+    "@stdout-design/core": "^0.4.1",
     "commander": "^15.0.0",
     "package-manager-detector": "^1.8.0"
   },
