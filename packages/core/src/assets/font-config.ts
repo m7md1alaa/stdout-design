@@ -35,7 +35,7 @@ export const createFetchFontsFromConfig = (
     return undefined;
   }
 
-  return async (localeId: string) => {
+  return async function fetchFontsFromConfig(localeId: string) {
     const configs = fontsConfig[localeId];
     if (!configs || configs.length === 0) {
       return null;

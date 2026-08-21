@@ -28,7 +28,7 @@ export const PropPanel = ({
 
   if (flattened.length === 0) {
     return (
-      <div className="px-5 py-10 text-center text-content-tertiary">
+      <div className="text-content-tertiary px-5 py-10 text-center">
         <p>This template has no editable props</p>
       </div>
     );
@@ -36,8 +36,8 @@ export const PropPanel = ({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="px-5 pb-2 pt-3">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-content-tertiary">
+      <div className="px-5 pt-3 pb-2">
+        <h3 className="text-content-tertiary text-[11px] font-semibold tracking-wider uppercase">
           Props
         </h3>
       </div>

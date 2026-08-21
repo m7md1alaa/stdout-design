@@ -28,7 +28,7 @@ export const propsSchema = defineSchema(
 
 export type Props = z.infer<typeof propsSchema>;
 
-export default function FeaturesShowcase({
+const FeaturesShowcase = ({
   background,
   description,
   headline,
@@ -36,7 +36,7 @@ export default function FeaturesShowcase({
   step,
   tags,
   theme,
-}: Props) {
+}: Props) => {
   const isLight = theme === "light";
   const isGlass = theme === "glass";
 
@@ -174,4 +174,6 @@ export default function FeaturesShowcase({
       </div>
     </div>
   );
-}
+};
+
+export default FeaturesShowcase;

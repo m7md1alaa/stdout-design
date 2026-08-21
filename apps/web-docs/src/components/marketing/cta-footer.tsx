@@ -15,29 +15,29 @@ export function CtaFooter() {
         opacity={0.6}
       />
       {/* Legibility overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-transparent pointer-events-none" />
+      <div className="from-background/80 via-background/40 pointer-events-none absolute inset-0 bg-gradient-to-b to-transparent" />
 
       <div className="relative mx-auto flex max-w-3xl flex-col items-start">
         {/* Heading with glow */}
         <div className="relative mb-3">
-          <h2 className="max-w-lg text-2xl font-medium leading-snug text-foreground sm:text-3xl">
+          <h2 className="text-foreground max-w-lg text-2xl leading-snug font-medium sm:text-3xl">
             {footer.headline}
           </h2>
           <div
             aria-hidden="true"
-            className="title-glow max-w-lg text-2xl font-medium leading-snug sm:text-3xl"
+            className="title-glow max-w-lg text-2xl leading-snug font-medium sm:text-3xl"
           >
             {footer.headline}
           </div>
         </div>
 
-        <p className="mt-3 text-fg-muted">{footer.body}</p>
+        <p className="text-fg-muted mt-3">{footer.body}</p>
 
         <div className="mt-8">
           <InstallCommand />
         </div>
 
-        <nav className="mt-14 flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-8 font-mono text-sm">
+        <nav className="border-border mt-14 flex flex-wrap gap-x-8 gap-y-2 border-t pt-8 font-mono text-sm">
           {footer.links.map((link) => (
             <Link
               key={link.href}

@@ -35,7 +35,7 @@ interface UseProximityHoverReturn {
    * reads as the highlight sliding in from another row.
    */
   isMeasured: boolean;
-  sessionRef: RefObject<number>;
+  session: number;
   handlers: {
     onMouseMove: (e: React.MouseEvent) => void;
     onMouseEnter: () => void;
@@ -71,7 +71,11 @@ export const useProximityHover = <T extends HTMLElement = HTMLElement>(
   const [itemRects, setItemRects] = useState<ItemRect[]>([]);
   const [isMeasured, setIsMeasured] = useState(false);
   const itemRectsRef = useRef<ItemRect[]>([]);
-  const sessionRef = useRef(0);
+  // A generation counter, bumped on every mouse-enter. Used as the hover
+  // highlight's React `key` so it remounts (replaying its enter animation)
+  // each time the mouse re-enters the list, rather than sliding over from
+  // wherever it last was.
+  const [session, setSession] = useState(0);
   const rafIdRef = useRef<number | null>(null);
   const remeasureRafIdRef = useRef<number | null>(null);
 
@@ -153,6 +157,14 @@ export const useProximityHover = <T extends HTMLElement = HTMLElement>(
    * is the only place readiness is reported, so `isMeasured` can never turn
    * true while another pass is still queued.
    */
+  // `scheduleMeasurement` retries itself (with a decrementing attempt count)
+  // from inside its own rAF callback. A useCallback can't reference its own
+  // binding while it's still being created, so the recursive call goes
+  // through this ref instead, which is kept pointed at the latest closure.
+  const scheduleMeasurementRef = useRef<(attemptsLeft: number) => void>(() => {
+    // Filled in by the effect below before any recursive call can happen.
+  });
+
   const scheduleMeasurement = useCallback(
     (attemptsLeft: number) => {
       if (remeasureRafIdRef.current !== null) {
@@ -163,12 +175,16 @@ export const useProximityHover = <T extends HTMLElement = HTMLElement>(
         if (runMeasurement()) {
           setIsMeasured(true);
         } else if (attemptsLeft > 1) {
-          scheduleMeasurement(attemptsLeft - 1);
+          scheduleMeasurementRef.current(attemptsLeft - 1);
         }
       });
     },
     [runMeasurement]
   );
+
+  useEffect(() => {
+    scheduleMeasurementRef.current = scheduleMeasurement;
+  }, [scheduleMeasurement]);
 
   const remeasure = useCallback(() => {
     // Readiness drops first: until the pass below settles, the published rects
@@ -351,7 +367,7 @@ export const useProximityHover = <T extends HTMLElement = HTMLElement>(
   );
 
   const handleMouseEnter = useCallback(() => {
-    sessionRef.current += 1;
+    setSession((s) => s + 1);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
@@ -406,7 +422,7 @@ export const useProximityHover = <T extends HTMLElement = HTMLElement>(
     measureItems,
     registerItem,
     remeasure,
-    sessionRef,
+    session,
     setActiveIndex,
   };
 };

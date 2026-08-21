@@ -56,11 +56,11 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
 
   return (
     <div className="flex flex-col items-start">
-      <div className="mb-2 flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest">
+      <div className="mb-2 flex items-center gap-3 font-mono text-[10px] tracking-widest uppercase">
         {audiences.map((audience, i) => (
           <span key={audience.id} className="flex items-center gap-3">
             {i > 0 && (
-              <span className="h-3 w-px bg-accent" aria-hidden="true" />
+              <span className="bg-accent h-3 w-px" aria-hidden="true" />
             )}
             <button
               type="button"
@@ -81,19 +81,19 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
       <button
         type="button"
         onClick={handleCopy}
-        className="group flex cursor-copy items-center gap-2 rounded-full border border-border bg-black/60 px-4 py-1.5 shadow-sm shadow-black/30 backdrop-blur-sm transition-[border-color,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-primary/50 active:scale-[0.98]"
+        className="group border-border hover:border-primary/50 flex cursor-copy items-center gap-2 rounded-full border bg-black/60 px-4 py-1.5 shadow-sm shadow-black/30 backdrop-blur-sm transition-[border-color,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]"
         aria-label={
           active.prompt ? "Copy agent setup prompt" : `Copy ${active.command}`
         }
       >
         <span
-          className="select-none font-mono text-xs text-accent"
+          className="text-accent font-mono text-xs select-none"
           aria-hidden="true"
         >
           $
         </span>
         <span
-          className="relative inline-block h-4 overflow-hidden font-mono text-xs text-foreground transition-[width]"
+          className="text-foreground relative inline-block h-4 overflow-hidden font-mono text-xs transition-[width]"
           style={{
             width: `${active.command.length}ch`,
             transitionTimingFunction: COMMAND_EASE,
@@ -101,7 +101,7 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
           }}
         >
           <span
-            className="absolute inset-0 whitespace-pre text-left transition-[opacity,filter]"
+            className="absolute inset-0 text-left whitespace-pre transition-[opacity,filter]"
             style={{
               opacity: commandVisible ? 1 : 0,
               filter: commandVisible ? "blur(0px)" : "blur(3px)",
@@ -114,7 +114,7 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
         </span>
         <span className="relative size-3.5 shrink-0" aria-hidden="true">
           <Clipboard
-            className="absolute inset-0 size-3.5 text-fg-muted opacity-100 transition-[opacity,transform] duration-150 group-hover:text-foreground"
+            className="text-fg-muted group-hover:text-foreground absolute inset-0 size-3.5 opacity-100 transition-[opacity,transform] duration-150"
             style={{
               opacity: copied ? 0 : 1,
               transform: copied ? "scale(0.75)" : "scale(1)",

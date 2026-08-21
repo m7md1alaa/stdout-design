@@ -1,3 +1,4 @@
+// oxlint-disable-next-line no-redeclare -- intentional const+type merge (standard TS enum-object pattern)
 export const ErrorCode = {
   API_ERROR: "API_ERROR",
   CACHE_CLEANUP_FAILED: "CACHE_CLEANUP_FAILED",

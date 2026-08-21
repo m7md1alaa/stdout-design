@@ -31,13 +31,13 @@ export const propsSchema = defineSchema(
 
 export type Props = z.infer<typeof propsSchema>;
 
-export default function BentoFeature({
+const BentoFeature = ({
   headline,
   description,
   accentColor,
   background,
   locale,
-}: Props) {
+}: Props) => {
   const isRtl = locale?.startsWith("ar") ?? false;
 
   return (
@@ -75,4 +75,6 @@ export default function BentoFeature({
       </div>
     </div>
   );
-}
+};
+
+export default BentoFeature;

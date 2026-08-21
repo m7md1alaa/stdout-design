@@ -6,7 +6,7 @@ export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       title: (
-        <span className="font-mono text-sm font-medium tracking-tight text-foreground">
+        <span className="text-foreground font-mono text-sm font-medium tracking-tight">
           {appName}
           <span className="text-accent">_</span>
         </span>

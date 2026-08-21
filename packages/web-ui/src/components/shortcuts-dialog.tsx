@@ -40,7 +40,7 @@ const BindingChip = ({
 }) => (
   <button
     className={cn(
-      "cursor-pointer rounded border border-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[11px] text-content-secondary transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.97] hover:text-content",
+      "border-border bg-surface-tertiary text-content-secondary hover:text-content cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[11px] transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.97]",
       isRecording && "border-primary/40 text-primary hover:text-primary"
     )}
     onClick={onToggle}
@@ -59,7 +59,7 @@ const ResetButton = ({
 }) => (
   <Button
     aria-label={`Reset ${label} to default`}
-    className="text-content-tertiary hover:bg-transparent hover:text-content"
+    className="text-content-tertiary hover:text-content hover:bg-transparent"
     onClick={onReset}
     size="icon-xs"
     variant="ghost"
@@ -77,9 +77,9 @@ const RowShell = ({
 }) => (
   <li className="flex items-center justify-between gap-3 px-4 py-2.5">
     <div className="min-w-0">
-      <p className="truncate text-content text-sm">{command.label}</p>
+      <p className="text-content truncate text-sm">{command.label}</p>
       {command.description ? (
-        <p className="truncate text-content-tertiary text-xs">
+        <p className="text-content-tertiary truncate text-xs">
           {command.description}
         </p>
       ) : null}
@@ -236,7 +236,7 @@ export const ShortcutsDialog = ({
           Click a shortcut and press a new combination to customize it.
         </DialogDescription>
       </div>
-      <ul className="max-h-96 divide-y divide-border overflow-y-auto">
+      <ul className="divide-border max-h-96 divide-y overflow-y-auto">
         {commands.map((command) =>
           command.kind === "hotkey" ? (
             <HotkeyRow

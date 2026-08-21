@@ -43,7 +43,7 @@ export default function DefaultSearchDialog(props: SharedProps) {
       <SearchDialogContent>
         <SearchDialogHeader>
           <SearchDialogIcon />
-          <span aria-hidden="true" className="font-mono text-accent">
+          <span aria-hidden="true" className="text-accent font-mono">
             $
           </span>
           <SearchDialogInput className="font-mono" />

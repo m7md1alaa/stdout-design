@@ -24,12 +24,12 @@ const RenderContent = ({ state }: { state: RenderPreviewState | null }) => {
   }
 
   if (state.status === "loading") {
-    return <div className="text-sm text-content-tertiary">Rendering...</div>;
+    return <div className="text-content-tertiary text-sm">Rendering...</div>;
   }
 
   if (state.status === "error") {
     return (
-      <div className="p-4 text-left text-danger">
+      <div className="text-danger p-4 text-left">
         <p className="mb-2 text-sm font-semibold">
           {state.message || "Render failed"}
         </p>
@@ -77,7 +77,7 @@ export const Canvas = ({
 
   if (!(templateId && preset)) {
     return (
-      <div className="flex flex-1 items-center justify-center text-content-tertiary">
+      <div className="text-content-tertiary flex flex-1 items-center justify-center">
         <p>Select a template to preview</p>
       </div>
     );
@@ -90,15 +90,15 @@ export const Canvas = ({
   return (
     <div className="flex flex-1 flex-col items-center justify-center overflow-auto p-6">
       <div className="mb-4 flex items-center gap-3">
-        <span className="font-mono text-sm font-semibold text-content-secondary">
+        <span className="text-content-secondary font-mono text-sm font-semibold">
           {preset.id}
         </span>
-        <span className="font-mono text-xs text-content-tertiary">
+        <span className="text-content-tertiary font-mono text-xs">
           {preset.width}&times;{preset.height}
         </span>
       </div>
       <div
-        className="flex items-center justify-center overflow-hidden rounded-lg bg-surface-tertiary shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
+        className="bg-surface-tertiary flex items-center justify-center overflow-hidden rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
         style={{ height: displayHeight, width: displayWidth }}
       >
         <RenderContent state={render} />

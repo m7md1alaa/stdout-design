@@ -134,6 +134,7 @@ export interface MeasuredNode {
  * methods are the real implementation (imported as a value below) -- only
  * the *type* is being declared here.
  */
+// oxlint-disable-next-line no-redeclare -- intentional interface+const merge (type re-typed above its runtime value)
 export interface Renderer {
   /**
    * Preload a font once and reuse it across many renders. Resolves to the

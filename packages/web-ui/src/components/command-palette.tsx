@@ -125,7 +125,7 @@ export const CommandPalette = ({
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate">{item.label}</span>
                         {item.description ? (
-                          <span className="truncate text-content-tertiary text-xs">
+                          <span className="text-content-tertiary truncate text-xs">
                             {item.description}
                           </span>
                         ) : null}
@@ -149,7 +149,7 @@ export const CommandPalette = ({
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate">{item.label}</span>
                         {item.description ? (
-                          <span className="truncate text-content-tertiary text-xs">
+                          <span className="text-content-tertiary truncate text-xs">
                             {item.description}
                           </span>
                         ) : null}

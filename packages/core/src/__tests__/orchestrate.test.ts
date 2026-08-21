@@ -1,3 +1,5 @@
+// oxlint-disable max-classes-per-file -- mocking a constructor (Renderer)
+// alongside a real RenderCache subclass (FailingCache) legitimately needs two.
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

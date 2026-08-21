@@ -25,16 +25,16 @@ export const TemplateSelector = ({
 }: TemplateSelectorProps) => {
   if (templates.length === 0) {
     return (
-      <div className="border-b border-border px-5 py-4 italic text-content-tertiary">
+      <div className="border-border text-content-tertiary border-b px-5 py-4 italic">
         <p>No templates found</p>
       </div>
     );
   }
 
   return (
-    <div className="border-b border-border px-5 py-4">
+    <div className="border-border border-b px-5 py-4">
       <Label
-        className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-content-tertiary"
+        className="text-content-tertiary mb-1.5 block text-[11px] font-semibold tracking-wider uppercase"
         htmlFor="template-select"
       >
         Template

@@ -2,29 +2,29 @@ import { features } from "@/lib/marketing-copy";
 
 export function FeaturesGrid() {
   return (
-    <section className="border-b border-border px-6 py-24 sm:px-8">
+    <section className="border-border border-b px-6 py-24 sm:px-8">
       <div className="mx-auto max-w-5xl">
-        <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-fg-faint">
+        <p className="text-fg-faint mb-4 font-mono text-xs tracking-[0.2em] uppercase">
           {features.eyebrow}
         </p>
 
         {/* Plain heading — the phosphor glow is reserved for the hero and
             CTA footer, the two dither-backed bookends, so it reads as a
             deliberate accent instead of a default applied everywhere. */}
-        <h2 className="mb-12 max-w-2xl text-2xl font-medium leading-snug text-foreground sm:text-3xl">
+        <h2 className="text-foreground mb-12 max-w-2xl text-2xl leading-snug font-medium sm:text-3xl">
           {features.headline}
         </h2>
 
-        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+        <div className="border-border bg-border grid grid-cols-1 gap-px overflow-hidden rounded-lg border sm:grid-cols-2">
           {features.items.map((feature) => (
             <article key={feature.label} className="bg-background p-6 sm:p-7">
-              <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-accent">
+              <p className="text-accent mb-3 font-mono text-xs tracking-[0.2em] uppercase">
                 {feature.label}
               </p>
-              <h3 className="mb-2 font-mono text-base font-medium text-foreground">
+              <h3 className="text-foreground mb-2 font-mono text-base font-medium">
                 {feature.title}
               </h3>
-              <p className="leading-relaxed text-fg-muted">{feature.body}</p>
+              <p className="text-fg-muted leading-relaxed">{feature.body}</p>
             </article>
           ))}
         </div>

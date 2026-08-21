@@ -3,7 +3,8 @@ export const updatePackageJsonDeps = (
   currentVersion: string
 ): { updated: string; changed: boolean } => {
   const pkg = JSON.parse(contents);
-  const deps = (pkg.dependencies ??= {});
+  pkg.dependencies ??= {};
+  const deps = pkg.dependencies;
   const currentRange = `^${currentVersion}`;
 
   if (deps["@stdout-design/cli"] === currentRange) {

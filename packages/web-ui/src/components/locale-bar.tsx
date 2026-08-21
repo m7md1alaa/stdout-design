@@ -12,13 +12,13 @@ export const LocaleBar = ({ locales, selected, onChange }: LocaleBarProps) => {
   }
 
   return (
-    <div className="overflow-x-auto border-b border-border bg-surface-secondary">
+    <div className="border-border bg-surface-secondary overflow-x-auto border-b">
       <Tabs
         onValueChange={(next) => onChange(next as string)}
         value={selected ?? undefined}
       >
         <TabsList
-          className="w-full justify-start gap-0 rounded-none bg-transparent p-0 *:data-[slot=tabs-tab]:hover:bg-surface-hover"
+          className="*:data-[slot=tabs-tab]:hover:bg-surface-hover w-full justify-start gap-0 rounded-none bg-transparent p-0"
           variant="underline"
         >
           {locales.map((locale) => (

@@ -37,7 +37,7 @@ const resolveValue = (
 
 const FieldLabel = ({ name, label }: { name: string; label: string }) => (
   <Label
-    className="mb-1.5 block text-xs font-medium text-content-secondary"
+    className="text-content-secondary mb-1.5 block text-xs font-medium"
     htmlFor={`prop-${name}`}
   >
     {label}
@@ -59,7 +59,7 @@ const FieldWrapper = ({
     <FieldLabel label={label} name={name} />
     {children}
     {error ? (
-      <p className="mt-1 text-[11px] leading-tight text-danger">{error}</p>
+      <p className="text-danger mt-1 text-[11px] leading-tight">{error}</p>
     ) : null}
   </div>
 );
@@ -207,7 +207,7 @@ const NumberField = ({
             step={1}
             value={numValue}
           />
-          <span className="min-w-[32px] text-right font-mono text-xs text-content-tertiary">
+          <span className="text-content-tertiary min-w-[32px] text-right font-mono text-xs">
             {String(numValue)}
           </span>
         </div>
@@ -242,7 +242,7 @@ const BooleanField = ({
 }) => (
   <div className="mb-3 flex items-center justify-between">
     <Label
-      className="text-xs font-medium text-content-secondary"
+      className="text-content-secondary text-xs font-medium"
       htmlFor={`prop-${name}`}
     >
       {label}
@@ -283,14 +283,14 @@ const TagList = ({
     <div className="mb-1.5 flex flex-wrap gap-1">
       {items.map((item, i) => (
         <Badge
-          className="gap-1 rounded-full bg-accent-muted pr-1 text-[11px] text-accent-hover hover:bg-accent-muted"
+          className="bg-accent-muted text-accent-hover hover:bg-accent-muted gap-1 rounded-full pr-1 text-[11px]"
           key={`${item}-${i}`}
           variant="secondary"
         >
           {item}
           <button
             aria-label={`Remove ${item}`}
-            className="flex size-3.5 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-accent-hover/60 transition-colors hover:text-danger"
+            className="text-accent-hover/60 hover:text-danger flex size-3.5 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 transition-colors"
             onClick={() => onRemove(i)}
             type="button"
           >
@@ -326,7 +326,7 @@ const NumericArrayField = ({
 
   return (
     <div className="mb-3">
-      <Label className="mb-1 block text-xs font-medium text-content-secondary">
+      <Label className="text-content-secondary mb-1 block text-xs font-medium">
         {label}
       </Label>
       <TagList
@@ -371,7 +371,7 @@ const StringArrayField = ({
 
   return (
     <div className="mb-3">
-      <Label className="mb-1 block text-xs font-medium text-content-secondary">
+      <Label className="text-content-secondary mb-1 block text-xs font-medium">
         {label}
       </Label>
       <TagList

@@ -40,12 +40,12 @@ export const StudioSidebar = ({
   exportFlow,
   shortcuts,
 }: StudioSidebarProps) => (
-  <aside className="flex w-sidebar min-w-sidebar max-w-sidebar shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-border bg-surface-secondary">
-    <div className="flex items-baseline gap-2 border-b border-border px-5 py-5 pb-4">
-      <h1 className="text-lg font-bold tracking-tight text-content">stdout</h1>
-      <span className="text-sm font-normal text-content-tertiary">studio</span>
+  <aside className="w-sidebar min-w-sidebar max-w-sidebar border-border bg-surface-secondary flex shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r">
+    <div className="border-border flex items-baseline gap-2 border-b px-5 py-5 pb-4">
+      <h1 className="text-content text-lg font-bold tracking-tight">stdout</h1>
+      <span className="text-content-tertiary text-sm font-normal">studio</span>
       {reloading ? (
-        <span className="ml-auto h-3 w-3 animate-pulse rounded-full bg-accent" />
+        <span className="bg-accent ml-auto h-3 w-3 animate-pulse rounded-full" />
       ) : null}
     </div>
 
@@ -63,12 +63,12 @@ export const StudioSidebar = ({
         onChange={studio.handlePropChange}
       />
     ) : (
-      <div className="px-5 py-10 text-center text-content-tertiary">
+      <div className="text-content-tertiary px-5 py-10 text-center">
         Select a template to begin
       </div>
     )}
 
-    <div className="border-t border-border px-5 py-4">
+    <div className="border-border border-t px-5 py-4">
       <Button
         className="w-full"
         disabled={!studio.effectiveTemplateId || !studio.currentPreset}
@@ -82,7 +82,7 @@ export const StudioSidebar = ({
         resolveBinding={shortcuts.bindings.resolve}
       />
       <Button
-        className="mt-2 h-auto w-full justify-between p-0 text-[11px] text-content-tertiary hover:bg-transparent hover:text-content-secondary"
+        className="text-content-tertiary hover:text-content-secondary mt-2 h-auto w-full justify-between p-0 text-[11px] hover:bg-transparent"
         onClick={() => shortcuts.handleShortcutsOpenChange(true)}
         variant="ghost"
       >
@@ -90,7 +90,7 @@ export const StudioSidebar = ({
           Keyboard shortcuts
         </span>
         {shortcuts.shortcutsHelpLabel ? (
-          <kbd className="rounded border border-border bg-surface-tertiary px-1 py-0.5 font-mono text-[10px]">
+          <kbd className="border-border bg-surface-tertiary rounded border px-1 py-0.5 font-mono text-[10px]">
             {shortcuts.shortcutsHelpLabel}
           </kbd>
         ) : null}

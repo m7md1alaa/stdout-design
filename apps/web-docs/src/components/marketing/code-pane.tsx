@@ -18,7 +18,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="relative flex cursor-pointer items-center justify-center rounded-lg p-1.5 text-fg-muted transition-colors hover:text-foreground focus:outline-hidden"
+      className="text-fg-muted hover:text-foreground relative flex cursor-pointer items-center justify-center rounded-lg p-1.5 transition-colors focus:outline-hidden"
       aria-label="Copy to clipboard"
     >
       <Clipboard
@@ -55,13 +55,13 @@ export function CodePane({
   code: string;
 }) {
   return (
-    <figure className="overflow-hidden rounded-xl border border-border bg-black/80">
-      <figcaption className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-        <span className="flex min-w-0 items-center gap-2 font-mono text-xs text-fg-muted">
+    <figure className="border-border overflow-hidden rounded-xl border bg-black/80">
+      <figcaption className="border-border/60 flex items-center justify-between border-b px-4 py-2.5">
+        <span className="text-fg-muted flex min-w-0 items-center gap-2 font-mono text-xs">
           {/* Accent dot — signals active/live state */}
           <span
             aria-hidden="true"
-            className="size-1.5 shrink-0 rounded-full bg-accent"
+            className="bg-accent size-1.5 shrink-0 rounded-full"
           />
           <span className="truncate">
             {label} — {file}

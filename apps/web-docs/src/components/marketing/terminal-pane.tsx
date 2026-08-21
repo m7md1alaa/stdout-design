@@ -77,17 +77,17 @@ export function TerminalPane() {
   const isComplete = visibleCount >= SEQUENCE.length;
 
   return (
-    <figure className="overflow-hidden rounded-xl terminal-container bg-black/85 shadow-2xl shadow-black/60">
+    <figure className="terminal-container overflow-hidden rounded-xl bg-black/85 shadow-2xl shadow-black/60">
       {/* Window chrome */}
-      <figcaption className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
+      <figcaption className="border-border/60 flex items-center justify-between border-b px-4 py-2.5">
         <div className="flex items-center gap-1.5">
           {/* macOS-style dots */}
-          <span className="size-2.5 rounded-full bg-muted/50 border border-white/10" />
-          <span className="size-2.5 rounded-full bg-muted/50 border border-white/10" />
-          <span className="size-2.5 rounded-full bg-muted/50 border border-white/10" />
+          <span className="bg-muted/50 size-2.5 rounded-full border border-white/10" />
+          <span className="bg-muted/50 size-2.5 rounded-full border border-white/10" />
+          <span className="bg-muted/50 size-2.5 rounded-full border border-white/10" />
         </div>
 
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/60">
+        <span className="text-muted-foreground/60 font-mono text-[10px] tracking-wider uppercase">
           studio render
         </span>
 
@@ -97,7 +97,7 @@ export function TerminalPane() {
             className={`relative flex size-1.5 ${isComplete ? "opacity-40" : ""}`}
           >
             {!isComplete && (
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-40" />
+              <span className="bg-accent absolute inline-flex size-full animate-ping rounded-full opacity-40" />
             )}
             <span
               className={`relative inline-flex size-1.5 rounded-full transition-colors duration-500 ${
@@ -105,7 +105,7 @@ export function TerminalPane() {
               }`}
             />
           </span>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60 hidden sm:inline">
+          <span className="text-muted-foreground/60 hidden font-mono text-[9px] tracking-wider uppercase sm:inline">
             {isComplete ? "done" : "live"}
           </span>
         </div>
@@ -114,11 +114,11 @@ export function TerminalPane() {
       {/* Terminal body */}
       <div className="relative h-[300px] sm:h-[340px]">
         {/* Top + bottom fade masks */}
-        <div className="absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-black/85 to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/85 to-transparent z-10 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-5 bg-gradient-to-b from-black/85 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-gradient-to-t from-black/85 to-transparent" />
 
         {/* Dot-grid texture */}
-        <div className="absolute inset-0 terminal-dots pointer-events-none" />
+        <div className="terminal-dots pointer-events-none absolute inset-0" />
 
         {/* Scrollable content */}
         <div
@@ -147,11 +147,11 @@ export function TerminalPane() {
       </div>
 
       {/* Footer strip */}
-      <div className="border-t border-border/30 px-4 py-2 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-muted-foreground/40">
+      <div className="border-border/30 flex items-center justify-between border-t px-4 py-2">
+        <span className="text-muted-foreground/40 font-mono text-[10px]">
           stdout-design
         </span>
-        <span className="font-mono text-[10px] text-accent/60">
+        <span className="text-accent/60 font-mono text-[10px]">
           TSX → pixels
         </span>
       </div>

@@ -45,23 +45,23 @@
 }
 
 @utility field-input {
-  @apply w-full rounded-sm border border-border bg-surface-tertiary px-2.5 py-1.5 font-sans text-xs text-content transition-colors focus:border-accent focus:outline-none;
+  @apply border-border bg-surface-tertiary text-content focus:border-accent w-full rounded-sm border px-2.5 py-1.5 font-sans text-xs transition-colors focus:outline-none;
 }
 
 @utility range-slider {
-  @apply h-1.5 appearance-none rounded-full bg-surface-tertiary;
+  @apply bg-surface-tertiary h-1.5 appearance-none rounded-full;
   background-image: linear-gradient(var(--color-accent), var(--color-accent));
   background-repeat: no-repeat;
 }
 .range-slider::-webkit-slider-thumb {
-  @apply h-3.5 w-3.5 appearance-none rounded-full bg-accent shadow-sm;
+  @apply bg-accent h-3.5 w-3.5 appearance-none rounded-full shadow-sm;
   cursor: pointer;
 }
 .range-slider::-webkit-slider-thumb:hover {
   @apply bg-accent-hover;
 }
 .range-slider::-moz-range-thumb {
-  @apply h-3.5 w-3.5 rounded-full border-none bg-accent shadow-sm;
+  @apply bg-accent h-3.5 w-3.5 rounded-full border-none shadow-sm;
   cursor: pointer;
 }
 

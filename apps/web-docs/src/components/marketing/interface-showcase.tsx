@@ -23,15 +23,15 @@ export function InterfaceShowcase() {
   }
 
   return (
-    <section className="border-b border-border px-6 py-24 sm:px-8">
+    <section className="border-border border-b px-6 py-24 sm:px-8">
       <div className="mx-auto max-w-3xl">
-        <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-fg-faint">
+        <p className="text-fg-faint mb-4 font-mono text-xs tracking-[0.2em] uppercase">
           {showcase.eyebrow}
         </p>
-        <h2 className="mb-3 max-w-xl text-2xl font-medium leading-snug text-foreground sm:text-3xl">
+        <h2 className="text-foreground mb-3 max-w-xl text-2xl leading-snug font-medium sm:text-3xl">
           {showcase.headline}
         </h2>
-        <p className="mb-8 max-w-xl leading-relaxed text-fg-muted">
+        <p className="text-fg-muted mb-8 max-w-xl leading-relaxed">
           {showcase.body}
         </p>
 
@@ -39,7 +39,7 @@ export function InterfaceShowcase() {
           role="tablist"
           aria-label={showcase.ariaLabel}
           onKeyDown={onKeyDown}
-          className="flex gap-1 border-b border-border"
+          className="border-border flex gap-1 border-b"
         >
           {tabs.map((tab, i) => (
             <button
@@ -56,7 +56,7 @@ export function InterfaceShowcase() {
               className={`-mb-px border-b-2 px-4 py-2.5 font-mono text-sm transition-colors ${
                 activeIndex === i
                   ? "border-accent text-foreground"
-                  : "border-transparent text-fg-muted hover:text-foreground"
+                  : "text-fg-muted hover:text-foreground border-transparent"
               }`}
             >
               {tab.label}

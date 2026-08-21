@@ -41,13 +41,13 @@ export const StudioCanvasPanel = ({
       selected={studio.effectiveLocale}
       onChange={studio.handleLocaleChange}
     />
-    <div className="overflow-x-auto border-b border-border bg-surface-secondary">
+    <div className="border-border bg-surface-secondary overflow-x-auto border-b">
       <Tabs
         onValueChange={(next) => studio.setSelectedPreset(next as string)}
         value={studio.effectivePresetId ?? undefined}
       >
         <TabsList
-          className="w-full justify-start gap-0 rounded-none bg-transparent p-0 *:data-[slot=tabs-tab]:hover:bg-surface-hover"
+          className="*:data-[slot=tabs-tab]:hover:bg-surface-hover w-full justify-start gap-0 rounded-none bg-transparent p-0"
           variant="underline"
         >
           {presets.map((preset) => (
@@ -57,7 +57,7 @@ export const StudioCanvasPanel = ({
               value={preset.id}
             >
               <span className="text-xs font-semibold">{preset.id}</span>
-              <span className="font-mono text-[10px] text-content-tertiary">
+              <span className="text-content-tertiary font-mono text-[10px]">
                 {preset.width}&times;{preset.height}
               </span>
             </TabsTrigger>

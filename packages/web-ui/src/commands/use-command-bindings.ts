@@ -36,7 +36,9 @@ export const useCommandBindings = () => {
       if (!(commandId in prev)) {
         return prev;
       }
-      const { [commandId]: _removed, ...rest } = prev;
+      const rest = Object.fromEntries(
+        Object.entries(prev).filter(([key]) => key !== commandId)
+      );
       saveStoredBindings(rest);
       return rest;
     });

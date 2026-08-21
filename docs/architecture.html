@@ -24,19 +24,19 @@
       }
     </style>
   </head>
-  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
-    <main class="max-w-5xl mx-auto px-6 py-16 space-y-16">
+  <body class="bg-stone-50 font-sans text-slate-900 antialiased">
+    <main class="mx-auto max-w-5xl space-y-16 px-6 py-16">
       <!-- ── Header ── -->
       <header class="space-y-3">
         <p
-          class="text-xs uppercase tracking-widest text-stone-400 font-semibold"
+          class="text-xs font-semibold tracking-widest text-stone-400 uppercase"
         >
           Architecture review · target design (ADR 0005–0012 applied)
         </p>
-        <h1 class="text-3xl font-serif font-bold tracking-tight text-slate-800">
+        <h1 class="font-serif text-3xl font-bold tracking-tight text-slate-800">
           stdout-design
         </h1>
-        <p class="text-base text-stone-500 leading-relaxed max-w-2xl">
+        <p class="max-w-2xl text-base leading-relaxed text-stone-500">
           One render pipeline, multiple front doors.
           <span class="text-stone-400">
             Core owns the Takumi binding, asset resolution, and orchestration.
@@ -50,12 +50,12 @@
       <!-- ── 1. Package Dependency Graph ── -->
       <section id="dependencies" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Package Dependency Graph
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             Core is the only module that touches
-            <code class="text-emerald-700 bg-emerald-50 px-1 rounded text-xs"
+            <code class="rounded bg-emerald-50 px-1 text-xs text-emerald-700"
               >@takumi-rs/core</code
             >
             directly. Everything else delegates. Core itself is no longer one
@@ -92,7 +92,7 @@
 
         <div class="flex gap-6 text-xs text-stone-500">
           <span class="flex items-center gap-2">
-            <span class="inline-block w-5 h-px bg-slate-600"></span>
+            <span class="inline-block h-px w-5 bg-slate-600"></span>
             runtime dependency
           </span>
           <span class="text-stone-400">
@@ -104,20 +104,20 @@
       <!-- ── 1a. Core Internal Layering (NEW) ── -->
       <section id="core-layers" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Core Internal Layering
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
-            <code class="text-xs bg-stone-100 px-1 rounded"
+          <p class="text-sm leading-relaxed text-stone-500">
+            <code class="rounded bg-stone-100 px-1 text-xs"
               >packages/core/src</code
             >
             is sliced by responsibility, not by runtime target. Every layer
             below
-            <code class="text-xs bg-stone-100 px-1 rounded">orchestrate/</code>
+            <code class="rounded bg-stone-100 px-1 text-xs">orchestrate/</code>
             depends only on
-            <code class="text-xs bg-stone-100 px-1 rounded">shared/</code> — no
+            <code class="rounded bg-stone-100 px-1 text-xs">shared/</code> — no
             module outside
-            <code class="text-xs bg-stone-100 px-1 rounded">shared/</code>
+            <code class="rounded bg-stone-100 px-1 text-xs">shared/</code>
             does disk or network I/O for free; that's an enforced boundary, not
             a convention.
           </p>
@@ -217,13 +217,13 @@
       <!-- ── 2. Data Flow — Studio Dev ── -->
       <section id="studio-dev" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Data Flow — Studio Dev
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             Browser sends props over HTTP. The dev server validates the raw
             shape, then hands off to the same
-            <code class="text-xs bg-stone-100 px-1 rounded"
+            <code class="rounded bg-stone-100 px-1 text-xs"
               >orchestrateRender()</code
             >
             that CLI batch calls — locale merge, font resolution, and post-merge
@@ -293,19 +293,19 @@
       <!-- ── 3. SSR Pipeline — Dev Server ── -->
       <section id="ssr-pipeline" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             SSR Pipeline — Dev Server
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             A persistent Vite SSR pipeline (<code
-              class="text-xs bg-stone-100 px-1 rounded"
+              class="rounded bg-stone-100 px-1 text-xs"
               >vite-node</code
             >) compiles
-            <code class="text-xs bg-stone-100 px-1 rounded">.tsx</code>
+            <code class="rounded bg-stone-100 px-1 text-xs">.tsx</code>
             templates at runtime. The
-            <code class="text-xs bg-stone-100 px-1 rounded">FileWatcher</code>
+            <code class="rounded bg-stone-100 px-1 text-xs">FileWatcher</code>
             watches every path returned by
-            <code class="text-xs bg-stone-100 px-1 rounded"
+            <code class="rounded bg-stone-100 px-1 text-xs"
               >resolveProjectPaths()</code
             >
             — templates, locales, and config — and invalidates the module cache
@@ -416,10 +416,10 @@
 
         <!-- One render path, two loaders -->
         <div class="rounded-lg border-2 border-sky-300 bg-sky-50 p-4">
-          <p class="text-xs font-semibold text-sky-800 mb-2">
+          <p class="mb-2 text-xs font-semibold text-sky-800">
             One render path, two loading mechanisms
           </p>
-          <p class="text-xs text-sky-700 mb-3">
+          <p class="mb-3 text-xs text-sky-700">
             CLI batch and dev-server no longer diverge in what happens once a
             template is loaded — both call
             <code class="text-[10px]">orchestrateRender()</code> /
@@ -429,9 +429,9 @@
             live invalidation for hot reload, CLI does not.
           </p>
           <div class="grid grid-cols-2 gap-4 text-xs text-sky-700">
-            <div class="bg-white rounded p-3 border border-sky-200">
+            <div class="rounded border border-sky-200 bg-white p-3">
               <span class="font-bold text-sky-800">SSR (dev-server)</span>
-              <ul class="mt-1 space-y-0.5 list-disc list-inside text-sky-600">
+              <ul class="mt-1 list-inside list-disc space-y-0.5 text-sky-600">
                 <li>
                   <code class="text-[10px]">ViteNodeRunner.executeFile()</code>
                 </li>
@@ -439,9 +439,9 @@
                 <li>Hot reload via FileWatcher + SSE</li>
               </ul>
             </div>
-            <div class="bg-white rounded p-3 border border-sky-200">
+            <div class="rounded border border-sky-200 bg-white p-3">
               <span class="font-bold text-sky-800">Batch (CLI)</span>
-              <ul class="mt-1 space-y-0.5 list-disc list-inside text-sky-600">
+              <ul class="mt-1 list-inside list-disc space-y-0.5 text-sky-600">
                 <li>
                   Raw
                   <code class="text-[10px]">import(pathToFileURL(...))</code>,
@@ -451,7 +451,7 @@
               </ul>
             </div>
           </div>
-          <p class="text-xs text-sky-700 mt-3">
+          <p class="mt-3 text-xs text-sky-700">
             Both feed the same
             <code class="text-[10px]">orchestrateRender()</code>, the same
             two-stage cache, and the same asset resolver — including caching.
@@ -464,11 +464,11 @@
       <!-- ── 4. Data Flow — CLI Batch Render ── -->
       <section id="cli-batch" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Data Flow — CLI Batch Render
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
-            <code class="text-xs bg-stone-100 px-1 rounded">studio render</code>
+          <p class="text-sm leading-relaxed text-stone-500">
+            <code class="rounded bg-stone-100 px-1 text-xs">studio render</code>
             loads the config, template, and data; expands the matrix (rows ×
             locales × presets); renders each cell through the same orchestrator
             dev-server uses, with bounded concurrency; and writes
@@ -511,10 +511,10 @@
       <!-- ── 5. Cross-Section ── -->
       <section id="cross-section" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Cross-Section — Studio Dev Call Layers
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             A render request now passes through one additional layer versus
             before — Orchestration + Assets — sitting between template loading
             and the Engine. It's a thin coordinating layer, not a second thick
@@ -523,43 +523,43 @@
         </div>
 
         <div
-          class="rounded-lg border border-slate-200 bg-white overflow-hidden"
+          class="overflow-hidden rounded-lg border border-slate-200 bg-white"
         >
           <!-- Layer 1 -->
-          <div class="flex border-l-4 border-sky-400 py-3 px-5 bg-white">
+          <div class="flex border-l-4 border-sky-400 bg-white px-5 py-3">
             <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-sky-600"
+                class="text-[10px] font-semibold tracking-wider text-sky-600 uppercase"
                 >Browser</span
               >
             </div>
             <div class="text-xs text-slate-600">
               React app &middot; prop panel &middot; canvas &middot; SSE hook
               &middot;
-              <code class="text-sky-700 text-[10px]">POST /render</code>
+              <code class="text-[10px] text-sky-700">POST /render</code>
             </div>
           </div>
           <!-- Layer 2 -->
-          <div class="flex border-l-4 border-sky-500 py-3 px-5 bg-sky-50/30">
+          <div class="flex border-l-4 border-sky-500 bg-sky-50/30 px-5 py-3">
             <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-sky-700"
+                class="text-[10px] font-semibold tracking-wider text-sky-700 uppercase"
                 >Dev Server</span
               >
             </div>
             <div class="text-xs text-slate-600">
               Hono router &middot; CORS &middot; raw-shape request validation
               (zod) &middot;
-              <code class="text-sky-700 text-[10px]">/render</code>
-              <code class="text-sky-700 text-[10px]">/measure</code>
-              <code class="text-sky-700 text-[10px]">/events</code>
+              <code class="text-[10px] text-sky-700">/render</code>
+              <code class="text-[10px] text-sky-700">/measure</code>
+              <code class="text-[10px] text-sky-700">/events</code>
             </div>
           </div>
           <!-- Layer 3 -->
-          <div class="flex border-l-4 border-sky-500 py-3 px-5 bg-white">
+          <div class="flex border-l-4 border-sky-500 bg-white px-5 py-3">
             <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-sky-700"
+                class="text-[10px] font-semibold tracking-wider text-sky-700 uppercase"
                 >Template Loader</span
               >
             </div>
@@ -571,11 +571,11 @@
           </div>
           <!-- Layer 4 (new — orchestration + assets) -->
           <div
-            class="flex border-l-4 border-indigo-500 py-3 px-5 bg-indigo-50/40"
+            class="flex border-l-4 border-indigo-500 bg-indigo-50/40 px-5 py-3"
           >
             <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-indigo-700"
+                class="text-[10px] font-semibold tracking-wider text-indigo-700 uppercase"
                 >Orchestration + Assets</span
               >
             </div>
@@ -590,15 +590,15 @@
           </div>
           <!-- Layer 5 (thick — engine) -->
           <div
-            class="flex border-l-4 border-emerald-600 py-4 px-5 bg-emerald-50/60"
+            class="flex border-l-4 border-emerald-600 bg-emerald-50/60 px-5 py-4"
           >
             <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800"
+                class="text-[10px] font-semibold tracking-wider text-emerald-800 uppercase"
                 >Engine</span
               >
             </div>
-            <div class="text-xs text-slate-700 space-y-1">
+            <div class="space-y-1 text-xs text-slate-700">
               <div>
                 <span class="font-medium text-emerald-700">Compile:</span>
                 <code class="text-[10px]">compileTemplate()</code> &rarr;
@@ -612,10 +612,10 @@
             </div>
           </div>
           <!-- Layer 6 -->
-          <div class="flex border-l-4 border-cyan-500 py-3 px-5 bg-white">
+          <div class="flex border-l-4 border-cyan-500 bg-white px-5 py-3">
             <div class="w-40 shrink-0">
               <span
-                class="text-[10px] uppercase tracking-wider font-semibold text-cyan-700"
+                class="text-[10px] font-semibold tracking-wider text-cyan-700 uppercase"
                 >Cache</span
               >
             </div>
@@ -647,10 +647,10 @@
       <!-- ── 6. Module Depth ── -->
       <section id="depth" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Module Depth
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             Interface versus implementation size. Core is deep — its interface
             is small relative to what it does, now organized by the layers above
             instead of one flat list. CLI stays shallow — it mostly delegates.
@@ -659,14 +659,14 @@
 
         <!-- Core (deep) -->
         <div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="mb-3 flex items-center gap-2">
             <span
-              class="text-xs uppercase tracking-wider font-bold text-emerald-700"
+              class="text-xs font-bold tracking-wider text-emerald-700 uppercase"
             >
               @stdout-design/core
             </span>
             <span
-              class="text-[10px] text-emerald-500 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full"
+              class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-500"
               >deep</span
             >
           </div>
@@ -677,12 +677,12 @@
               style="min-height: 200px"
             >
               <p
-                class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
+                class="mb-2 text-[10px] font-semibold tracking-wider text-emerald-600 uppercase"
               >
                 Interface
               </p>
               <ul
-                class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed"
+                class="space-y-0.5 text-[11px] leading-relaxed text-slate-600"
               >
                 <li><code>orchestrateRender()</code></li>
                 <li><code>orchestrateMeasure()</code></li>
@@ -703,11 +703,11 @@
               style="min-height: 420px"
             >
               <p
-                class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2"
+                class="mb-2 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase"
               >
                 Implementation, by layer
               </p>
-              <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
+              <div class="space-y-2 text-[11px] leading-relaxed text-slate-700">
                 <div>
                   <span class="font-medium text-indigo-700">orchestrate/</span>
                   — merge→validate→cache-key sequencing, per-cell asset
@@ -750,14 +750,14 @@
 
         <!-- CLI (shallow) -->
         <div class="mt-8">
-          <div class="flex items-center gap-2 mb-3">
+          <div class="mb-3 flex items-center gap-2">
             <span
-              class="text-xs uppercase tracking-wider font-bold text-amber-600"
+              class="text-xs font-bold tracking-wider text-amber-600 uppercase"
             >
               @stdout-design/cli
             </span>
             <span
-              class="text-[10px] text-amber-500 font-semibold bg-amber-50 px-2 py-0.5 rounded-full"
+              class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-500"
               >shallow</span
             >
           </div>
@@ -768,12 +768,12 @@
               style="min-height: 220px"
             >
               <p
-                class="text-[10px] uppercase tracking-wider font-semibold text-amber-600 mb-2"
+                class="mb-2 text-[10px] font-semibold tracking-wider text-amber-600 uppercase"
               >
                 Interface
               </p>
               <ul
-                class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed"
+                class="space-y-0.5 text-[11px] leading-relaxed text-slate-600"
               >
                 <li><code>studio dev</code></li>
                 <li><code>studio render</code></li>
@@ -790,14 +790,14 @@
               style="min-height: 260px"
             >
               <p
-                class="text-[10px] uppercase tracking-wider font-semibold text-amber-700 mb-2"
+                class="mb-2 text-[10px] font-semibold tracking-wider text-amber-700 uppercase"
               >
                 Implementation
               </p>
-              <div class="space-y-1 text-[11px] text-slate-700 leading-relaxed">
+              <div class="space-y-1 text-[11px] leading-relaxed text-slate-700">
                 <div class="flex items-center gap-2">
                   <span
-                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                    class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
                   ></span>
                   <code class="text-[10px]">studio dev</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
@@ -811,7 +811,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <span
-                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                    class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
                   ></span>
                   <code class="text-[10px]">studio render</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
@@ -821,7 +821,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <span
-                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                    class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
                   ></span>
                   <code class="text-[10px]">studio cache</code>
                   <span class="text-stone-400">&rarr; delegates to</span>
@@ -829,16 +829,16 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <span
-                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                    class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
                   ></span>
                   <code class="text-[10px]">studio init</code>
                   <span class="text-stone-400"
                     >&rarr; standalone scaffolding</span
                   >
                 </div>
-                <div class="flex items-start gap-2 mt-2">
+                <div class="mt-2 flex items-start gap-2">
                   <span
-                    class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1"
+                    class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
                   ></span>
                   <span
                     >Remaining: display formatting, prop argument parsing, typo
@@ -860,18 +860,18 @@
       <!-- ── 7. RenderCache Sub-System ── -->
       <section id="render-cache" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             RenderCache Sub-System
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             The two-stage cache remains decomposed into six specialized
             sub-modules, now living under
-            <code class="text-xs bg-stone-100 px-1 rounded">cache/</code>. A new
+            <code class="rounded bg-stone-100 px-1 text-xs">cache/</code>. A new
             thin helper,
-            <code class="text-xs bg-stone-100 px-1 rounded"
+            <code class="rounded bg-stone-100 px-1 text-xs"
               >openCache(rootDir, overrides)</code
             >, wraps default-path resolution + construction +
-            <code class="text-xs bg-stone-100 px-1 rounded">init()</code> — it
+            <code class="rounded bg-stone-100 px-1 text-xs">init()</code> — it
             does not change anything below it.
           </p>
         </div>
@@ -919,11 +919,11 @@
             style="min-height: 260px"
           >
             <p
-              class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
+              class="mb-2 text-[10px] font-semibold tracking-wider text-emerald-600 uppercase"
             >
               Interface
             </p>
-            <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
+            <ul class="space-y-0.5 text-[11px] leading-relaxed text-slate-600">
               <li><code>openCache(rootDir, overrides?)</code></li>
               <li><code>getCompiled(key)</code></li>
               <li><code>setCompiled(key, value)</code></li>
@@ -943,11 +943,11 @@
             style="min-height: 420px"
           >
             <p
-              class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800 mb-2"
+              class="mb-2 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase"
             >
               Implementation
             </p>
-            <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
+            <div class="space-y-2 text-[11px] leading-relaxed text-slate-700">
               <div>
                 <span class="font-medium text-violet-700">openCache</span> —
                 resolves <code class="text-[10px]">defaultCacheDir</code> via
@@ -997,20 +997,20 @@
       <!-- ── 7a. Asset Resolution Sub-System (NEW) ── -->
       <section id="assets-subsystem" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Asset Resolution Sub-System
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             New in this design. Replaces two independent, drifted
             implementations — core's
-            <code class="text-xs bg-stone-100 px-1 rounded">mergeLocale</code> /
-            <code class="text-xs bg-stone-100 px-1 rounded"
+            <code class="rounded bg-stone-100 px-1 text-xs">mergeLocale</code> /
+            <code class="rounded bg-stone-100 px-1 text-xs"
               >resolveArabicFonts</code
             >
             and dev-server's
-            <code class="text-xs bg-stone-100 px-1 rounded">applyLocale</code>
+            <code class="rounded bg-stone-100 px-1 text-xs">applyLocale</code>
             — with one module, called by
-            <code class="text-xs bg-stone-100 px-1 rounded">orchestrate/</code>
+            <code class="rounded bg-stone-100 px-1 text-xs">orchestrate/</code>
             for every render, from every front door.
           </p>
         </div>
@@ -1022,11 +1022,11 @@
             style="min-height: 140px"
           >
             <p
-              class="text-[10px] uppercase tracking-wider font-semibold text-teal-600 mb-2"
+              class="mb-2 text-[10px] font-semibold tracking-wider text-teal-600 uppercase"
             >
               Interface
             </p>
-            <ul class="text-[11px] text-slate-600 space-y-0.5 leading-relaxed">
+            <ul class="space-y-0.5 text-[11px] leading-relaxed text-slate-600">
               <li><code>resolveAssetsForLocale(localeId, props)</code></li>
               <li>&rarr; <code>{ props, fonts, fontFamilies, lang }</code></li>
             </ul>
@@ -1037,11 +1037,11 @@
             style="min-height: 260px"
           >
             <p
-              class="text-[10px] uppercase tracking-wider font-semibold text-teal-800 mb-2"
+              class="mb-2 text-[10px] font-semibold tracking-wider text-teal-800 uppercase"
             >
               Implementation
             </p>
-            <div class="text-[11px] text-slate-700 leading-relaxed space-y-2">
+            <div class="space-y-2 text-[11px] leading-relaxed text-slate-700">
               <div>
                 <span class="font-medium text-teal-700">Locale merge</span> —
                 one algorithm: override a prop with the locale value only when
@@ -1100,16 +1100,16 @@
       <!-- ── 8. Call-Graph Collapse ── -->
       <section id="collapse" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             Call-Graph Collapse
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             Before: the CLI coordinates eight discrete steps. After: one call to
-            <code class="text-emerald-700 text-xs bg-emerald-50 px-1 rounded"
+            <code class="rounded bg-emerald-50 px-1 text-xs text-emerald-700"
               >runBatch()</code
             >
             — core owns everything below, and the per-cell step is now the same
-            <code class="text-emerald-700 text-xs bg-emerald-50 px-1 rounded"
+            <code class="rounded bg-emerald-50 px-1 text-xs text-emerald-700"
               >orchestrateRender()</code
             >
             dev-server calls too.
@@ -1120,49 +1120,49 @@
           <!-- Before -->
           <div>
             <p
-              class="text-[10px] uppercase tracking-wider font-semibold text-red-600 mb-2"
+              class="mb-2 text-[10px] font-semibold tracking-wider text-red-600 uppercase"
             >
               Before &mdash; flat
             </p>
             <div class="rounded-lg border-2 border-red-300 bg-red-50 p-4">
-              <p class="text-xs font-bold text-red-800 mb-2">
+              <p class="mb-2 text-xs font-bold text-red-800">
                 studio render (caller)
               </p>
               <div class="flex flex-wrap gap-1.5">
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >loadConfig</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >importTemplateForBatch</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >importTemplateForBatch <em>(again, in render.ts)</em></span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >parseDataFile</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >expandMatrix</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >renderOne &times;N</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >compileTemplate</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >renderToPixels</span
                 >
                 <span
-                  class="border border-red-200 bg-white rounded px-2 py-1 text-[10px] text-red-700"
+                  class="rounded border border-red-200 bg-white px-2 py-1 text-[10px] text-red-700"
                   >writeManifest</span
                 >
               </div>
@@ -1172,43 +1172,43 @@
           <!-- After -->
           <div>
             <p
-              class="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-2"
+              class="mb-2 text-[10px] font-semibold tracking-wider text-emerald-600 uppercase"
             >
               After &mdash; collapsed
             </p>
             <div
               class="rounded-lg border-2 border-emerald-500 bg-emerald-50 p-4"
             >
-              <p class="text-xs font-bold text-emerald-800 mb-2">
+              <p class="mb-2 text-xs font-bold text-emerald-800">
                 studio render (caller)
               </p>
               <div class="rounded-lg border-2 border-emerald-600 bg-white p-3">
-                <p class="text-[11px] font-semibold text-emerald-700 mb-2">
+                <p class="mb-2 text-[11px] font-semibold text-emerald-700">
                   runBatch()
                 </p>
                 <div class="flex flex-wrap gap-1.5 opacity-50">
                   <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    class="rounded border border-slate-300 px-2 py-1 text-[10px] text-slate-500"
                     >loadConfig</span
                   >
                   <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    class="rounded border border-slate-300 px-2 py-1 text-[10px] text-slate-500"
                     >loadTemplate (memoized, one call)</span
                   >
                   <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    class="rounded border border-slate-300 px-2 py-1 text-[10px] text-slate-500"
                     >parseDataFile</span
                   >
                   <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    class="rounded border border-slate-300 px-2 py-1 text-[10px] text-slate-500"
                     >expandMatrix</span
                   >
                   <span
-                    class="border border-indigo-300 rounded px-2 py-1 text-[10px] text-indigo-600 bg-indigo-50"
+                    class="rounded border border-indigo-300 bg-indigo-50 px-2 py-1 text-[10px] text-indigo-600"
                     >orchestrateRender ×N</span
                   >
                   <span
-                    class="border border-slate-300 rounded px-2 py-1 text-[10px] text-slate-500"
+                    class="rounded border border-slate-300 px-2 py-1 text-[10px] text-slate-500"
                     >writeManifest</span
                   >
                 </div>
@@ -1220,13 +1220,13 @@
         <div class="flex gap-6 text-xs text-stone-500">
           <div class="flex items-center gap-2">
             <span
-              class="inline-block w-3 h-3 rounded bg-red-50 border border-red-300"
+              class="inline-block h-3 w-3 rounded border border-red-300 bg-red-50"
             ></span>
             CLI owns everything, template loaded twice
           </div>
           <div class="flex items-center gap-2">
             <span
-              class="inline-block w-3 h-3 rounded bg-emerald-50 border border-emerald-500"
+              class="inline-block h-3 w-3 rounded border border-emerald-500 bg-emerald-50"
             ></span>
             CLI calls <code class="text-[10px]">runBatch()</code>; core owns the
             rest, template loaded once
@@ -1237,18 +1237,18 @@
       <!-- ── 9. What Changed (NEW) ── -->
       <section id="what-changed" class="space-y-6">
         <div class="space-y-1">
-          <h2 class="text-xl font-serif font-semibold text-slate-800">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">
             What Changed — Bugs Closed by This Design
           </h2>
-          <p class="text-sm text-stone-500 leading-relaxed">
+          <p class="text-sm leading-relaxed text-stone-500">
             Each ADR below corresponds to a specific, previously-observed
             defect, not a stylistic preference. Filenames match
-            <code class="text-xs bg-stone-100 px-1 rounded">docs/adr/</code>.
+            <code class="rounded bg-stone-100 px-1 text-xs">docs/adr/</code>.
           </p>
         </div>
 
         <div
-          class="rounded-lg border border-slate-200 bg-white divide-y divide-stone-100"
+          class="divide-y divide-stone-100 rounded-lg border border-slate-200 bg-white"
         >
           <div class="flex gap-4 p-4 text-xs">
             <span class="w-14 shrink-0 font-mono text-indigo-600">0005</span>
@@ -1332,17 +1332,17 @@
         <div class="space-y-3">
           <div class="flex items-center gap-3">
             <span
-              class="inline-block w-2 h-2 rounded-full bg-emerald-500"
+              class="inline-block h-2 w-2 rounded-full bg-emerald-500"
             ></span>
-            <h2 class="text-lg font-serif font-semibold text-emerald-900">
+            <h2 class="font-serif text-lg font-semibold text-emerald-900">
               Core: one render pipeline, multiple front doors
             </h2>
           </div>
 
-          <p class="text-sm text-emerald-800 leading-relaxed max-w-3xl">
+          <p class="max-w-3xl text-sm leading-relaxed text-emerald-800">
             Every front door (CLI, dev-server, web-ui, future MCP) renders
             through
-            <code class="text-xs bg-white px-1 rounded"
+            <code class="rounded bg-white px-1 text-xs"
               >@stdout-design/core</code
             >'s orchestrator. Preview == export by construction — there is no
             second renderer, no second locale-merge algorithm, and no second
@@ -1354,62 +1354,62 @@
           <div class="flex flex-wrap gap-3 pt-2">
             <a
               href="adr/0001.md"
-              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              class="rounded border border-emerald-300 bg-white px-3 py-1.5 text-xs text-emerald-700 no-underline transition-colors hover:bg-emerald-100"
               >0001</a
             >
             <a
               href="adr/0002.md"
-              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              class="rounded border border-emerald-300 bg-white px-3 py-1.5 text-xs text-emerald-700 no-underline transition-colors hover:bg-emerald-100"
               >0002</a
             >
             <a
               href="adr/0003-version-resolution-and-scaffold-metadata.md"
-              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              class="rounded border border-emerald-300 bg-white px-3 py-1.5 text-xs text-emerald-700 no-underline transition-colors hover:bg-emerald-100"
               >0003</a
             >
             <a
               href="adr/0004-cli-dependency-boundary.md"
-              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              class="rounded border border-emerald-300 bg-white px-3 py-1.5 text-xs text-emerald-700 no-underline transition-colors hover:bg-emerald-100"
               >0004</a
             >
             <a
               href="adr/0005-render-orchestration-entry-point.md"
-              class="text-xs bg-white border border-indigo-300 rounded px-3 py-1.5 text-indigo-700 hover:bg-indigo-100 transition-colors no-underline"
+              class="rounded border border-indigo-300 bg-white px-3 py-1.5 text-xs text-indigo-700 no-underline transition-colors hover:bg-indigo-100"
               >0005</a
             >
             <a
               href="adr/0006-asset-resolution-module.md"
-              class="text-xs bg-white border border-teal-300 rounded px-3 py-1.5 text-teal-700 hover:bg-teal-100 transition-colors no-underline"
+              class="rounded border border-teal-300 bg-white px-3 py-1.5 text-xs text-teal-700 no-underline transition-colors hover:bg-teal-100"
               >0006</a
             >
             <a
               href="adr/0007-project-convention-resolution-module.md"
-              class="text-xs bg-white border border-violet-300 rounded px-3 py-1.5 text-violet-700 hover:bg-violet-100 transition-colors no-underline"
+              class="rounded border border-violet-300 bg-white px-3 py-1.5 text-xs text-violet-700 no-underline transition-colors hover:bg-violet-100"
               >0007</a
             >
             <a
               href="adr/0008-reslice-core-by-layer.md"
-              class="text-xs bg-white border border-emerald-300 rounded px-3 py-1.5 text-emerald-700 hover:bg-emerald-100 transition-colors no-underline"
+              class="rounded border border-emerald-300 bg-white px-3 py-1.5 text-xs text-emerald-700 no-underline transition-colors hover:bg-emerald-100"
               >0008</a
             >
             <a
               href="adr/0009-open-cache-helper.md"
-              class="text-xs bg-white border border-cyan-300 rounded px-3 py-1.5 text-cyan-700 hover:bg-cyan-100 transition-colors no-underline"
+              class="rounded border border-cyan-300 bg-white px-3 py-1.5 text-xs text-cyan-700 no-underline transition-colors hover:bg-cyan-100"
               >0009</a
             >
             <a
               href="adr/0010-dev-server-standalone-bootstrap.md"
-              class="text-xs bg-white border border-sky-300 rounded px-3 py-1.5 text-sky-700 hover:bg-sky-100 transition-colors no-underline"
+              class="rounded border border-sky-300 bg-white px-3 py-1.5 text-xs text-sky-700 no-underline transition-colors hover:bg-sky-100"
               >0010</a
             >
             <a
               href="adr/0011-stop-double-importing-template-module.md"
-              class="text-xs bg-white border border-amber-300 rounded px-3 py-1.5 text-amber-700 hover:bg-amber-100 transition-colors no-underline"
+              class="rounded border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 no-underline transition-colors hover:bg-amber-100"
               >0011</a
             >
             <a
               href="adr/0012-unify-config-loading.md"
-              class="text-xs bg-white border border-stone-300 rounded px-3 py-1.5 text-stone-700 hover:bg-stone-100 transition-colors no-underline"
+              class="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-700 no-underline transition-colors hover:bg-stone-100"
               >0012</a
             >
           </div>

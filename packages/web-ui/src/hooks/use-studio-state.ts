@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   consumeShareParam,
@@ -86,19 +86,16 @@ export const useStudioState = ({
     ? propStore[effectiveTemplateId]
     : undefined;
 
-  const defaultPropsCache = useRef<Record<string, Record<string, unknown>>>({});
+  const defaultProps = useMemo(
+    () => computeDefaultProps(effectiveTemplateSchema),
+    [effectiveTemplateSchema]
+  );
   const propValues = useMemo(() => {
     if (!effectiveTemplateId) {
       return {};
     }
-    return mergeWithDefaults(
-      (defaultPropsCache.current[effectiveTemplateId] ??= computeDefaultProps(
-        effectiveTemplateSchema
-      )),
-      effectivePropStore
-    );
-    // oxlint-disable-next-line react-compiler/MemoDependencies react/react-compiler
-  }, [effectivePropStore, effectiveTemplateId, effectiveTemplateSchema]);
+    return mergeWithDefaults(defaultProps, effectivePropStore);
+  }, [defaultProps, effectiveTemplateId, effectivePropStore]);
 
   const { locale: effectiveLocale, autoDetected } = resolveLocale(
     selectedLocale,
@@ -155,10 +152,9 @@ export const useStudioState = ({
           value
         ),
       }));
-      setValidationErrors((prev) => {
-        const { [path]: _removed, ...rest } = prev;
-        return rest;
-      });
+      setValidationErrors((prev) =>
+        Object.fromEntries(Object.entries(prev).filter(([key]) => key !== path))
+      );
     },
     [effectiveTemplateId]
   );
@@ -167,10 +163,11 @@ export const useStudioState = ({
     if (!effectiveTemplateId) {
       return;
     }
-    setPropStore((prev) => {
-      const { [effectiveTemplateId]: _removed, ...rest } = prev;
-      return rest;
-    });
+    setPropStore((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(([key]) => key !== effectiveTemplateId)
+      )
+    );
     setValidationErrors({});
   }, [effectiveTemplateId]);
 

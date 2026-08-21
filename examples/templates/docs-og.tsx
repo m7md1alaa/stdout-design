@@ -23,6 +23,6 @@ export const propsSchema = defineSchema(
 
 export type Props = z.infer<typeof propsSchema>;
 
-export default function DocsOgPreview(props: Props) {
-  return <DocsOgTemplate {...props} />;
-}
+const DocsOgPreview = (props: Props) => <DocsOgTemplate {...props} />;
+
+export default DocsOgPreview;

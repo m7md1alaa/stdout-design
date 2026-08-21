@@ -40,7 +40,7 @@ export const propsSchema = defineSchema(
 
 export type Props = z.infer<typeof propsSchema>;
 
-export default function ComplexStatCard({
+const ComplexStatCard = ({
   theme,
   accentColor,
   title,
@@ -50,7 +50,7 @@ export default function ComplexStatCard({
   sparkline,
   collaborators,
   showGrid,
-}: Props) {
+}: Props) => {
   const isDark = theme === "dark";
   const bg = isDark ? "#0f172a" : "#ffffff";
   const textMain = isDark ? "#f8fafc" : "#0f172a";
@@ -187,4 +187,6 @@ export default function ComplexStatCard({
       </div>
     </div>
   );
-}
+};
+
+export default ComplexStatCard;

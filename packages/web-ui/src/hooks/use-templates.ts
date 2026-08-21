@@ -75,10 +75,9 @@ export const useTemplates = () => {
       if (!isReload) {
         setError(message);
       }
-    } finally {
-      setInitialLoading(false);
-      setReloading(false);
     }
+    setInitialLoading(false);
+    setReloading(false);
   }, []);
 
   const reload = useCallback(() => {

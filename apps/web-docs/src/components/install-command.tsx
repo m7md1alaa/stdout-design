@@ -19,7 +19,7 @@ export function InstallCommand({
   }
 
   return (
-    <pre className="relative inline-flex h-11 w-full max-w-max items-center overflow-auto whitespace-pre rounded-xl border border-border pl-4 pr-11 font-mono text-sm bg-black/80">
+    <pre className="border-border relative inline-flex h-11 w-full max-w-max items-center overflow-auto rounded-xl border bg-black/80 pr-11 pl-4 font-mono text-sm whitespace-pre">
       {/* Top edge — animated shimmer */}
       <div className="absolute inset-x-0 top-0 h-px overflow-hidden">
         <div className="pulse-shimmer h-full" />
@@ -43,7 +43,7 @@ export function InstallCommand({
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute right-1 flex cursor-pointer items-center justify-center rounded-xl p-2.5 text-[#EEF7FE] transition-all duration-200 ease-out hover:text-white active:scale-95 focus:outline-hidden"
+        className="absolute right-1 flex cursor-pointer items-center justify-center rounded-xl p-2.5 text-[#EEF7FE] transition-all duration-200 ease-out hover:text-white focus:outline-hidden active:scale-95"
         aria-label="Copy to clipboard"
       >
         <Clipboard

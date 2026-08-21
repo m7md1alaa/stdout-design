@@ -30,50 +30,50 @@ export const propsSchema = defineSchema(
 
 export type Props = z.infer<typeof propsSchema>;
 
-export default function BentoFeature({
+const BentoFeature = ({
   headline,
   description,
   image,
   tags,
   background,
-}: Props) {
-  return (
+}: Props) => (
+  <div
+    tw="flex w-full h-full p-8"
+    style={{
+      backgroundColor: background,
+      color: "#ffffff",
+      fontFamily: "IBM Plex Sans Arabic, system-ui, sans-serif",
+    }}
+  >
     <div
-      tw="flex w-full h-full p-8"
-      style={{
-        backgroundColor: background,
-        color: "#ffffff",
-        fontFamily: "IBM Plex Sans Arabic, system-ui, sans-serif",
-      }}
+      tw="flex flex-col justify-between flex-1"
+      style={{ paddingRight: "2rem" }}
     >
-      <div
-        tw="flex flex-col justify-between flex-1"
-        style={{ paddingRight: "2rem" }}
-      >
-        {tags.length > 0 ? (
-          <div tw="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                tw="text-xs font-medium bg-white/10 rounded-full px-3 py-1"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <div>
-          <h2 tw="text-4xl font-bold mb-3 leading-tight">{headline}</h2>
-          {description ? (
-            <p tw="text-lg text-gray-400 leading-relaxed max-w-md">
-              {description}
-            </p>
-          ) : null}
+      {tags.length > 0 ? (
+        <div tw="flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              tw="text-xs font-medium bg-white/10 rounded-full px-3 py-1"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
-      </div>
-      <div tw="flex-1">
-        <img src={image} tw="w-full h-full object-cover rounded-2xl" alt="" />
+      ) : null}
+      <div>
+        <h2 tw="text-4xl font-bold mb-3 leading-tight">{headline}</h2>
+        {description ? (
+          <p tw="text-lg text-gray-400 leading-relaxed max-w-md">
+            {description}
+          </p>
+        ) : null}
       </div>
     </div>
-  );
-}
+    <div tw="flex-1">
+      <img src={image} tw="w-full h-full object-cover rounded-2xl" alt="" />
+    </div>
+  </div>
+);
+
+export default BentoFeature;

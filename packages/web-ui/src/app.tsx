@@ -63,7 +63,7 @@ const App = () => {
 
   if (initialLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-content-tertiary">
+      <div className="text-content-tertiary flex h-screen items-center justify-center">
         <p>Loading studio...</p>
       </div>
     );
@@ -71,7 +71,7 @@ const App = () => {
 
   if (error) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 text-content-tertiary">
+      <div className="text-content-tertiary flex h-screen flex-col items-center justify-center gap-4">
         <p>Couldn&apos;t load the studio: {error}</p>
         <Button onClick={() => reload()} variant="link">
           Retry
