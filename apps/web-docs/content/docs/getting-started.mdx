@@ -8,19 +8,76 @@ description: Install stdout-design, scaffold a project, and render your first im
 - **Node.js 18+**
 - **Bun 1.2+** (recommended package manager)
 
-## Install
+<Steps>
+<Step>
+
+### Install
 
 Add the CLI as a dev dependency:
+
+<Tabs items={["bun", "npm", "pnpm", "yarn"]}>
+<Tab value="bun">
 
 ```bash
 bun add -d @stdout-design/cli
 ```
 
+</Tab>
+<Tab value="npm">
+
+```bash
+npm install -D @stdout-design/cli
+```
+
+</Tab>
+<Tab value="pnpm">
+
+```bash
+pnpm add -D @stdout-design/cli
+```
+
+</Tab>
+<Tab value="yarn">
+
+```bash
+yarn add -D @stdout-design/cli
+```
+
+</Tab>
+</Tabs>
+
 Or install globally to use `studio` directly:
+
+<Tabs items={["bun", "npm", "pnpm", "yarn"]}>
+<Tab value="bun">
 
 ```bash
 bun add -g @stdout-design/cli
 ```
+
+</Tab>
+<Tab value="npm">
+
+```bash
+npm install -g @stdout-design/cli
+```
+
+</Tab>
+<Tab value="pnpm">
+
+```bash
+pnpm add -g @stdout-design/cli
+```
+
+</Tab>
+<Tab value="yarn">
+
+```bash
+yarn global add @stdout-design/cli
+```
+
+</Tab>
+</Tabs>
 
 If you installed locally, prefix commands with `npx` (or `bunx`):
 
@@ -28,7 +85,10 @@ If you installed locally, prefix commands with `npx` (or `bunx`):
 npx @stdout-design/cli <command>
 ```
 
-## Scaffold a project
+</Step>
+<Step>
+
+### Scaffold a project
 
 ```bash
 npx @stdout-design/cli init
@@ -40,22 +100,31 @@ npx @stdout-design/cli init
 
 `init` creates:
 
-```
-my-project/
-├── studio.config.ts   template registry, presets, locales
-├── package.json
-├── tsconfig.json
-├── types.d.ts         adds the tw= attribute type for React
-├── templates/         your TSX components
-│   └── bento-feature.tsx
-└── locales/           translation files
-    ├── en.json
-    └── ar.json
-```
+<Files>
+  <File name="studio.config.ts" />
+  <File name="package.json" />
+  <File name="tsconfig.json" />
+  <File name="types.d.ts" />
+  <Folder name="templates" defaultOpen>
+    <File name="bento-feature.tsx" />
+  </Folder>
+  <Folder name="locales" defaultOpen>
+    <File name="en.json" />
+    <File name="ar.json" />
+  </Folder>
+</Files>
+
+- `studio.config.ts` the template registry, presets, and locales.
+- `types.d.ts` adds the `tw=` attribute type for React.
+- `templates/` your TSX components.
+- `locales/` translation files.
 
 The scaffolded `studio.config.ts` registers a single `bento-feature` template with two presets (`instagram-square` 1080×1080 as default, and `x-card`).
 
-## Render your first image
+</Step>
+<Step>
+
+### Render your first image
 
 ```bash
 npx @stdout-design/cli render bento-feature --title "Hello" --out-dir out
@@ -70,7 +139,10 @@ out/bento-feature.en.x-card.0.png
 
 It also writes a `manifest.json` alongside the images summarizing what was rendered.
 
-## Open the live studio
+</Step>
+<Step>
+
+### Open the live studio
 
 ```bash
 npx @stdout-design/cli dev
@@ -78,22 +150,28 @@ npx @stdout-design/cli dev
 
 This starts the dev server on `http://localhost:3030` with a live preview, an auto-generated prop panel, preset tabs, and locale switching. See [Live Studio](/docs/dev-studio) for the full walkthrough.
 
+</Step>
+</Steps>
+
 ## Project structure
 
-```
-my-project/
-├── studio.config.ts      template registry, presets, locales, fonts
-├── templates/            your TSX components
-├── data/                 CSV/JSON for batch renders
-├── locales/              translation files
-├── out/                  rendered assets (gitignored)
-└── .studio-cache/        render cache (gitignored)
-```
+<Files>
+  <File name="studio.config.ts" />
+  <Folder name="templates" />
+  <Folder name="data" />
+  <Folder name="locales" />
+  <Folder name="out" />
+  <Folder name=".studio-cache" />
+</Files>
 
+- `studio.config.ts` template registry, presets, locales, fonts.
 - `templates/` one `.tsx` file per template. See [Writing Templates](/docs/templates).
 - `data/` CSV or JSON files for data-driven batch rendering. See [Batch Rendering](/docs/batch-rendering).
 - `locales/` per-locale translation JSON. See [Internationalization](/docs/internationalization).
-- `out/` and `.studio-cache/` are gitignored by the scaffold and rebuilt as needed.
+- `out/` rendered assets (gitignored).
+- `.studio-cache/` render cache (gitignored).
+
+`out/` and `.studio-cache/` are gitignored by the scaffold and rebuilt as needed.
 
 ## Next steps
 

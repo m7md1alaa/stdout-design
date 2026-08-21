@@ -206,9 +206,7 @@ html.light:has(#nd-docs-layout) ::selection {
 }
 
 /* ============================================================
-   CODE BLOCKS — dot-grid texture matches the hero's TerminalPane,
-   plus a single reveal shimmer on the first block in view (see
-   CodeRevealOnce), never a looping effect scattered across the page.
+   CODE BLOCKS — dot-grid texture matches the hero's TerminalPane.
    ============================================================ */
 #nd-page figure.shiki {
   position: relative;
@@ -228,30 +226,6 @@ html.light:has(#nd-docs-layout) ::selection {
     transparent 0
   );
   background-size: 16px 16px;
-  pointer-events: none;
-}
-
-@keyframes code-reveal-sweep {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(420%);
-  }
-}
-
-#nd-page figure.shiki.code-reveal-once::after {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  width: 30%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--accent) 45%, transparent) 50%,
-    transparent 100%
-  );
-  animation: code-reveal-sweep 1.1s ease-out 1;
   pointer-events: none;
 }
 

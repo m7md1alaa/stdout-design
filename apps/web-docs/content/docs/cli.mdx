@@ -26,16 +26,28 @@ Scaffold a new studio project.
 studio init [projectDir] [options]
 ```
 
-| Option            | Description                         |
-| ----------------- | ----------------------------------- |
-| `-y, --yes`       | Skip prompts, use defaults          |
-| `--install-skill` | Install the agent skill after setup |
+<TypeTable
+  type={{
+    "-y, --yes": {
+      type: "boolean",
+      description: "Skip prompts, use defaults",
+    },
+    "--install-skill": {
+      type: "boolean",
+      description: "Install the agent skill after setup",
+    },
+  }}
+/>
 
 Skips scaffolding if a `studio.config.ts` already exists. See [Getting Started](/docs/getting-started).
 
-### Non-interactive / CI mode
+<Accordions>
+<Accordion title="Non-interactive / CI mode">
 
 `init` skips every prompt and uses defaults (project name `studio-project`, the `bento-feature` template, `en`+`ar` locales, dependencies installed) when `-y`/`--yes` is passed, **or automatically** when it detects a CI environment: `CI=true`/`CI=1`, `CIRCLECI=true`, `GITHUB_ACTIONS`, or `GITLAB_CI` is set. Useful for scaffolding a project from a script or agent without wiring `--yes` explicitly.
+
+</Accordion>
+</Accordions>
 
 ## `studio update`
 
@@ -45,11 +57,17 @@ Update an existing studio project to the latest CLI version adds the CLI depende
 studio update [projectDir] [options]
 ```
 
-| Option      | Description               |
-| ----------- | ------------------------- |
-| `-y, --yes` | Skip confirmation prompts |
+<TypeTable
+  type={{
+    "-y, --yes": {
+      type: "boolean",
+      description: "Skip confirmation prompts",
+    },
+  }}
+/>
 
-### Version gate
+<Accordions>
+<Accordion title="Version gate">
 
 `update` compares your **installed** CLI version (from your own `package.json`) against the **latest published** version before doing anything. If a newer CLI is available, it refuses to proceed:
 
@@ -60,7 +78,8 @@ Run `npm install @stdout-design/cli@latest` first, then re-run `studio update`.
 
 Upgrade the CLI first, then run `studio update` again.
 
-### What gets merged
+</Accordion>
+<Accordion title="What gets merged">
 
 `update` diffs your `studio.config.ts` against the scaffold defaults for your installed version and:
 
@@ -71,6 +90,9 @@ Upgrade the CLI first, then run `studio update` again.
 - Bumps the `@stdout-design/cli` dependency in `package.json` to match.
 
 If nothing would change, it prints "Project is already up to date." and exits without touching any files. Otherwise it prints a diff-style summary and asks for confirmation (skipped with `--yes`).
+
+</Accordion>
+</Accordions>
 
 ## `studio render`
 
@@ -86,15 +108,42 @@ studio render <template> [props...] [options]
 studio render bento-feature title="Hello" stat="10k users"
 ```
 
-| Option               | Description                                          |
-| -------------------- | ---------------------------------------------------- |
-| `--data <path>`      | CSV or JSON data file for batch rendering            |
-| `--preset <ids>`     | Comma-separated preset IDs. Defaults to all presets  |
-| `--locale <locales>` | Comma-separated locale codes. Defaults to config     |
-| `--out-dir <path>`   | Output directory (default: `config.outDir` or `out`) |
-| `--concurrency <n>`  | Max concurrent renders in batch mode (default `4`)   |
-| `--fail-fast`        | Stop the batch on the first error                    |
-| `--json`             | Output the manifest as JSON                          |
+<TypeTable
+  type={{
+    "--data <path>": {
+      type: "string",
+      description: "CSV or JSON data file for batch rendering",
+    },
+    "--preset <ids>": {
+      type: "string",
+      description: "Comma-separated preset IDs.",
+      default: "all presets",
+    },
+    "--locale <locales>": {
+      type: "string",
+      description: "Comma-separated locale codes.",
+      default: "config",
+    },
+    "--out-dir <path>": {
+      type: "string",
+      description: "Output directory",
+      default: "config.outDir or out",
+    },
+    "--concurrency <n>": {
+      type: "number",
+      description: "Max concurrent renders in batch mode",
+      default: "4",
+    },
+    "--fail-fast": {
+      type: "boolean",
+      description: "Stop the batch on the first error",
+    },
+    "--json": {
+      type: "boolean",
+      description: "Output the manifest as JSON",
+    },
+  }}
+/>
 
 Examples:
 
@@ -109,7 +158,8 @@ studio render stat-card --preset instagram-square --locale en --out-dir out
 studio render stat-card --data data/stats.csv --preset instagram-square,x-card --locale en,ar --out-dir out
 ```
 
-### Output
+<Accordions>
+<Accordion title="Output">
 
 Each render produces one PNG per **(preset × locale × data row)**, named:
 
@@ -129,11 +179,15 @@ A `manifest.json` is written to the output directory alongside the images, summa
 
 Exit code is `1` if any render failed. Use `--json` to get the manifest as machine-readable output.
 
-### Flag notes
+</Accordion>
+<Accordion title="Flag notes">
 
 - `--preset` and `--locale` are **singular** and accept comma-separated values. Omit them to render every configured preset and locale.
 - `--concurrency` is accepted but rendering is currently sequential; it has no effect on output.
 - Unknown template IDs trigger a "Did you mean …?" suggestion based on closest match.
+
+</Accordion>
+</Accordions>
 
 ## `studio dev`
 
@@ -143,9 +197,15 @@ Start the live preview studio (see [Live Studio](/docs/dev-studio)).
 studio dev [rootDir] [options]
 ```
 
-| Option           | Description                     |
-| ---------------- | ------------------------------- |
-| `-p, --port <n>` | Port to run on (default `3030`) |
+<TypeTable
+  type={{
+    "-p, --port <n>": {
+      type: "number",
+      description: "Port to run on",
+      default: "3030",
+    },
+  }}
+/>
 
 `--open` is accepted but currently a no-op open `http://localhost:3030` manually.
 
@@ -159,9 +219,14 @@ Show cache statistics location, compiled/pixel entry counts, disk usage, and the
 studio cache stats [rootDir] [options]
 ```
 
-| Option   | Description    |
-| -------- | -------------- |
-| `--json` | Output as JSON |
+<TypeTable
+  type={{
+    "--json": {
+      type: "boolean",
+      description: "Output as JSON",
+    },
+  }}
+/>
 
 ## `studio cache clean`
 
@@ -171,9 +236,14 @@ Clear the render cache entirely.
 studio cache clean [rootDir] [options]
 ```
 
-| Option   | Description    |
-| -------- | -------------- |
-| `--json` | Output as JSON |
+<TypeTable
+  type={{
+    "--json": {
+      type: "boolean",
+      description: "Output as JSON",
+    },
+  }}
+/>
 
 See [Caching](/docs/caching) for how the cache works.
 
@@ -189,9 +259,14 @@ Install the stdout-design agent skill for AI coding agents.
 studio skill install [options]
 ```
 
-| Option      | Description               |
-| ----------- | ------------------------- |
-| `-y, --yes` | Skip confirmation prompts |
+<TypeTable
+  type={{
+    "-y, --yes": {
+      type: "boolean",
+      description: "Skip confirmation prompts",
+    },
+  }}
+/>
 
 See [AI Agents](/docs/agents).
 

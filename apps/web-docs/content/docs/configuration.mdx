@@ -40,16 +40,46 @@ export default config;
 
 ## Fields
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `templates` | `Record<string, { componentPath, description? }>` | **Yes** | The template registry (see below) |
-| `presets` | `Array<{ id, width, height, platform }>` | **Yes** | Output sizes (see below) |
-| `defaultPreset` | `string` | No | Preset ID used by default |
-| `locales` | `string[]` | No | Supported locale codes, e.g. `["en", "ar"]` |
-| `outDir` | `string` | No | Output directory (default `./out`) |
-| `fonts` | `Record<locale, FontConfig[]>` | No | Per-locale font config (see Internationalization) |
-| `images` | `ImagePolicy` | No | Remote image/emoji fetch policy (see below) default denies all |
-| `scaffoldVersion` | `string` | No | Written by `init`/`update`; not for manual edits |
+<TypeTable
+  type={{
+    templates: {
+      type: "Record<string, { componentPath, description? }>",
+      description: "The template registry (see below)",
+      required: true,
+    },
+    presets: {
+      type: "Array<{ id, width, height, platform }>",
+      description: "Output sizes (see below)",
+      required: true,
+    },
+    defaultPreset: {
+      type: "string",
+      description: "Preset ID used by default",
+    },
+    locales: {
+      type: "string[]",
+      description: 'Supported locale codes, e.g. ["en", "ar"]',
+    },
+    outDir: {
+      type: "string",
+      description: "Output directory",
+      default: "./out",
+    },
+    fonts: {
+      type: "Record<locale, FontConfig[]>",
+      description: "Per-locale font config (see Internationalization)",
+    },
+    images: {
+      type: "ImagePolicy",
+      description: "Remote image/emoji fetch policy (see below)",
+      default: "denies all",
+    },
+    scaffoldVersion: {
+      type: "string",
+      description: "Written by `init`/`update`; not for manual edits",
+    },
+  }}
+/>
 
 ### `templates`
 
@@ -103,13 +133,36 @@ images: {
 },
 ```
 
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `allowUrl` | `(url: string) => boolean` | blocks every URL | Return `true` for URLs you want fetched. |
-| `maxBytes` | `number` | 32 MiB | Reject an image body larger than this. |
-| `timeout` | `number` (ms) | 5000 | Give up fetching an image after this long. |
-| `fetch` | `typeof fetch` | `globalThis.fetch` | Use a custom fetch e.g. to add auth headers or go through a proxy. |
-| `emoji` | `EmojiType \| "from-font"` | off | Turn emoji into rendered glyphs. `"from-font"` uses a color emoji font you've registered instead of fetching. |
+<TypeTable
+  type={{
+    allowUrl: {
+      type: "(url: string) => boolean",
+      description: "Return `true` for URLs you want fetched.",
+      default: "blocks every URL",
+    },
+    maxBytes: {
+      type: "number",
+      description: "Reject an image body larger than this.",
+      default: "32 MiB",
+    },
+    timeout: {
+      type: "number (ms)",
+      description: "Give up fetching an image after this long.",
+      default: "5000",
+    },
+    fetch: {
+      type: "typeof fetch",
+      description: "Use a custom fetch e.g. to add auth headers or go through a proxy.",
+      default: "globalThis.fetch",
+    },
+    emoji: {
+      type: 'EmojiType | "from-font"',
+      description:
+        'Turn emoji into rendered glyphs. "from-font" uses a color emoji font you\'ve registered instead of fetching.',
+      default: "off",
+    },
+  }}
+/>
 
 A blocked URL shows up as a clear render error naming the URL, so you know to add it to `allowUrl` rather than chasing a mystery failure.
 

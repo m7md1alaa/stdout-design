@@ -133,6 +133,38 @@ export function BentoFeature({ title, rows }: Props) {
   ],
 };
 
+export const gallery = {
+  eyebrow: "$ ls ./out/",
+  headline: "One bento-feature.tsx. Every crop it ships as.",
+  body: "Same component, same data file, rendered once per target — no manual re-export when a new placement shows up.",
+  items: [
+    {
+      file: "og-image.png",
+      dims: "1200×630",
+      ratio: 1200 / 630,
+      src: "/gallery/og-image.png",
+    },
+    {
+      file: "x-card.png",
+      dims: "1200×675",
+      ratio: 1200 / 675,
+      src: "/gallery/x-card.png",
+    },
+    {
+      file: "instagram-square.png",
+      dims: "1080×1080",
+      ratio: 1,
+      src: "/gallery/instagram-square.png",
+    },
+    {
+      file: "instagram-story.png",
+      dims: "1080×1920",
+      ratio: 1080 / 1920,
+      src: "/gallery/instagram-story.png",
+    },
+  ],
+};
+
 export const footer = {
   headline: "Render your first asset tonight.",
   body: "Open source, local-first, no account required.",

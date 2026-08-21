@@ -5,6 +5,7 @@ import { FeaturesGrid } from "@/components/marketing/features-grid";
 import { Hero } from "@/components/marketing/hero";
 import { InterfaceShowcase } from "@/components/marketing/interface-showcase";
 import { LogosStrip } from "@/components/marketing/logos-strip";
+// import { OutputGallery } from "@/components/marketing/output-gallery";
 import { PipelineShowcase } from "@/components/marketing/pipeline-showcase";
 import { appName } from "@/lib/shared";
 
@@ -26,8 +27,8 @@ export default function HomePage() {
     <main>
       <Hero />
       <LogosStrip />
-      {/* Pipeline diagram — visually explains the render flow */}
       <PipelineShowcase />
+      {/* <OutputGallery /> */}
       <FeaturesGrid />
       <InterfaceShowcase />
       <CtaFooter />

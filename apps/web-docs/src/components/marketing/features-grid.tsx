@@ -8,18 +8,12 @@ export function FeaturesGrid() {
           {features.eyebrow}
         </p>
 
-        {/* Heading with glow */}
-        <div className="relative mb-12 inline-block">
-          <h2 className="max-w-2xl text-2xl font-medium leading-snug text-foreground sm:text-3xl">
-            {features.headline}
-          </h2>
-          <div
-            aria-hidden="true"
-            className="title-glow max-w-2xl text-2xl font-medium leading-snug sm:text-3xl"
-          >
-            {features.headline}
-          </div>
-        </div>
+        {/* Plain heading — the phosphor glow is reserved for the hero and
+            CTA footer, the two dither-backed bookends, so it reads as a
+            deliberate accent instead of a default applied everywhere. */}
+        <h2 className="mb-12 max-w-2xl text-2xl font-medium leading-snug text-foreground sm:text-3xl">
+          {features.headline}
+        </h2>
 
         <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
           {features.items.map((feature) => (

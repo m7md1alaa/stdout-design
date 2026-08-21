@@ -25,13 +25,35 @@ Content-Type: application/json
 }
 ```
 
-| Field | Required | Description |
-| --- | --- | --- |
-| `templateId` | Yes | A template ID from `studio.config.ts` |
-| `props` | Yes | Raw prop values (validated server-side against the template's schema) |
-| `preset` | No | Preset ID defaults to `config.defaultPreset` |
-| `locale` | No | Locale code merges that locale's translation data into props |
-| `autoDetected` | No | Set `true` to skip locale-file lookup (used by the studio's RTL auto-detect) |
+<TypeTable
+  type={{
+    templateId: {
+      type: "string",
+      description: "A template ID from `studio.config.ts`",
+      required: true,
+    },
+    props: {
+      type: "Record<string, unknown>",
+      description:
+        "Raw prop values (validated server-side against the template's schema)",
+      required: true,
+    },
+    preset: {
+      type: "string",
+      description: "Preset ID",
+      default: "config.defaultPreset",
+    },
+    locale: {
+      type: "string",
+      description: "Locale code merges that locale's translation data into props",
+    },
+    autoDetected: {
+      type: "boolean",
+      description:
+        "Set `true` to skip locale-file lookup (used by the studio's RTL auto-detect)",
+    },
+  }}
+/>
 
 Response is the raw image bytes (`Content-Type: image/png`), with:
 

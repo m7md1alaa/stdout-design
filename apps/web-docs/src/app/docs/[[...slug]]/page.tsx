@@ -10,7 +10,6 @@ import { createRelativeLink } from "fumadocs-ui/mdx";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { CodeRevealOnce } from "@/components/docs/code-reveal-once";
 import { getMDXComponents } from "@/components/mdx";
 import { gitConfig } from "@/lib/shared";
 import { getPageImageUrl, getPageMarkdownUrl, source } from "@/lib/source";
@@ -49,7 +48,6 @@ export default async function Page(props: PageProps<"/docs/[[...slug]]">) {
           })}
         />
       </DocsBody>
-      <CodeRevealOnce />
     </DocsPage>
   );
 }
