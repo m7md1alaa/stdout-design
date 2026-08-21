@@ -7,6 +7,10 @@ export interface InstallAudience {
   id: string;
   label: string;
   command: string;
+  /** If set, this is copied to the clipboard instead of `command` — a
+   * natural-language instruction meant to be pasted into an agent chat
+   * rather than run in a shell. The chip still displays `command`. */
+  prompt?: string;
 }
 
 interface InstallToggleProps {
@@ -43,7 +47,7 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
 
   async function handleCopy() {
     if (!active) return;
-    await navigator.clipboard.writeText(active.command);
+    await navigator.clipboard.writeText(active.prompt ?? active.command);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -78,7 +82,11 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
         type="button"
         onClick={handleCopy}
         className="group flex cursor-copy items-center gap-2 rounded-full border border-border bg-black/60 px-4 py-1.5 shadow-sm shadow-black/30 backdrop-blur-sm transition-[border-color,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-primary/50 active:scale-[0.98]"
-        aria-label={`Copy ${active.command}`}
+        aria-label={
+          active.prompt
+            ? "Copy agent setup prompt"
+            : `Copy ${active.command}`
+        }
       >
         <span
           className="select-none font-mono text-xs text-accent"
@@ -123,7 +131,11 @@ export function InstallToggle({ audiences }: InstallToggleProps) {
           />
         </span>
         <span className="sr-only" aria-live="polite">
-          {copied ? "Copied" : "Copy to clipboard"}
+          {copied
+            ? "Copied"
+            : active.prompt
+              ? "Copy agent setup prompt"
+              : "Copy to clipboard"}
         </span>
       </button>
     </div>

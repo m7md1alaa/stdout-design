@@ -18,6 +18,8 @@ export const hero = {
       id: "agents",
       label: "For agents",
       command: "npx @stdout-design/cli init --install-skill",
+      prompt:
+        "Set up stdout-design in this repo: run `npx @stdout-design/cli init --install-skill`, then use the installed skill to scaffold render templates from my existing TSX components and generate App Store, Open Graph, and social assets.",
     },
   ],
 };
