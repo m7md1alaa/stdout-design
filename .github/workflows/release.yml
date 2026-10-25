@@ -26,11 +26,13 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      # changesets/action@v2 no longer writes an .npmrc from NPM_TOKEN;
-      # setup-node writes one that reads NODE_AUTH_TOKEN for `npm publish`.
+      # Publishing uses npm Trusted Publishing (OIDC via `id-token: write`),
+      # not a token. It needs npm >= 11.5.1, so pin Node 24 and update npm.
       - uses: actions/setup-node@v7
         with:
+          node-version: 24
           registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
 
       - run: bun install --frozen-lockfile
       - run: bun --bun run check
@@ -47,5 +49,3 @@ jobs:
           commit-message: "chore: release packages"
           create-github-releases: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
