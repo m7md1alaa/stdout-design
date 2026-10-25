@@ -43,6 +43,46 @@ describe("createFetchFontsFromConfig", () => {
     });
   });
 
+  describe("fetcher: default entry fallback", () => {
+    const anton = {
+      family: "Anton",
+      source: "google" as const,
+      weights: [400],
+    };
+
+    it("uses the default entry for locales without their own", async () => {
+      const fetchFonts = createFetchFontsFromConfig({ default: [anton] })!;
+
+      await fetchFonts("en");
+
+      expect(mockGoogleFonts).toHaveBeenCalledWith([
+        { name: "Anton", weight: [400] },
+      ]);
+    });
+
+    it("prefers a locale's own entry over the default", async () => {
+      mockGoogleFonts.mockClear();
+      const fetchFonts = createFetchFontsFromConfig({
+        default: [anton],
+        es: [{ family: "Inter", source: "google", weights: [700] }],
+      })!;
+
+      await fetchFonts("es");
+
+      expect(mockGoogleFonts).toHaveBeenCalledWith([
+        { name: "Inter", weight: [700] },
+      ]);
+    });
+
+    it("does not apply the default entry to Arabic locales", async () => {
+      const fetchFonts = createFetchFontsFromConfig({ default: [anton] })!;
+
+      const result = await fetchFonts("ar-EG");
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe("fetcher: locale lookup edge cases", () => {
     it("returns null for any locale when config is empty", async () => {
       const fetchFonts = createFetchFontsFromConfig({})!;

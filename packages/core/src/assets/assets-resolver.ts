@@ -84,6 +84,23 @@ const classifyLocale = (
 
 const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
 
+const cachedFetch = async (
+  key: string,
+  fetch: () => Promise<FontResolutionResult | null>
+): Promise<FontResolutionResult | null> => {
+  const cached = fontCache.get(key);
+  if (cached) {
+    return await cached;
+  }
+  const promise = fetch();
+  fontCache.set(key, promise);
+  const resolution = await promise;
+  if (!resolution) {
+    fontCache.delete(key);
+  }
+  return resolution;
+};
+
 export const clearFontCache = (): void => {
   fontCache.clear();
 };
@@ -111,19 +128,19 @@ export const resolveAssetsForLocale = async (
   if (options?.preResolvedFonts) {
     fonts = options.preResolvedFonts;
     fontFamilies = options.preResolvedFontFamilies;
-  } else if (needsArabic) {
-    const fetch = options?.fetchFonts ?? defaultFetchFonts;
-    const cached = fontCache.get(localeId);
-    let resolution: FontResolutionResult | null;
-    if (cached) {
-      resolution = await cached;
-    } else {
-      const promise = fetch(localeId);
-      fontCache.set(localeId, promise);
-      resolution = await promise;
-      if (!resolution) {
-        fontCache.delete(localeId);
-      }
+  } else {
+    // Config fonts apply to every locale; Arabic falls back to Noto Sans
+    // Arabic when the config has nothing for it.
+    let resolution = options?.fetchFonts
+      ? await cachedFetch(
+          `config:${localeId}`,
+          () => options.fetchFonts?.(localeId) ?? Promise.resolve(null)
+        )
+      : null;
+    if (!resolution && needsArabic) {
+      resolution = await cachedFetch(`arabic:${localeId}`, () =>
+        defaultFetchFonts(localeId)
+      );
     }
 
     if (resolution) {

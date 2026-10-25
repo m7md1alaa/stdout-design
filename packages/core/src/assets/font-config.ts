@@ -27,6 +27,19 @@ const loadLocalFontDescriptor = async (
 const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
   c.source === "local" && typeof c.path === "string" && c.path.length > 0;
 
+/**
+ * The `default` entry covers every locale without its own entry — and the
+ * no-locale render, whose id is `default`. Arabic locales are excluded from
+ * the fallback: a Latin display face has no Arabic glyphs, so they keep the
+ * resolver's Noto Sans Arabic unless they declare fonts explicitly.
+ */
+const resolveLocaleFontConfigs = (
+  fontsConfig: Record<string, FontConfig[]>,
+  localeId: string
+): FontConfig[] | undefined =>
+  fontsConfig[localeId] ??
+  (localeId?.startsWith("ar") ? undefined : fontsConfig.default);
+
 export const createFetchFontsFromConfig = (
   fontsConfig?: Record<string, FontConfig[]> | undefined,
   configDir?: string
@@ -36,7 +49,7 @@ export const createFetchFontsFromConfig = (
   }
 
   return async function fetchFontsFromConfig(localeId: string) {
-    const configs = fontsConfig[localeId];
+    const configs = resolveLocaleFontConfigs(fontsConfig, localeId);
     if (!configs || configs.length === 0) {
       return null;
     }
