@@ -43,6 +43,57 @@ const resolveLocaleFontConfigs = (
     ? fontsConfig.default
     : undefined);
 
+/**
+ * Loads font configs: local files from disk, the rest from Google Fonts.
+ * Returns null when nothing loads, so callers can fall back.
+ */
+export const loadFontConfigs = async (
+  configs: readonly FontConfig[],
+  label: string,
+  configDir?: string
+): Promise<FontResolutionResult | null> => {
+  if (configs.length === 0) {
+    return null;
+  }
+
+  try {
+    const localConfigs = configs.filter(isLocalConfig);
+    const googleConfigs = configs.filter((c) => !isLocalConfig(c));
+
+    const localFonts: Font[] = await Promise.all(
+      localConfigs.map((c) =>
+        loadLocalFontDescriptor(c.family, c.path, c.weights?.[0], configDir)
+      )
+    );
+
+    const googleFontDescriptors: Font[] =
+      googleConfigs.length > 0
+        ? await googleFonts(
+            googleConfigs.map((c) => ({
+              name: c.family,
+              weight: [...(c.weights ?? [400, 700])],
+            }))
+          )
+        : [];
+
+    const fonts = [...localFonts, ...googleFontDescriptors];
+    const fontFamilies = fonts
+      .filter(isFontObject)
+      .map((f) => String(f.name ?? ""))
+      .filter(Boolean);
+
+    logDebug("fonts resolved", {
+      count: fonts.length,
+      label,
+      names: fontFamilies,
+    });
+    return fonts.length > 0 ? { fontFamilies, fonts } : null;
+  } catch (error) {
+    logDebug("fonts failed to load", { error: String(error), label });
+    return null;
+  }
+};
+
 export const createFetchFontsFromConfig = (
   fontsConfig?: Record<string, FontConfig[]> | undefined,
   configDir?: string
@@ -52,52 +103,7 @@ export const createFetchFontsFromConfig = (
   }
 
   return async function fetchFontsFromConfig(localeId: string) {
-    const configs = resolveLocaleFontConfigs(fontsConfig, localeId);
-    if (!configs || configs.length === 0) {
-      return null;
-    }
-
-    try {
-      const localConfigs = configs.filter(isLocalConfig);
-      const googleConfigs = configs.filter((c) => !isLocalConfig(c));
-
-      const localFonts: Font[] = await Promise.all(
-        localConfigs.map((c) =>
-          loadLocalFontDescriptor(c.family, c.path, c.weights?.[0], configDir)
-        )
-      );
-
-      let googleFontDescriptors: Font[] = [];
-
-      if (googleConfigs.length > 0) {
-        const families = googleConfigs.map((c) => ({
-          name: c.family,
-          weight: (c.weights ?? [400, 700]) as number[],
-        }));
-
-        googleFontDescriptors = await googleFonts(families);
-      }
-
-      const fonts = [...localFonts, ...googleFontDescriptors];
-
-      const fontFamilies = fonts
-        .filter(isFontObject)
-        .map((f) => String(f.name ?? ""))
-        .filter(Boolean);
-
-      logDebug("fonts resolved from config", {
-        count: fonts.length,
-        localeId,
-        names: fontFamilies,
-      });
-
-      return { fontFamilies, fonts };
-    } catch (error) {
-      logDebug("fonts from config failed", {
-        error: String(error),
-        localeId,
-      });
-      return null;
-    }
+    const configs = resolveLocaleFontConfigs(fontsConfig, localeId) ?? [];
+    return await loadFontConfigs(configs, `config:${localeId}`, configDir);
   };
 };

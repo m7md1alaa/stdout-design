@@ -16,11 +16,11 @@ A review of the four poster starters (`launch-hero`, `bento-feature`, `retro-pos
 
 ## Decision
 
-1. **`defineTemplate({ id, schema, fonts, render: (props, ctx) => … })` is the template interface**, exported from a new `@stdout-design/core/template` subpath and re-exported as `@stdout-design/cli/template`. The schema describes user content only; a type rejects the reserved keys `locale` and `ctx`.
-2. **The render context `ctx` is built once, in `orchestrateRender`** (the single entry point from ADR-0009), so batch and the live preview cannot disagree. It carries `dir`, `start`/`end`, `flip()`, `canvas`, `type()` (per-script typography), and typed `fonts`. Core sets `dir` and `lang` on the root.
+1. **`defineTemplate({ schema, fonts, render: (props, ctx) => … })` is the template interface**, exported from a new `@stdout-design/core/template` subpath and re-exported as `@stdout-design/cli/template`. The schema describes user content only; a type rejects the reserved keys `locale` and `ctx`.
+2. **The render context `ctx` is built once, in `orchestrateRender`** (the single entry point from ADR-0009), so batch and the live preview cannot disagree. It carries `locale`, `dir`, `canvas`, `flip()`, `type()` (per-script typography), and typed `fonts`. Core sets `dir` and `lang` on the root, so logical CSS properties (`insetInlineStart`, `marginInlineEnd`) mirror on their own; `flip()` covers what CSS does not (rotation, SVG offsets). Both cache keys hash the locale, canvas, and loaded fonts with the props.
 3. **`classifyLocale` in `shared/locale.ts` (pure, so every layer may use it) is the only place that maps a locale to script and direction**, through closed lookup tables (`Record<Script, Direction>`) the compiler checks for completeness. dev-server's `/config` sends each locale's `dir` so web-ui stops testing for `"ar"`.
-4. **Schema fields record their kind** (`field.color()`, `field.text()`, `field.list()`, `field.object()`) and whether they are translatable, via zod metadata that reaches web-ui through the JSON schema. The studio reads the kind; `mergeLocaleProps` walks the schema and replaces only translatable text, at any depth.
-5. **Templates declare their fonts**; the pipeline loads the declared families, and `studio.config.ts` fonts become overrides. Locale font entries add to `default` instead of replacing it.
+4. **Schema fields record their kind** (`field.color()`, `field.text()`, `field.list()`, `field.object()`) and whether they are translatable, via zod metadata that reaches web-ui through the JSON schema. The studio reads the kind; `applyTranslations` walks the schema and replaces only translatable text, at any depth, without changing list lengths. Translated props are validated again.
+5. **Templates declare their fonts**; the pipeline loads the declared families on every locale, and `studio.config.ts` fonts become overrides: a family the config loads is the config's to define (a local file wins over Google). A non-Latin locale with no config entry also gets its script's Noto face, unless the template names that face.
 6. **Module boundaries are data plus a test.** `packages/config/boundaries/rules.ts` holds the core layer graph (with `types`-only edges, e.g. `assets → engine`), the I/O-free layers, the workspace dependency graph, the template import allowlist, and a list of deliberate exceptions, each with a reason. `boundaries.test.ts` walks every source file with a real parser and fails on any edge the tables don't allow, on a core folder or workspace missing from the tables, and on an exception nothing uses anymore. It runs in `turbo test`, so CI enforces it.
 7. **Legacy templates keep working until 1.0.** A template not built with `defineTemplate` still receives `props.locale`, now on both paths, with a one-time deprecation warning.
 
@@ -37,7 +37,7 @@ A review of the four poster starters (`launch-hero`, `bento-feature`, `retro-pos
 - Templates written with `defineTemplate` are no longer plain React components; they need the pipeline (or a test helper) to supply `ctx`.
 - The per-script typography table is opinionated; authors who want different Arabic leading need an override.
 - The boundary test reads static imports and literal dynamic imports. A computed `import(path)` is invisible to it; `batch/loaders.ts` uses one deliberately, to load user templates.
-- Adding declared template fonts to `default` changes which faces load for Arabic projects that relied on the resolver's Noto Sans Arabic alone.
+- Arabic and Hebrew renders now load the template's declared faces alongside the Noto fallback, so more fonts download per render (once per process, cached by family set).
 
 ## Rollout
 

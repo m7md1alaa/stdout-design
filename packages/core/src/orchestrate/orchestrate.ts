@@ -19,6 +19,7 @@ import type { PropSchema } from "../shared/validation.js";
 import { validateProps } from "../shared/validation.js";
 import { legacyTemplateDefinition } from "../template/define-template.js";
 import type { TemplateDefinition } from "../template/define-template.js";
+import { declaredFontConfigs } from "../template/fonts.js";
 import { createRenderContext, toCanvas } from "../template/render-context.js";
 import type { Canvas } from "../template/render-context.js";
 import type {
@@ -149,6 +150,7 @@ const prepPipeline = async (input: {
     locale,
     validated as Record<string, unknown>,
     {
+      declaredFonts: definition ? declaredFontConfigs(definition.fonts) : [],
       fetchFonts,
       loadLocaleData,
       preResolvedFontFamilies,
@@ -167,11 +169,12 @@ const prepPipeline = async (input: {
       : translated;
 
   const localeInfo = classifyLocale(locale);
-  // Everything the compiled output depends on: the props and the render
-  // context. Both cache keys hash this, so a locale or canvas change never
-  // serves another render's output.
+  // Everything the output depends on besides the template: the props, the
+  // render context, and the loaded fonts. Both cache keys hash this, so a
+  // locale, canvas, or font change never serves another render's output.
   const propsJSON = JSON.stringify({
     canvas: [canvas.width, canvas.height],
+    fonts: resolvedFontFamilies ?? [],
     locale: localeInfo.id,
     props: merged,
   });
