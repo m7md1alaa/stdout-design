@@ -16,8 +16,7 @@ createRoot(rootElement).render(
   <StrictMode>
     <HotkeysProvider
       defaultOptions={{
-        hotkey: { preventDefault: true },
-        hotkeySequence: { timeout: 1200 },
+        hotkey: { preventDefault: true, timeout: 1200 },
       }}
     >
       <CommandScopeProvider>

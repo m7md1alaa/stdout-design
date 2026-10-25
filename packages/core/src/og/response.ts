@@ -33,6 +33,7 @@ export const createOgResponse = async (
     height: explicitHeight,
     width: explicitWidth,
     devicePixelRatio: explicitDpr,
+    stylesheets,
     ...rest
   } = options ?? {};
 
@@ -47,6 +48,8 @@ export const createOgResponse = async (
     },
     height: explicitHeight ?? OG_DEFAULT_HEIGHT,
     ...rest,
+    // Takumi 2.17 deprecated `stylesheets` in favour of `css`.
+    css: stylesheets,
     lang: locale ?? rest.lang,
     onError: (error: unknown) => {
       console.error("[og] render failed", error);

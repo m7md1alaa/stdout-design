@@ -13,7 +13,7 @@ const asPropValidationError = (
   error: unknown
 ): { issues: PropValidationIssue[] } => {
   if (!(error instanceof PropValidationError)) {
-    throw new Error("Expected PropValidationError");
+    throw new TypeError("Expected PropValidationError");
   }
   return error;
 };

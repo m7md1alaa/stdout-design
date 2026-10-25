@@ -60,16 +60,30 @@ export interface SharePayload {
   props: Record<string, unknown>;
 }
 
-const encodeBase64Url = (json: string): string =>
-  btoa(unescape(encodeURIComponent(json)))
+// UTF-8 <-> base64url. `btoa`/`atob` work on byte strings, so the text goes
+// through TextEncoder/TextDecoder; output matches the older
+// `btoa(unescape(encodeURIComponent(json)))` form, so existing links decode.
+const utf8Decoder = new TextDecoder("utf-8", { fatal: true });
+
+const encodeBase64Url = (json: string): string => {
+  let binary = "";
+  for (const byte of new TextEncoder().encode(json)) {
+    binary += String.fromCodePoint(byte);
+  }
+  return btoa(binary)
     .replaceAll("+", "-")
     .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+    .replace(/[=]+$/u, "");
+};
 
 const decodeBase64Url = (encoded: string): string => {
   const padded = encoded.replaceAll("-", "+").replaceAll("_", "/");
   const withPadding = padded + "=".repeat((4 - (padded.length % 4)) % 4);
-  return decodeURIComponent(escape(atob(withPadding)));
+  const bytes = Uint8Array.from(
+    atob(withPadding),
+    (char) => char.codePointAt(0) ?? 0
+  );
+  return utf8Decoder.decode(bytes);
 };
 
 export const buildShareUrl = (payload: SharePayload): string => {

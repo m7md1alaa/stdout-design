@@ -7,14 +7,13 @@
  * `moduleResolution: "nodenext"`. This file re-declares the v2 surface we
  * actually use, backed by the real runtime export.
  *
- * TODO(verify-on-upgrade): the v1 packaging bug this shim worked around
- * has not been independently re-verified against the v2 release actually
- * installed. Once upgraded, run the same isolated-probe check described
- * in the v1 version of this file (import the types directly from
- * "takumi-js/node" in a throwaway file and see if `render`/`measure`/
- * `registerFont` resolve). If they do, delete this file and switch all
- * importers back to `takumi-js/node` directly. Tracked against the
- * upstream repo: https://github.com/kane50613/takumi
+ * TODO: the v1 packaging bug this shim worked around is fixed as of
+ * takumi-js 2.17.1 -- a throwaway file importing `Renderer` from
+ * "takumi-js/node" resolves `render`/`measure`/`registerFont` cleanly.
+ * Because of the `as unknown` cast below, these hand-written types can
+ * silently drift from the real ones (2.17 inserted a `key` parameter into
+ * `registerFont`), so prefer deleting this file and importing from
+ * `takumi-js/node` directly. Upstream: https://github.com/kane50613/takumi
  *
  * v2 breaking changes reflected below (see /docs/upgrade/v2):
  * - `new Renderer()` -> `new Renderer(options?)`. The constructor takes an
@@ -107,10 +106,22 @@ export interface RenderOptions {
   fontFamilies?: string[];
   /** BCP-47 language tag for locale-aware shaping. Inherited by children. */
   lang?: string;
+  /** CSS stylesheet text. Sent to Takumi as `css` (its `stylesheets` field is deprecated since 2.17). */
   stylesheets?: string[];
   devicePixelRatio?: number;
   timeMs?: number;
   dithering?: DitheringAlgorithm;
+}
+
+/** What actually crosses the native boundary: `stylesheets` is renamed to `css`. */
+export type NativeRenderOptions = Omit<RenderOptions, "stylesheets"> & {
+  css?: string[];
+};
+
+/** A font family produced by `registerFont`. */
+interface RegisteredFamily {
+  name: string;
+  faces: unknown[];
 }
 
 interface MeasuredTextRun {
@@ -138,18 +149,24 @@ export interface MeasuredNode {
 export interface Renderer {
   /**
    * Preload a font once and reuse it across many renders. Resolves to the
-   * family name(s) the font produced. Most callers don't need this --
-   * passing `fonts` directly on `render`/`measure` covers the common case.
+   * families the font produced. `key` (added in Takumi 2.17) names the
+   * registration for `cachedFonts`; pass `null` when not needed. Most
+   * callers don't need this -- passing `fonts` directly on
+   * `render`/`measure` covers the common case.
    */
-  registerFont: (font: Font, signal?: AbortSignal) => Promise<string[]>;
+  registerFont: (
+    font: Font,
+    key?: string | null,
+    signal?: AbortSignal
+  ) => Promise<RegisteredFamily[]>;
   render: (
     source: unknown,
-    options?: RenderOptions,
+    options?: NativeRenderOptions,
     signal?: AbortSignal
   ) => Promise<Buffer>;
   measure: (
     source: unknown,
-    options?: RenderOptions,
+    options?: NativeRenderOptions,
     signal?: AbortSignal
   ) => Promise<MeasuredNode>;
 }

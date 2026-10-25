@@ -1,8 +1,4 @@
-import {
-  formatForDisplay,
-  useHotkeyRecorder,
-  useHotkeySequenceRecorder,
-} from "@tanstack/react-hotkeys";
+import { formatForDisplay, useHotkeyRecorder } from "@tanstack/react-hotkeys";
 import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 
@@ -153,9 +149,11 @@ const SequenceRow = ({
   onReset: () => void;
   onRecordingChange: (recording: boolean) => void;
 }) => {
-  const recorder = useHotkeySequenceRecorder({
-    onRecord: (sequence) => {
-      onChange(sequence.join(" "));
+  const recorder = useHotkeyRecorder({
+    maxSteps: Number.POSITIVE_INFINITY,
+    // A one-step recording commits as a plain chord string, not an array.
+    onRecord: (hotkey) => {
+      onChange(Array.isArray(hotkey) ? hotkey.join(" ") : String(hotkey));
       recorder.stopRecording();
     },
   });

@@ -1161,7 +1161,7 @@ const FormatDropdown = ({
                     shadowLevel={3}
                     ref={(node: HTMLDivElement | null) => {
                       (
-                        containerRef as React.MutableRefObject<HTMLDivElement | null>
+                        containerRef as React.RefObject<HTMLDivElement | null>
                       ).current = node;
                     }}
                   />
@@ -1532,7 +1532,7 @@ const ScrubColorInputInner: ForwardRefRenderFunction<
       if (typeof ref === "function") {
         ref(node);
       } else if (ref) {
-        (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
+        (ref as React.RefObject<HTMLInputElement | null>).current = node;
       }
     },
     [ref]

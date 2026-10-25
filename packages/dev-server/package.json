@@ -50,20 +50,23 @@
   },
   "dependencies": {
     "@stdout-design/core": "^0.4.1",
-    "@vitejs/plugin-react": "^6.0.3",
-    "chokidar": "^5.0.0",
-    "hono": "^4.12.29",
-    "vite": "^8.1.4",
+    "@vitejs/plugin-react": "^6.1.2",
+    "chokidar": "^6.0.0",
+    "hono": "^4.13.13",
+    "vite": "^8.3.5",
     "vite-node": "^6.0.0"
   },
   "devDependencies": {
     "@stdout-design/config": "workspace:*",
-    "tsdown": "^0.22.5",
-    "typescript": "^7.0.2"
+    "tsdown": "^0.23.2",
+    "typescript": "7.1.0-beta"
   },
   "peerDependencies": {
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=22.22"
   }
 }

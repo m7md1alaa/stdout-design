@@ -48,10 +48,17 @@ export const __resetRendererForTesting = (): void => {
  * its bytes on every call. Optional -- per Takumi's v2 guidance, passing
  * `fonts` directly in a render/measure call's options covers most cases.
  */
-export const registerFont = (
+export const registerFont = async (
   font: Font,
   signal?: AbortSignal
-): Promise<string[]> => __getRendererForTesting().registerFont(font, signal);
+): Promise<string[]> => {
+  const families = await __getRendererForTesting().registerFont(
+    font,
+    null,
+    signal
+  );
+  return families.map((family) => family.name);
+};
 
 export interface RenderOutput {
   bytes: Buffer;
@@ -94,12 +101,13 @@ export const renderToPixels = async (
     lang: options?.lang,
   });
 
+  const { stylesheets, ...nativeOptions } = options ?? {};
   const bytes = await renderer.render(
     template.node,
     {
-      ...options,
+      ...nativeOptions,
+      css: [...(stylesheets ?? []), ...template.stylesheets],
       height: dimensions.height,
-      stylesheets: [...(options?.stylesheets ?? []), ...template.stylesheets],
       width: dimensions.width,
     },
     signal
@@ -119,12 +127,13 @@ export const measureTemplate = (
   signal?: AbortSignal
 ): Promise<MeasuredNode> => {
   const renderer = __getRendererForTesting();
+  const { stylesheets, ...nativeOptions } = options ?? {};
 
   return renderer.measure(
     template.node,
     {
-      ...options,
-      stylesheets: [...(options?.stylesheets ?? []), ...template.stylesheets],
+      ...nativeOptions,
+      css: [...(stylesheets ?? []), ...template.stylesheets],
     },
     signal
   );

@@ -1,5 +1,5 @@
 import type { Hotkey, HotkeySequence } from "@tanstack/hotkeys";
-import { useHotkeys, useHotkeySequences } from "@tanstack/react-hotkeys";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 
 import { deserializeSequence } from "./bindings";
 import { useIsScopeActive } from "./command-scope";
@@ -33,8 +33,13 @@ export const useRegisterCommands = (
     global: globalActive,
   };
 
-  useHotkeys(
-    commands.filter(isHotkeyCommand).map((cmd) => ({
+  const isActive = (cmd: CommandDefinition): boolean =>
+    !suppressAll &&
+    (scopeActive[cmd.scope] ?? false) &&
+    (cmd.isEnabled?.() ?? true);
+
+  useHotkeys([
+    ...commands.filter(isHotkeyCommand).map((cmd) => ({
       callback: () => cmd.run(),
       // Bindings are dynamic (defaults or user-recorded, round-tripped
       // through localStorage as plain strings), so they can't carry the
@@ -42,21 +47,14 @@ export const useRegisterCommands = (
       hotkey: resolveBinding(cmd) as Hotkey,
       options: {
         conflictBehavior: "warn" as const,
-        enabled:
-          !suppressAll && scopeActive[cmd.scope] && (cmd.isEnabled?.() ?? true),
+        enabled: isActive(cmd),
         ignoreInputs: cmd.ignoreInputs,
       },
-    }))
-  );
-
-  useHotkeySequences(
-    commands.filter(isSequenceCommand).map((cmd) => ({
+    })),
+    ...commands.filter(isSequenceCommand).map((cmd) => ({
       callback: () => cmd.run(),
-      options: {
-        enabled:
-          !suppressAll && scopeActive[cmd.scope] && (cmd.isEnabled?.() ?? true),
-      },
-      sequence: deserializeSequence(resolveBinding(cmd)) as HotkeySequence,
-    }))
-  );
+      hotkey: deserializeSequence(resolveBinding(cmd)) as HotkeySequence,
+      options: { enabled: isActive(cmd) },
+    })),
+  ]);
 };

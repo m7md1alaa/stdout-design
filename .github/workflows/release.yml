@@ -26,6 +26,12 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
+      # changesets/action@v2 no longer writes an .npmrc from NPM_TOKEN;
+      # setup-node writes one that reads NODE_AUTH_TOKEN for `npm publish`.
+      - uses: actions/setup-node@v7
+        with:
+          registry-url: https://registry.npmjs.org
+
       - run: bun install --frozen-lockfile
       - run: bun --bun run check
       - run: bun --bun run check-types
@@ -33,15 +39,13 @@ jobs:
       - run: bun --bun run test
 
       - name: Create release PR or publish
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          publish: bun run release
-          version: bun run version
-          title: "chore: release packages"
-          commit: "chore: release packages"
-
-          createGithubReleases: true
+          publish-script: bun run release
+          version-script: bun run version
+          pr-title: "chore: release packages"
+          commit-message: "chore: release packages"
+          create-github-releases: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

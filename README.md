@@ -36,7 +36,7 @@ npx @stdout-design/cli dev
 bun add -d @stdout-design/cli
 ```
 
-**Prerequisites:** Node.js 18+, Bun 1.2+.
+**Prerequisites:** Node.js 22.22+, Bun 1.2+.
 
 ## Features
 
@@ -97,9 +97,9 @@ type Props = {
 
 export default function MilestoneCard({ title, stat }: Props) {
   return (
-    <div className="bg-black text-white p-8 rounded-2xl">
+    <div className="rounded-2xl bg-black p-8 text-white">
       <h1 className="text-4xl font-bold">{title}</h1>
-      <p className="text-lg mt-2">{stat}</p>
+      <p className="mt-2 text-lg">{stat}</p>
     </div>
   );
 }

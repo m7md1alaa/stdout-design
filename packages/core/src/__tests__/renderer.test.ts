@@ -16,7 +16,10 @@ class MockRenderer {
     ],
     width: 200,
   }));
-  registerFont = mock(() => Promise.resolve([]));
+  registerFont = mock(
+    (_font: unknown, _key?: string | null, _signal?: AbortSignal) =>
+      Promise.resolve([{ faces: [], name: "Geist" }])
+  );
 }
 
 mock.module("takumi-js/node", () => ({ Renderer: MockRenderer }));
@@ -27,7 +30,11 @@ const {
   renderToPixels,
   measureTemplate,
   renderAutoSized,
+  registerFont,
 } = await import("../engine/renderer.js");
+
+const getMockRenderer = (): MockRenderer =>
+  __getRendererForTesting() as unknown as MockRenderer;
 
 describe("__getRendererForTesting", () => {
   it("returns a renderer with render and measure methods", () => {
@@ -84,6 +91,40 @@ describe("renderToPixels", () => {
       height: 600,
       width: 800,
     });
+  });
+});
+
+describe("stylesheets", () => {
+  it("are sent to Takumi as css, merged with the template's own", async () => {
+    __resetRendererForTesting();
+    await renderToPixels(
+      { node: { type: "container" }, stylesheets: ["b {}"] },
+      { height: 600, width: 800 },
+      { stylesheets: ["a {}"] }
+    );
+    const [, options] = getMockRenderer().render.mock.calls[0] as unknown as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(options.css).toEqual(["a {}", "b {}"]);
+    expect(options).not.toHaveProperty("stylesheets");
+  });
+});
+
+describe("registerFont", () => {
+  it("passes the abort signal in Takumi's third slot and returns family names", async () => {
+    __resetRendererForTesting();
+    const { signal } = new AbortController();
+    const families = await registerFont(
+      "https://example.com/font.woff2",
+      signal
+    );
+    expect(families).toEqual(["Geist"]);
+    expect(getMockRenderer().registerFont.mock.calls[0]).toEqual([
+      "https://example.com/font.woff2",
+      null,
+      signal,
+    ]);
   });
 });
 

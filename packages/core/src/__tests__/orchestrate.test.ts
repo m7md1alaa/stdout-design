@@ -219,9 +219,8 @@ describe("orchestrateRender", () => {
     const cache = new RenderCache({ cacheDir: tmpDir });
     await cache.init();
 
-    const loadLocaleData = mock(
-      (): Promise<Record<string, unknown>> =>
-        Promise.resolve({ title: "unused" })
+    const loadLocaleData = mock((): Promise<Record<string, unknown>> =>
+      Promise.resolve({ title: "unused" })
     );
 
     await orchestrateRender({
