@@ -15,6 +15,7 @@ import {
   getDefaults,
   TEMPLATE_IDS,
 } from "./init/scaffold.js";
+import { serializeConfig } from "./init/serialize-config.js";
 import { getScaffoldVersion } from "./init/version.js";
 
 const DEPRECATED_PRESET_IDS = new Set<string>();
@@ -33,14 +34,6 @@ const compareVersions = (a: string, b: string): number => {
 
   return 0;
 };
-
-const serializeConfig = (config: unknown): string =>
-  `import type { StudioConfig } from "@stdout-design/cli";
-
-const config: StudioConfig = ${JSON.stringify(config, null, 2)};
-
-export default config;
-`;
 
 export interface UpdatePlan {
   mergedConfig: StudioConfig;

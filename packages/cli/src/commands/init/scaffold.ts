@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type { StudioConfig } from "@stdout-design/core";
 
+import { serializeConfig } from "./serialize-config.js";
 import { getScaffoldVersion } from "./version.js";
 
 export interface ScaffoldOptions {
@@ -92,56 +93,20 @@ export const getDefaults = () => ({
   templates: getTemplateEntries(TEMPLATE_IDS),
 });
 
-const IDENTIFIER = /^[A-Za-z_$][\w$]*$/u;
-const INLINE_MAX = 80;
-
-/**
- * Prints a value as a TypeScript literal: bare keys where possible, and
- * short objects and arrays on one line, the way a person would write the
- * config by hand.
- */
-const toLiteral = (value: unknown, depth = 0): string => {
-  if (typeof value !== "object" || value === null) {
-    return JSON.stringify(value);
-  }
-  const entries = Array.isArray(value)
-    ? value.map((item) => toLiteral(item, depth + 1))
-    : Object.entries(value).map(
-        ([key, item]) =>
-          `${IDENTIFIER.test(key) ? key : JSON.stringify(key)}: ${toLiteral(item, depth + 1)}`
-      );
-  const [open, close] = Array.isArray(value) ? ["[", "]"] : ["{ ", " }"];
-  const inline = `${open}${entries.join(", ")}${close}`;
-  if (
-    entries.length === 0 ||
-    (inline.length <= INLINE_MAX && !inline.includes("\n"))
-  ) {
-    return entries.length === 0 ? open.trim() + close.trim() : inline;
-  }
-  const pad = "  ".repeat(depth + 1);
-  return `${open.trim()}\n${entries.map((e) => `${pad}${e},`).join("\n")}\n${"  ".repeat(depth)}${close.trim()}`;
-};
-
-const getConfigTemplate = (
+// Keys in the order a reader scans the generated file.
+const getConfig = (
   version: string,
   templates: string[],
   locales: string[]
-) =>
-  `import type { StudioConfig } from "@stdout-design/cli";
-
-const config: StudioConfig = {
-  scaffoldVersion: "${version}",
+  // oxlint-disable-next-line eslint/sort-keys
+): StudioConfig => ({
+  scaffoldVersion: version,
   defaultPreset: "instagram-square",
   outDir: "./out",
-  // Google Fonts, fetched on first render. \`default\` covers every locale
-  // without its own entry; Arabic needs its own (see README).
-  fonts: ${toLiteral(getFonts(locales), 1)},
-  presets: ${toLiteral(PRESETS, 1)},
-  templates: ${toLiteral(getTemplateEntries(templates), 1)},
-};
-
-export default config;
-`;
+  fonts: getFonts(locales),
+  presets: PRESETS,
+  templates: getTemplateEntries(templates),
+});
 
 // oxlint-disable-next-line eslint/sort-keys
 const getPkgJson = (name: string, version: string) => ({
@@ -191,7 +156,7 @@ const generateConfig = async (
 ): Promise<void> => {
   await writeFile(
     path.resolve(dir, "studio.config.ts"),
-    getConfigTemplate(version, options.templates, options.locales)
+    serializeConfig(getConfig(version, options.templates, options.locales))
   );
 };
 
