@@ -12,7 +12,8 @@ export interface Canvas {
 
 /** A text style written for Latin; `ctx.type` adapts it to the render's script. */
 export interface TypeSpec<R extends string = string> {
-  size: number;
+  /** Font size in px; scaled per script. Leave out for text sized elsewhere. */
+  size?: number;
   /** Line height, unitless. */
   leading?: number;
   /** Letter spacing in em. */
@@ -22,6 +23,12 @@ export interface TypeSpec<R extends string = string> {
   weight?: number;
   /** Font role declared in the template's `fonts`. */
   font?: R;
+  /**
+   * Exact size or leading for one script, used as given instead of the
+   * table's adjustment: for a face whose metrics the table doesn't suit,
+   * e.g. `{ arabic: { leading: 1 } }` for a tall display face.
+   */
+  scripts?: Partial<Record<Script, { size?: number; leading?: number }>>;
 }
 
 /**
@@ -39,8 +46,13 @@ export interface RenderContext<R extends string = string> {
   fonts: Readonly<Record<R, string>>;
   /** Mirrors a horizontal value (rotation angle, SVG x offset) for right-to-left renders. */
   flip: (value: number) => number;
-  /** A text style adapted to the script: see `SCRIPT_TYPOGRAPHY`. */
-  type: (spec: TypeSpec<R>) => CSSProperties;
+  /**
+   * A text style adapted to the script: see `SCRIPT_TYPOGRAPHY`. Declared
+   * as a method so a context with named font roles still passes where a
+   * plain `RenderContext` is expected.
+   */
+  // oxlint-disable-next-line method-signature-style -- bivariance is the point, see above
+  type(spec: TypeSpec<R>): CSSProperties;
 }
 
 interface ScriptTypography {
@@ -98,10 +110,16 @@ export const createRenderContext = <R extends string>(input: {
     fonts,
     locale,
     type: (spec) => {
-      const style: CSSProperties = {
-        fontSize: Math.round(spec.size * script.sizeScale),
-      };
-      if (spec.leading !== undefined) {
+      const style: CSSProperties = {};
+      const exact = spec.scripts?.[locale.script];
+      if (exact?.size !== undefined) {
+        style.fontSize = exact.size;
+      } else if (spec.size !== undefined) {
+        style.fontSize = Math.round(spec.size * script.sizeScale);
+      }
+      if (exact?.leading !== undefined) {
+        style.lineHeight = exact.leading;
+      } else if (spec.leading !== undefined) {
         style.lineHeight = Math.max(spec.leading, script.minLeading);
       }
       if (spec.weight !== undefined) {

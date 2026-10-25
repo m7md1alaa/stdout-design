@@ -8,6 +8,15 @@ export type {
   TemplateSpec,
 } from "./template/define-template.js";
 export { field } from "./template/field.js";
+export {
+  Arrow,
+  halftone,
+  keyed,
+  Sparkle,
+  starburst,
+  words,
+} from "./template/kit.js";
+export type { Keyed } from "./template/kit.js";
 export type { FontFace, FontRole, FontRoles } from "./template/fonts.js";
 export type {
   Canvas,

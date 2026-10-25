@@ -229,4 +229,28 @@ describe("createRenderContext", () => {
       lineHeight: 1.15,
     });
   });
+
+  it("uses a per-script size and leading exactly as given", () => {
+    const spec = {
+      leading: 0.95,
+      scripts: { arabic: { leading: 1, size: 100 } },
+      size: 132,
+    };
+    expect(ctxFor("ar").type(spec)).toEqual({ fontSize: 100, lineHeight: 1 });
+    expect(ctxFor("he").type(spec)).toEqual({
+      fontSize: 124,
+      lineHeight: 1.05,
+    });
+    expect(ctxFor("en").type(spec)).toEqual({
+      fontSize: 132,
+      lineHeight: 0.95,
+    });
+  });
+
+  it("leaves the size alone when the spec has none", () => {
+    expect(ctxFor("ar").type({ tracking: 0.2 })).toEqual({});
+    expect(ctxFor("en").type({ tracking: 0.2 })).toEqual({
+      letterSpacing: "0.2em",
+    });
+  });
 });
