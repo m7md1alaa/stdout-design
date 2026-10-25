@@ -60,11 +60,11 @@ The poster starters gave locales their own font entries, and `default` for Latin
 ### Decision
 
 - **One rule.** `packages/core/src/assets/locale-fonts.ts` decides a locale's fonts: `scriptOf` maps a locale id to its script, and `fontEntriesFor` picks the locale's own entry, else `default` (Latin only), else the script's built-in fonts. It replaces the classification rule above.
-- **Cached by font set, not locale id.** The cache lives in `font-config.ts`, keyed by `fontSetKey` (the entries in order, plus the config directory local paths resolve against). Locales that share fonts download once. Failures are not cached, so the next render retries.
+- **Cached by font set, not locale id.** This replaces "memoized **per locale id**" above. The cache lives in `font-config.ts`, keyed by `fontSetKey` (the entries in order, plus the config directory local paths resolve against). Locales that share fonts download once. Failures are not cached, so the next render retries.
 - **A custom `fetchFonts` is not cached by the resolver.** One passed to `resolveAssetsForLocale` or the orchestrator is called for every render; the caller owns its caching. Fetchers made by `createFetchFontsFromConfig` and the built-in fetcher go through the cache.
 - **Fetch failure falls back to the script's built-in fonts.** This settles the open question above. When the fetcher returns `null` (its fonts failed to load, or a custom fetcher has none), the resolver uses the built-in fonts for the locale's script: Noto Sans Arabic for Arabic, none for Latin, which leaves the renderer's default font. Nothing is faked with a zero-byte descriptor.
 
 ### Consequences
 
 - A batch over `en`, `fr` and `de` sharing `default` fonts downloads them once.
-- An Arabic render whose configured fonts fail still shapes Arabic text, in Noto rather than the configured face. The failure is logged at debug level.
+- An Arabic render whose configured fonts fail still shapes Arabic text, in Noto rather than the configured face. When the fonts come from the config or the built-in set, the failure is logged at debug level; a custom fetcher that returns `null` is not logged by core.

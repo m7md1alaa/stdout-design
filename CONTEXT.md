@@ -18,7 +18,7 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 
 **Script**: The writing system a locale renders in, `arabic` or `latin`. Decided in one place, `scriptOf` in `@stdout-design/core` (`assets/locale-fonts.ts`), from the locale id. A locale's script picks its built-in fonts and whether it may use the `default` font entry. _Avoid_: language, direction, RTL (as the classification)
 
-**Font set**: The ordered font entries a locale resolves to, after falling back through its own entry, `default` and its script's built-in fonts. The unit fonts are downloaded and cached by: locales with the same font set share one download. See ADR-0007. _Avoid_: font config (that is the whole `fonts` field), locale fonts
+**Font set**: The ordered font entries a locale resolves to, after falling back through its own entry, `default` and its script's built-in fonts. The unit fonts are downloaded and cached by: locales with the same font set share one download. See ADR-0007. _Avoid_: font config (that is the whole `fonts` field)
 
 **Scaffold version**: The CLI version that created a project. Stored in `studio.config.ts` as `scaffoldVersion`. Used by `studio update` to compare against the current CLI version. _Avoid_: version, created-version
 
