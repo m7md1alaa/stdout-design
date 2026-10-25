@@ -1,6 +1,6 @@
 # 0016. Agent skill for AI coding agents
 
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
