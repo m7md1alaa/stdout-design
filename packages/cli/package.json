@@ -17,7 +17,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/m7md1alaa/stdout-design/studio.git"
+    "url": "git+https://github.com/m7md1alaa/stdout-design.git"
   },
   "bin": {
     "studio": "dist/index.mjs"
