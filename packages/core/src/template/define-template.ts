@@ -38,11 +38,12 @@ export interface TemplateDefinition {
   readonly propsSchema: PropSchema;
   readonly fonts: FontRoles;
   /**
-   * The pipeline sets `dir` and `lang` on the root element. False for legacy
-   * templates, which mirror themselves from the `locale` prop: a `dir` root
-   * would mirror them twice.
+   * Built from a component plus `propsSchema` export. Legacy templates
+   * mirror themselves from the `locale` prop, so the pipeline sets no `dir`
+   * on their root (it would mirror them twice) and does not re-check props
+   * after translation.
    */
-  readonly localeRoot: boolean;
+  readonly legacy: boolean;
   readonly render: (
     props: Record<string, unknown>,
     ctx: RenderContext
@@ -65,7 +66,7 @@ export const defineTemplate = <
   return {
     [TEMPLATE_BRAND]: true,
     fonts: spec.fonts ?? {},
-    localeRoot: true,
+    legacy: false,
     // The schema validates props before `render` runs, so the widened
     // signatures below hold at runtime.
     propsSchema: z.object(spec.schema) as unknown as PropSchema,
@@ -101,7 +102,7 @@ export const legacyTemplateDefinition = (
   return {
     [TEMPLATE_BRAND]: true,
     fonts: {},
-    localeRoot: false,
+    legacy: true,
     propsSchema,
     render: (props, ctx) =>
       createElement(

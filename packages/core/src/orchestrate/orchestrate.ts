@@ -144,7 +144,7 @@ const prepPipeline = async (input: {
     fonts: resolvedFonts,
     fontFamilies: resolvedFontFamilies,
     lang: resolvedLang,
-    props: merged,
+    props: translated,
   } = await resolveAssetsForLocale(
     locale,
     validated as Record<string, unknown>,
@@ -153,8 +153,18 @@ const prepPipeline = async (input: {
       loadLocaleData,
       preResolvedFontFamilies,
       preResolvedFonts,
+      propsSchema: definition?.propsSchema,
     }
   );
+
+  // A translation is content like any other: it meets the same limits.
+  const merged =
+    definition && !definition.legacy
+      ? (validateProps(definition.propsSchema, translated) as Record<
+          string,
+          unknown
+        >)
+      : translated;
 
   const localeInfo = classifyLocale(locale);
   // Everything the compiled output depends on: the props and the render
@@ -188,9 +198,9 @@ const prepPipeline = async (input: {
         locale: localeInfo,
       });
       const rendered = definition.render(merged, ctx);
-      const element = definition.localeRoot
-        ? withLocaleRoot(rendered, localeInfo)
-        : rendered;
+      const element = definition.legacy
+        ? rendered
+        : withLocaleRoot(rendered, localeInfo);
       compiled = await compileTemplate(element);
       cache.setCompiledWithContentHash(
         compileKey,

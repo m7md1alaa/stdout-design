@@ -75,11 +75,13 @@ const isZodString = (schema: z.ZodTypeAny): schema is z.ZodString =>
 
 type Wrappable =
   | z.ZodDefault<z.ZodTypeAny>
+  | z.ZodPrefault<z.ZodTypeAny>
   | z.ZodOptional<z.ZodTypeAny>
   | z.ZodNullable<z.ZodTypeAny>;
 
 const isWrappable = (schema: z.ZodTypeAny): schema is Wrappable =>
   schema.type === "default" ||
+  schema.type === "prefault" ||
   schema.type === "optional" ||
   schema.type === "nullable";
 

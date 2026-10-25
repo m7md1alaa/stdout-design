@@ -460,6 +460,53 @@ describe("orchestrateRender with a defineTemplate template", () => {
     cache.close();
   });
 
+  it("translates only translatable text and holds translations to the schema", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+    const cache = new RenderCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    const seen: unknown[] = [];
+    const template = defineTemplate({
+      render: (props) => {
+        seen.push(props);
+        return createElement("div");
+      },
+      schema: {
+        accent: field.color("#ff6a3d"),
+        title: field.text("Hello", { max: 10 }),
+      },
+    });
+    const base = {
+      cache,
+      height: 100,
+      locale: "ar",
+      props: {},
+      template,
+      templateId: "translate",
+      width: 100,
+    };
+
+    await orchestrateRender({
+      ...base,
+      loadLocaleData: () =>
+        Promise.resolve({ accent: "#000000", title: "مرحبا" }),
+      templateContentHash: "hash-translate",
+    });
+    expect(seen).toEqual([{ accent: "#ff6a3d", title: "مرحبا" }]);
+
+    await expect(
+      orchestrateRender({
+        ...base,
+        loadLocaleData: () =>
+          Promise.resolve({ title: "عنوان أطول بكثير من الحد" }),
+        templateContentHash: "hash-translate-long",
+      })
+    ).rejects.toThrow("title");
+
+    cache.close();
+  });
+
   it("leaves a legacy template's root alone", async () => {
     tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
     const { RenderCache } = await import("../cache/render-cache.js");

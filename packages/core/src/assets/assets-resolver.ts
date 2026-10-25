@@ -1,9 +1,11 @@
 import { googleFonts } from "@takumi-rs/helpers";
+import type { z } from "zod";
 
 import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
 import { classifyLocale } from "../shared/locale.js";
 import type { Script } from "../shared/locale.js";
 import { logDebug } from "../shared/logger.js";
+import { applyTranslations } from "../shared/translations.js";
 
 export interface AssetsForLocale {
   fonts: Font[];
@@ -23,6 +25,8 @@ export interface AssetsResolverOptions {
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
   preResolvedFonts?: Font[];
   preResolvedFontFamilies?: string[];
+  /** The template's prop schema; with `field.*` meta, it decides which props a locale file may replace. */
+  propsSchema?: z.ZodType;
 }
 
 const isFontDescriptor = (f: Font): f is FontDescriptor =>
@@ -63,26 +67,6 @@ const fetchFallbackFont = async (
   }
 };
 
-const mergeLocaleProps = (
-  props: Record<string, unknown>,
-  localeData?: Record<string, unknown>
-): Record<string, unknown> => {
-  if (!localeData) {
-    return { ...props };
-  }
-
-  const merged = { ...props };
-  for (const [key, value] of Object.entries(localeData)) {
-    if (Array.isArray(value) && Array.isArray(merged[key])) {
-      merged[key] = value;
-    } else if (typeof value === "string" && typeof merged[key] === "string") {
-      merged[key] = value;
-    }
-  }
-
-  return merged;
-};
-
 const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
 
 const cachedFetch = async (
@@ -120,7 +104,11 @@ export const resolveAssetsForLocale = async (
     }
   }
 
-  const mergedProps = mergeLocaleProps(props, localeData);
+  const mergedProps = applyTranslations(
+    options?.propsSchema,
+    props,
+    localeData
+  );
   const { lang, script } = classifyLocale(localeId);
   const fallbackFont = SCRIPT_FALLBACK_FONT[script];
 

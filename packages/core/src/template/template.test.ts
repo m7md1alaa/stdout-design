@@ -45,7 +45,7 @@ describe("defineTemplate", () => {
 
   it("brands the definition and fills defaults through its schema", () => {
     expect(isTemplateDefinition(poster)).toBe(true);
-    expect(poster.localeRoot).toBe(true);
+    expect(poster.legacy).toBe(false);
     expect(poster.propsSchema.parse({})).toEqual({
       accent: "#ff6a3d",
       title: "Hello",
@@ -92,7 +92,7 @@ describe("toTemplateDefinition", () => {
       { default: Legacy, propsSchema },
       "legacy"
     );
-    expect(definition.localeRoot).toBe(false);
+    expect(definition.legacy).toBe(true);
 
     const arabic = ctxFor("ar");
     expect(propsOf(definition.render({ title: "x" }, arabic)).locale).toBe(
