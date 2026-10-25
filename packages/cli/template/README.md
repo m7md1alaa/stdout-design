@@ -6,9 +6,9 @@ Social images as React components, rendered to PNG by [stdout design](https://gi
 
 ```bash
 npm run dev                                  # live studio with every template and preset
-npm run render launch-hero                   # render one template to ./out
+npm run render launch-hero                   # one template, every locale, to ./out
 npm run render launch-hero --preset all      # every preset in studio.config.ts
-npm run render launch-hero --locale en,ar    # English and Arabic (RTL) side by side
+npm run render launch-hero --locale ar       # just the Arabic (RTL) version
 ```
 
 ## What's here
@@ -17,7 +17,7 @@ npm run render launch-hero --locale en,ar    # English and Arabic (RTL) side by 
 | --- | --- |
 | `templates/*.tsx` | One component per image. Its `propsSchema` is the form you see in the studio. |
 | `locales/*.json` | Per-locale copy, keyed by template id. Strings here override the schema defaults. |
-| `studio.config.ts` | Presets (canvas sizes), registered templates, and fonts. |
+| `studio.config.ts` | Presets (canvas sizes), locales, registered templates, and fonts. |
 
 ## The starters
 
@@ -26,11 +26,11 @@ npm run render launch-hero --locale en,ar    # English and Arabic (RTL) side by 
 - **retro-poster**: a print poster with a drawn cassette, tape stripes, and a rubber stamp.
 - **trend-poster**: an editorial six-item grid with a drawn specimen in each cell.
 
-Each one lays out at both 1080×1080 and 1200×675 and mirrors itself for Arabic. Rewrite them or delete them; `studio update` never overwrites a template you already have.
+Each one lays out at both 1080×1080 and 1200×675 and mirrors itself for Arabic. Rewrite them or delete them: `studio update` never overwrites a template you already have, and never brings back a starter you left out.
 
 ## Fonts
 
-The `fonts` block in `studio.config.ts` pulls Google Fonts on the first render and caches them. `default` applies to every locale without its own entry. Arabic gets its own entry so its faces load alongside the Latin ones. A template names its fonts in `fontFamily`, Latin face first: `"Archivo Black, Lalezar, sans-serif"`. Any glyph the first face lacks falls through to the next.
+The `fonts` block in `studio.config.ts` pulls Google Fonts on the first render and caches them. It lists only the faces your starters use. `default` applies to every locale without its own entry, except Arabic: a Latin face has no Arabic glyphs, so Arabic gets its own entry with the Latin and Arabic faces together. Without one, Arabic falls back to Noto Sans Arabic. A template names its fonts in `fontFamily`, Latin face first: `"Archivo Black, Lalezar, sans-serif"`. Any glyph the first face lacks falls through to the next.
 
 ## Writing RTL templates
 

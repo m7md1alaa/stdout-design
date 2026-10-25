@@ -7,6 +7,7 @@ import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
 import { logDebug } from "../shared/logger.js";
 import type { FontConfig } from "../shared/types.js";
 import type { FontResolutionResult } from "./assets-resolver.js";
+import { fontEntriesFor, fontSetKey } from "./locale-fonts.js";
 
 const isFontObject = (f: Font): f is FontDescriptor =>
   typeof f === "object" && !(f instanceof Uint8Array);
@@ -27,18 +28,95 @@ const loadLocalFontDescriptor = async (
 const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
   c.source === "local" && typeof c.path === "string" && c.path.length > 0;
 
-/**
- * The `default` entry covers every locale without its own entry — and the
- * no-locale render, whose id is `default`. Arabic locales are excluded from
- * the fallback: a Latin display face has no Arabic glyphs, so they keep the
- * resolver's Noto Sans Arabic unless they declare fonts explicitly.
- */
-const resolveLocaleFontConfigs = (
-  fontsConfig: Record<string, FontConfig[]>,
+const loadFontSet = async (
+  configs: FontConfig[],
+  configDir: string | undefined
+): Promise<FontResolutionResult | null> => {
+  try {
+    const localConfigs = configs.filter(isLocalConfig);
+    const googleConfigs = configs.filter((c) => !isLocalConfig(c));
+
+    const localFonts: Font[] = await Promise.all(
+      localConfigs.map((c) =>
+        loadLocalFontDescriptor(c.family, c.path, c.weights?.[0], configDir)
+      )
+    );
+
+    let googleFontDescriptors: Font[] = [];
+
+    if (googleConfigs.length > 0) {
+      const families = googleConfigs.map((c) => ({
+        name: c.family,
+        weight: (c.weights ?? [400, 700]) as number[],
+      }));
+
+      googleFontDescriptors = await googleFonts(families);
+    }
+
+    const fonts = [...localFonts, ...googleFontDescriptors];
+
+    const fontFamilies = fonts
+      .filter(isFontObject)
+      .map((f) => String(f.name ?? ""))
+      .filter(Boolean);
+
+    logDebug("fonts resolved", { count: fonts.length, names: fontFamilies });
+
+    return { fontFamilies, fonts };
+  } catch (error) {
+    logDebug("fonts failed to load", {
+      error: String(error),
+      families: configs.map((c) => c.family),
+    });
+    return null;
+  }
+};
+
+// Keyed by font set, not locale, so locales sharing fonts download once.
+// Failures are dropped so the next render retries.
+const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
+
+export const clearFontCache = (): void => {
+  fontCache.clear();
+};
+
+const loadFontSetCached = async (
+  configs: FontConfig[],
+  configDir: string | undefined
+): Promise<FontResolutionResult | null> => {
+  const key = fontSetKey(configs, configDir);
+  const cached = fontCache.get(key);
+  if (cached) {
+    return await cached;
+  }
+  const promise = loadFontSet(configs, configDir);
+  fontCache.set(key, promise);
+  const resolution = await promise;
+  if (!resolution) {
+    fontCache.delete(key);
+  }
+  return resolution;
+};
+
+const fetchFontsFor = async (
+  fontsConfig: Record<string, FontConfig[]> | undefined,
+  localeId: string,
+  configDir?: string
+): Promise<FontResolutionResult | null> => {
+  // Guards untyped callers (a JS config, a bad request) passing no locale.
+  if (typeof localeId !== "string") {
+    return null;
+  }
+  const configs = fontEntriesFor(fontsConfig, localeId);
+  return configs.length > 0
+    ? await loadFontSetCached(configs, configDir)
+    : null;
+};
+
+/** The fetcher for a project without a `fonts` config: built-in fonts only. */
+export const fetchBuiltInFonts = (
   localeId: string
-): FontConfig[] | undefined =>
-  fontsConfig[localeId] ??
-  (localeId?.startsWith("ar") ? undefined : fontsConfig.default);
+): Promise<FontResolutionResult | null> => fetchFontsFor(undefined, localeId);
 
 export const createFetchFontsFromConfig = (
   fontsConfig?: Record<string, FontConfig[]> | undefined,
@@ -48,53 +126,5 @@ export const createFetchFontsFromConfig = (
     return undefined;
   }
 
-  return async function fetchFontsFromConfig(localeId: string) {
-    const configs = resolveLocaleFontConfigs(fontsConfig, localeId);
-    if (!configs || configs.length === 0) {
-      return null;
-    }
-
-    try {
-      const localConfigs = configs.filter(isLocalConfig);
-      const googleConfigs = configs.filter((c) => !isLocalConfig(c));
-
-      const localFonts: Font[] = await Promise.all(
-        localConfigs.map((c) =>
-          loadLocalFontDescriptor(c.family, c.path, c.weights?.[0], configDir)
-        )
-      );
-
-      let googleFontDescriptors: Font[] = [];
-
-      if (googleConfigs.length > 0) {
-        const families = googleConfigs.map((c) => ({
-          name: c.family,
-          weight: (c.weights ?? [400, 700]) as number[],
-        }));
-
-        googleFontDescriptors = await googleFonts(families);
-      }
-
-      const fonts = [...localFonts, ...googleFontDescriptors];
-
-      const fontFamilies = fonts
-        .filter(isFontObject)
-        .map((f) => String(f.name ?? ""))
-        .filter(Boolean);
-
-      logDebug("fonts resolved from config", {
-        count: fonts.length,
-        localeId,
-        names: fontFamilies,
-      });
-
-      return { fontFamilies, fonts };
-    } catch (error) {
-      logDebug("fonts from config failed", {
-        error: String(error),
-        localeId,
-      });
-      return null;
-    }
-  };
+  return (localeId: string) => fetchFontsFor(fontsConfig, localeId, configDir);
 };

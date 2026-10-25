@@ -1,21 +1,20 @@
-import type { StudioConfig } from "@stdout-design/core";
+import type { FontConfig, StudioConfig } from "@stdout-design/core";
 
 type Preset = StudioConfig["presets"][number];
 type TemplateEntry = StudioConfig["templates"][string];
-type Fonts = NonNullable<StudioConfig["fonts"]>;
 
-export interface Defaults {
-  presets: Preset[];
-  templates: Record<string, TemplateEntry>;
-  defaultPreset?: string;
-  fonts?: Fonts;
-}
+/** The config `update` merges in: the presets, starters and fonts the project lacks. */
+export type Defaults = Pick<StudioConfig, "presets" | "templates"> &
+  Partial<Pick<StudioConfig, "defaultPreset" | "fonts" | "locales">>;
 
 export interface ChangeSummary {
   addedPresets: string[];
   deprecatedPresets: string[];
   addedTemplates: string[];
-  addedFontLocales: string[];
+  /** `<locale>: <family>` for each font added to an entry. */
+  addedFonts: string[];
+  /** Locales written to a config that had none recorded. */
+  recordedLocales: string[];
   oldVersion: string | null;
   newVersion: string;
 }
@@ -77,24 +76,30 @@ const mergeTemplates = (
   return { addedTemplates, templates };
 };
 
-// Adds font entries for locales the project has none for; a locale the
-// user already configured is theirs and is left untouched.
+// Adds the families a locale's entry lacks; the user's own entries and
+// their order are kept.
 const mergeFonts = (
   existing: StudioConfig,
   defaults: Defaults
-): { fonts: Fonts | undefined; addedFontLocales: string[] } => {
-  const addedFontLocales: string[] = [];
-  const fonts: Fonts = { ...existing.fonts };
+): {
+  fonts: Record<string, FontConfig[]> | undefined;
+  addedFonts: string[];
+} => {
+  const addedFonts: string[] = [];
+  const fonts: Record<string, FontConfig[]> = { ...existing.fonts };
 
   for (const [locale, entries] of Object.entries(defaults.fonts ?? {})) {
-    if (!(locale in fonts)) {
-      fonts[locale] = entries.map((entry) => ({ ...entry }));
-      addedFontLocales.push(locale);
+    const current = fonts[locale] ?? [];
+    const missing = entries.filter(
+      (entry) => !current.some((c) => c.family === entry.family)
+    );
+    if (missing.length > 0) {
+      fonts[locale] = [...current, ...missing.map((entry) => ({ ...entry }))];
+      addedFonts.push(...missing.map((entry) => `${locale}: ${entry.family}`));
     }
   }
 
-  const isEmpty = Object.keys(fonts).length === 0;
-  return { addedFontLocales, fonts: isEmpty ? existing.fonts : fonts };
+  return { addedFonts, fonts: addedFonts.length > 0 ? fonts : existing.fonts };
 };
 
 const resolveDefaultPreset = (
@@ -127,25 +132,36 @@ export const mergeConfig = (
   );
 
   const { templates, addedTemplates } = mergeTemplates(existing, defaults);
-  const { fonts, addedFontLocales } = mergeFonts(existing, defaults);
+  const { fonts, addedFonts } = mergeFonts(existing, defaults);
+  const recordedLocales = existing.locales ? [] : (defaults.locales ?? []);
 
   const config: StudioConfig = {
     ...existing,
     defaultPreset: resolveDefaultPreset(presets, existing, defaults),
-    ...(fonts ? { fonts } : {}),
+    fonts,
+    locales: existing.locales ?? defaults.locales,
     presets,
     scaffoldVersion: currentVersion,
     templates,
   };
 
   const summary: ChangeSummary = {
-    addedFontLocales,
+    addedFonts,
     addedPresets,
     addedTemplates,
     deprecatedPresets,
     newVersion: currentVersion,
     oldVersion,
+    recordedLocales,
   };
 
   return { config, summary };
 };
+
+export const hasChanges = (summary: ChangeSummary): boolean =>
+  summary.addedPresets.length > 0 ||
+  summary.deprecatedPresets.length > 0 ||
+  summary.addedTemplates.length > 0 ||
+  summary.addedFonts.length > 0 ||
+  summary.recordedLocales.length > 0 ||
+  summary.oldVersion !== summary.newVersion;

@@ -16,12 +16,14 @@ mock.module("node:fs/promises", () => ({
   readFile: mockReadFile,
 }));
 
+const { clearFontCache, createFetchFontsFromConfig } =
+  await import("./font-config.js");
+
 afterEach(() => {
+  clearFontCache();
   mockGoogleFonts.mockImplementation(() => Promise.resolve([]));
   mockReadFile.mockImplementation(() => Promise.resolve(Buffer.from([])));
 });
-
-const { createFetchFontsFromConfig } = await import("./font-config.js");
 
 describe("createFetchFontsFromConfig", () => {
   describe("factory: fontsConfig parameter", () => {
@@ -74,54 +76,53 @@ describe("createFetchFontsFromConfig", () => {
       ]);
     });
 
-    it("does not apply the default entry to Arabic locales", async () => {
+    it("gives Arabic locales the built-in Arabic face, not the default", async () => {
+      mockGoogleFonts.mockClear();
       const fetchFonts = createFetchFontsFromConfig({ default: [anton] })!;
 
-      const result = await fetchFonts("ar-EG");
+      await fetchFonts("ar-EG");
 
-      expect(result).toBeNull();
+      expect(mockGoogleFonts).toHaveBeenCalledWith([
+        { name: "Noto Sans Arabic", weight: [400, 700] },
+      ]);
+    });
+
+    it("downloads a font set once for every locale that shares it", async () => {
+      mockGoogleFonts.mockClear();
+      mockGoogleFonts.mockImplementation(() =>
+        Promise.resolve([{ data: new Uint8Array([1]), name: "Anton" }])
+      );
+      const fetchFonts = createFetchFontsFromConfig({ default: [anton] })!;
+
+      await Promise.all([fetchFonts("en"), fetchFonts("fr")]);
+      await fetchFonts("default");
+
+      expect(mockGoogleFonts).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("fetcher: locale lookup edge cases", () => {
-    it("returns null for any locale when config is empty", async () => {
+    const noto = [{ name: "Noto Sans Arabic", weight: [400, 700] }];
+
+    it.each([
+      ["the config is empty", {}],
+      ["the locale entry is null", { ar: null }],
+      ["the locale entry is an empty array", { ar: [] }],
+      ["the locale entry is a string", { ar: "not-an-array" }],
+      ["the locale entry is a number", { ar: 42 }],
+    ])("loads the built-in Arabic face when %s", async (_case, fontsConfig) => {
+      mockGoogleFonts.mockClear();
+      const fetchFonts = createFetchFontsFromConfig(fontsConfig as never)!;
+
+      await fetchFonts("ar");
+
+      expect(mockGoogleFonts).toHaveBeenCalledWith(noto);
+    });
+
+    it("returns null for a Latin locale when the config is empty", async () => {
       const fetchFonts = createFetchFontsFromConfig({})!;
 
-      const result = await fetchFonts("ar");
-
-      expect(result).toBeNull();
-    });
-
-    it("returns null when locale entry is null", async () => {
-      const fetchFonts = createFetchFontsFromConfig({ ar: null as never })!;
-
-      const result = await fetchFonts("ar");
-
-      expect(result).toBeNull();
-    });
-
-    it("returns null when locale entry is an empty array", async () => {
-      const fetchFonts = createFetchFontsFromConfig({ ar: [] })!;
-
-      const result = await fetchFonts("ar");
-
-      expect(result).toBeNull();
-    });
-
-    it("returns null when locale entry is a string (not array)", async () => {
-      const fetchFonts = createFetchFontsFromConfig({
-        ar: "not-an-array",
-      } as never)!;
-
-      const result = await fetchFonts("ar");
-
-      expect(result).toBeNull();
-    });
-
-    it("returns null when locale entry is a number", async () => {
-      const fetchFonts = createFetchFontsFromConfig({ ar: 42 } as never)!;
-
-      const result = await fetchFonts("ar");
+      const result = await fetchFonts("en");
 
       expect(result).toBeNull();
     });

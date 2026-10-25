@@ -1,13 +1,25 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { Font } from "../engine/takumi-types-shim.js";
-import { clearFontCache, resolveAssetsForLocale } from "./assets-resolver.js";
 
 const stubFont: Font = { name: "test-font", weight: 400 } as Font;
+const notoArabic: Font = { name: "Noto Sans Arabic", weight: 400 } as Font;
+
+const mockGoogleFonts = mock<(...args: unknown[]) => Promise<Font[]>>(() =>
+  Promise.resolve([notoArabic])
+);
+
+mock.module("@takumi-rs/helpers", () => ({
+  googleFonts: mockGoogleFonts,
+}));
+
+const { resolveAssetsForLocale } = await import("./assets-resolver.js");
+const { clearFontCache } = await import("./font-config.js");
 
 describe("resolveAssetsForLocale", () => {
   beforeEach(() => {
     clearFontCache();
+    mockGoogleFonts.mockClear();
   });
 
   it("classifies empty locale with no lang or fonts", async () => {
@@ -116,6 +128,34 @@ describe("resolveAssetsForLocale", () => {
 
     expect(result.fonts).toEqual([]);
     expect(result.fontFamilies).toBeUndefined();
+    expect(mockGoogleFonts).not.toHaveBeenCalled();
+  });
+
+  it("falls back to Noto Sans Arabic when an Arabic locale's fonts fail", async () => {
+    const fetchFonts = mock((_localeId: string) => Promise.resolve(null));
+
+    const result = await resolveAssetsForLocale(
+      "ar-EG",
+      { title: "مرحبا" },
+      { fetchFonts }
+    );
+
+    expect(mockGoogleFonts).toHaveBeenCalledWith([
+      { name: "Noto Sans Arabic", weight: [400, 700] },
+    ]);
+    expect(result.fonts).toEqual([notoArabic]);
+    expect(result.fontFamilies).toEqual(["Noto Sans Arabic"]);
+  });
+
+  it("asks for the built-in Arabic fonts once when they fail to load", async () => {
+    mockGoogleFonts.mockImplementationOnce(() =>
+      Promise.reject(new Error("offline"))
+    );
+
+    const result = await resolveAssetsForLocale("ar", { title: "مرحبا" });
+
+    expect(mockGoogleFonts).toHaveBeenCalledTimes(1);
+    expect(result.fonts).toEqual([]);
   });
 
   it("calls loadLocaleData callback and merges results into props", async () => {
@@ -147,22 +187,6 @@ describe("resolveAssetsForLocale", () => {
 
     expect(result.props).toEqual(props);
     expect(loadLocaleData).toHaveBeenCalledTimes(1);
-  });
-
-  it("memoizes font resolution per locale id", async () => {
-    const props = { title: "Hello" };
-    const fetchFonts = mock((_localeId: string) =>
-      Promise.resolve({
-        fontFamilies: ["Test"],
-        fonts: [stubFont],
-      })
-    );
-
-    await resolveAssetsForLocale("ar", props, { fetchFonts });
-    await resolveAssetsForLocale("ar", props, { fetchFonts });
-    await resolveAssetsForLocale("ar", { other: true }, { fetchFonts });
-
-    expect(fetchFonts).toHaveBeenCalledTimes(1);
   });
 
   it("uses preResolvedFonts and skips fetchFonts while still classifying lang", async () => {

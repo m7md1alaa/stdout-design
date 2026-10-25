@@ -1,51 +1,47 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { loadConfig } from "@stdout-design/core";
 import type { StudioConfig } from "@stdout-design/core";
 
+import { isStarterId } from "./init/catalog.js";
+import type { StarterId } from "./init/catalog.js";
 import { updatePackageJsonDeps } from "./init/deps.js";
-import { mergeConfig } from "./init/merge-config.js";
+import { hasChanges, mergeConfig } from "./init/merge-config.js";
 import type { Defaults, ChangeSummary } from "./init/merge-config.js";
+import { buildProjectConfig, startersSince } from "./init/project-config.js";
 import { getLatestVersion } from "./init/registry.js";
 import {
+  addStarterLocaleStrings,
+  copyStarterFiles,
   copyStaticAssets,
-  copyTemplateFiles,
-  getDefaults,
-  TEMPLATE_IDS,
 } from "./init/scaffold.js";
-import { getScaffoldVersion } from "./init/version.js";
+import { serializeConfig } from "./init/serialize-config.js";
+import { compareVersions, getScaffoldVersion } from "./init/version.js";
 
 const DEPRECATED_PRESET_IDS = new Set<string>();
 
-const compareVersions = (a: string, b: string): number => {
-  const partsA = a.split(".").map(Number);
-  const partsB = b.split(".").map(Number);
-  const length = Math.max(partsA.length, partsB.length);
-
-  for (let i = 0; i < length; i += 1) {
-    const diff = (partsA[i] ?? 0) - (partsB[i] ?? 0);
-    if (diff !== 0) {
-      return diff;
-    }
+// Projects from before `locales` was recorded: read them off the locale files.
+const localesOnDisk = (dir: string): string[] => {
+  const localesDir = path.resolve(dir, "locales");
+  if (!existsSync(localesDir)) {
+    return [];
   }
-
-  return 0;
+  return readdirSync(localesDir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => file.slice(0, -".json".length))
+    .toSorted();
 };
-
-const serializeConfig = (config: unknown): string =>
-  `import type { StudioConfig } from "@stdout-design/cli";
-
-const config: StudioConfig = ${JSON.stringify(config, null, 2)};
-
-export default config;
-`;
 
 export interface UpdatePlan {
   mergedConfig: StudioConfig;
   summary: ChangeSummary;
   installedVersion: string;
+  /** The starters this update registers, whose files it writes. */
+  starters: StarterId[];
+  /** The project's locales, which get the new starters' strings. */
+  locales: string[];
 }
 
 export interface UpdateDeps {
@@ -65,7 +61,13 @@ export const planUpdate = (
     installedVersion,
     deprecatedPresetIds
   );
-  return { installedVersion, mergedConfig, summary };
+  return {
+    installedVersion,
+    locales: mergedConfig.locales ?? [],
+    mergedConfig,
+    starters: summary.addedTemplates.filter(isStarterId),
+    summary,
+  };
 };
 
 const resolveVersion = async (
@@ -105,8 +107,13 @@ const printChanges = (summary: ChangeSummary, installedVersion: string) => {
   for (const id of summary.addedTemplates) {
     console.log(`  templates        +${id}`);
   }
-  for (const locale of summary.addedFontLocales) {
-    console.log(`  fonts            +${locale}`);
+  for (const font of summary.addedFonts) {
+    console.log(`  fonts            +${font}`);
+  }
+  if (summary.recordedLocales.length > 0) {
+    console.log(
+      `  locales          ${summary.recordedLocales.join(", ")} (recorded)`
+    );
   }
   console.log(
     "  assets           tsconfig.json, .gitignore, types.d.ts (overwrite)"
@@ -121,16 +128,15 @@ export const applyUpdate = async (
   dir: string,
   plan: UpdatePlan
 ): Promise<void> => {
-  const configPath = path.resolve(dir, "studio.config.ts");
-
-  await writeFile(configPath, serializeConfig(plan.mergedConfig));
+  // Files first, config last: if copying fails, the config still matches
+  // what is on disk. A registered starter needs its template and its copy;
+  // files and entries the project already has are never overwritten.
+  await copyStarterFiles(dir, plan.starters, { force: false });
+  await addStarterLocaleStrings(dir, plan.locales, plan.starters);
   await copyStaticAssets(dir);
-  // Registering a starter without its file would break `studio render`;
-  // files the user already has are never overwritten.
-  await copyTemplateFiles(
-    dir,
-    plan.summary.addedTemplates.filter((id) => TEMPLATE_IDS.includes(id)),
-    { overwrite: false }
+  await writeFile(
+    path.resolve(dir, "studio.config.ts"),
+    serializeConfig(plan.mergedConfig)
   );
 
   const pkgPath = path.resolve(dir, "package.json");
@@ -156,11 +162,17 @@ export const update = async (
 
   const existingConfig = await loadConfig(dir);
 
-  const defaults = getDefaults();
   const installedVersion = await resolveVersion(deps);
   if (installedVersion === undefined) {
     return;
   }
+
+  // What the project would get from `init` today, limited to the starters
+  // it has never been offered.
+  const defaults = buildProjectConfig(installedVersion, {
+    locales: existingConfig.locales ?? localesOnDisk(dir),
+    starters: startersSince(existingConfig.scaffoldVersion, installedVersion),
+  });
 
   const plan = planUpdate(
     existingConfig,
@@ -173,14 +185,7 @@ export const update = async (
 
   intro("studio update");
 
-  const hasChanges =
-    plan.summary.addedPresets.length > 0 ||
-    plan.summary.deprecatedPresets.length > 0 ||
-    plan.summary.addedTemplates.length > 0 ||
-    plan.summary.addedFontLocales.length > 0 ||
-    plan.summary.oldVersion !== plan.summary.newVersion;
-
-  if (!hasChanges) {
+  if (!hasChanges(plan.summary)) {
     console.log("Project is already up to date.");
     outro("Done");
     return;
