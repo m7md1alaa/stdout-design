@@ -45,9 +45,13 @@ Default: show a summary and prompt confirmation (`Apply these changes? [Y/n]`). 
 packages/cli/src/
 ├── commands/
 │   ├── init/
-│   │   ├── scaffold.ts       # scaffold(), getDefaults(), copyStaticAssets (shared)
-│   │   ├── merge-config.ts   # mergeConfig() — pure config merge (shared)
-│   │   └── deps.ts           # updatePackageJsonDeps() — pure dep update (shared)
+│   │   ├── catalog.ts          # the starter catalog: fonts and `since` per starter
+│   │   ├── project-config.ts   # buildProjectConfig() — a project's config from its choices
+│   │   ├── serialize-config.ts # serializeConfig() — prints studio.config.ts (shared)
+│   │   ├── scaffold.ts         # scaffold(), copyStaticAssets, starter files (shared)
+│   │   ├── merge-config.ts     # mergeConfig() — pure config merge (shared)
+│   │   ├── version.ts          # compareVersions() (shared)
+│   │   └── deps.ts             # updatePackageJsonDeps() — pure dep update (shared)
 │   ├── init.ts               # init command handler
 │   └── update.ts             # update command handler (new)
 └── index.ts                   # registers `studio update`
