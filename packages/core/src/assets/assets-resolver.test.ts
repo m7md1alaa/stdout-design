@@ -147,6 +147,17 @@ describe("resolveAssetsForLocale", () => {
     expect(result.fontFamilies).toEqual(["Noto Sans Arabic"]);
   });
 
+  it("asks for the built-in Arabic fonts once when they fail to load", async () => {
+    mockGoogleFonts.mockImplementationOnce(() =>
+      Promise.reject(new Error("offline"))
+    );
+
+    const result = await resolveAssetsForLocale("ar", { title: "مرحبا" });
+
+    expect(mockGoogleFonts).toHaveBeenCalledTimes(1);
+    expect(result.fonts).toEqual([]);
+  });
+
   it("calls loadLocaleData callback and merges results into props", async () => {
     const props = { title: "Hello" };
     const loadLocaleData = mock((_locale: string) =>

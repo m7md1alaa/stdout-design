@@ -68,9 +68,10 @@ export const resolveAssetsForLocale = async (
   } else {
     // Without a `fonts` config, or when its fonts fail to load, a locale
     // still gets its script's built-in fonts (none for Latin).
-    const fetchFonts = options?.fetchFonts ?? fetchBuiltInFonts;
-    const resolution =
-      (await fetchFonts(localeId)) ?? (await fetchBuiltInFonts(localeId));
+    const configured = options?.fetchFonts
+      ? await options.fetchFonts(localeId)
+      : null;
+    const resolution = configured ?? (await fetchBuiltInFonts(localeId));
     if (resolution) {
       ({ fontFamilies, fonts } = resolution);
     }
