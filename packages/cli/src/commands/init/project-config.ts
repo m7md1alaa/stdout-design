@@ -1,11 +1,9 @@
 import { scriptOf } from "@stdout-design/core";
-import type { StudioConfig } from "@stdout-design/core";
+import type { FontConfig, StudioConfig } from "@stdout-design/core";
 
-import { STARTER_IDS, starter, starterFonts } from "./catalog.js";
+import { STARTER_IDS, getStarter, starterFonts } from "./catalog.js";
 import type { StarterId } from "./catalog.js";
 import { compareVersions } from "./version.js";
-
-type Fonts = NonNullable<StudioConfig["fonts"]>;
 
 const PRESETS: StudioConfig["presets"] = [
   { height: 1080, id: "instagram-square", platform: "instagram", width: 1080 },
@@ -20,10 +18,13 @@ export interface ProjectChoices {
 
 // Only the fonts the chosen starters use. Arabic locales don't fall back
 // to `default`, so their entry lists the Latin faces too.
-const fontsFor = ({ starters, locales }: ProjectChoices): Fonts | undefined => {
+const fontsFor = ({
+  starters,
+  locales,
+}: ProjectChoices): Record<string, FontConfig[]> | undefined => {
   const latin = starterFonts(starters, "latin");
   const arabic = starterFonts(starters, "arabic");
-  const fonts: Fonts = {};
+  const fonts: Record<string, FontConfig[]> = {};
   if (latin.length > 0) {
     fonts.default = latin;
   }
@@ -57,7 +58,7 @@ export const buildProjectConfig = (
       id,
       {
         componentPath: `./templates/${id}`,
-        description: starter(id).description,
+        description: getStarter(id).description,
       },
     ])
   ),
@@ -73,7 +74,7 @@ export const startersSince = (
   installedVersion: string
 ): StarterId[] =>
   STARTER_IDS.filter((id) => {
-    const { since } = starter(id);
+    const { since } = getStarter(id);
     const isNewToProject = compareVersions(since, scaffoldVersion ?? "0") > 0;
     const isShipped =
       installedVersion === "latest" ||

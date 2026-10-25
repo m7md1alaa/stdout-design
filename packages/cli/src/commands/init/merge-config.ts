@@ -1,8 +1,7 @@
-import type { StudioConfig } from "@stdout-design/core";
+import type { FontConfig, StudioConfig } from "@stdout-design/core";
 
 type Preset = StudioConfig["presets"][number];
 type TemplateEntry = StudioConfig["templates"][string];
-type Fonts = NonNullable<StudioConfig["fonts"]>;
 
 /** The config `update` merges in: the presets, starters and fonts the project lacks. */
 export type Defaults = Pick<StudioConfig, "presets" | "templates"> &
@@ -82,9 +81,12 @@ const mergeTemplates = (
 const mergeFonts = (
   existing: StudioConfig,
   defaults: Defaults
-): { fonts: Fonts | undefined; addedFonts: string[] } => {
+): {
+  fonts: Record<string, FontConfig[]> | undefined;
+  addedFonts: string[];
+} => {
   const addedFonts: string[] = [];
-  const fonts: Fonts = { ...existing.fonts };
+  const fonts: Record<string, FontConfig[]> = { ...existing.fonts };
 
   for (const [locale, entries] of Object.entries(defaults.fonts ?? {})) {
     const current = fonts[locale] ?? [];

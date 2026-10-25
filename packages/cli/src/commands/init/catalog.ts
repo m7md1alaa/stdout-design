@@ -1,6 +1,4 @@
-import type { Script, StudioConfig } from "@stdout-design/core";
-
-type FontConfig = NonNullable<StudioConfig["fonts"]>[string][number];
+import type { FontConfig, Script } from "@stdout-design/core";
 
 /**
  * Every Google Font a starter uses. The array order is the load order, and
@@ -97,7 +95,7 @@ export const STARTER_IDS: StarterId[] = STARTERS.map((s) => s.id);
 export const isStarterId = (id: string): id is StarterId =>
   (STARTER_IDS as string[]).includes(id);
 
-export const starter = (id: StarterId): Starter => {
+export const getStarter = (id: StarterId): Starter => {
   const found: Starter | undefined = STARTERS.find((s) => s.id === id);
   if (!found) {
     throw new Error(`Unknown starter "${id}".`);
@@ -110,7 +108,7 @@ export const starterFonts = (
   ids: StarterId[],
   script: Script
 ): FontConfig[] => {
-  const used = new Set<FontFamily>(ids.flatMap((id) => starter(id).fonts));
+  const used = new Set<FontFamily>(ids.flatMap((id) => getStarter(id).fonts));
   return FONTS.filter(
     (font) => used.has(font.family) && font.script === script
   ).map(({ family, weights }) => ({

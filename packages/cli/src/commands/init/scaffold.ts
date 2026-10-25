@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { isStarterId } from "./catalog.js";
+import { STARTER_IDS, isStarterId } from "./catalog.js";
 import type { StarterId } from "./catalog.js";
 import { buildProjectConfig } from "./project-config.js";
 import type { ProjectChoices } from "./project-config.js";
@@ -159,7 +159,9 @@ export const addStarterLocaleStrings = async (
 const toStarterIds = (templates: string[]): StarterId[] =>
   templates.map((id) => {
     if (!isStarterId(id)) {
-      throw new Error(`Template "${id}" not found at templates/${id}.tsx`);
+      throw new Error(
+        `Template "${id}" not found in the starter catalog. Choose from: ${STARTER_IDS.join(", ")}.`
+      );
     }
     return id;
   });
