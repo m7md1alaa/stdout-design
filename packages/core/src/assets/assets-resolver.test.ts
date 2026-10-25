@@ -88,19 +88,34 @@ describe("resolveAssetsForLocale", () => {
     expect(fetchFonts).toHaveBeenCalledWith("ar-EG");
   });
 
-  it("does not fetch fonts for non-Arabic locales", async () => {
+  it("fetches config fonts for non-Arabic locales too", async () => {
     const props = { title: "Hello" };
     const fetchFonts = mock((_localeId: string) =>
       Promise.resolve({
-        fontFamilies: ["Test"],
+        fontFamilies: ["Display"],
         fonts: [stubFont],
       })
     );
 
     const result = await resolveAssetsForLocale("en", props, { fetchFonts });
 
+    expect(result.lang).toBeUndefined();
+    expect(result.fonts).toEqual([stubFont]);
+    expect(result.fontFamilies).toEqual(["Display"]);
+    expect(fetchFonts).toHaveBeenCalledWith("en");
+  });
+
+  it("leaves non-Arabic locales on built-in fonts when the config has none", async () => {
+    const fetchFonts = mock((_localeId: string) => Promise.resolve(null));
+
+    const result = await resolveAssetsForLocale(
+      "fr",
+      { title: "Bonjour" },
+      { fetchFonts }
+    );
+
     expect(result.fonts).toEqual([]);
-    expect(fetchFonts).toHaveBeenCalledTimes(0);
+    expect(result.fontFamilies).toBeUndefined();
   });
 
   it("calls loadLocaleData callback and merges results into props", async () => {

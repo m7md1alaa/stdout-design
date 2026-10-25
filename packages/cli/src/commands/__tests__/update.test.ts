@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { getDefaults } from "../init/scaffold.js";
 import type { UpdateDeps } from "../update.js";
 
 const inTempDir = () => {
@@ -24,23 +25,20 @@ export default config;
   writeFileSync(path.resolve(dir, "studio.config.ts"), configContent);
 };
 
+// A config that already has every default preset, template and font
+// locale, so `update` has nothing to add.
 const createCurrentConfig = (dir: string): void => {
+  const { defaultPreset, fonts, presets, templates } = getDefaults();
+  const config = {
+    defaultPreset,
+    fonts,
+    presets,
+    scaffoldVersion: "0.2.9",
+    templates,
+  };
   const configContent = `import type { StudioConfig } from "@stdout-design/cli";
 
-const config: StudioConfig = {
-  scaffoldVersion: "0.2.9",
-  defaultPreset: "instagram-square",
-  presets: [
-    { height: 1080, id: "instagram-square", platform: "instagram", width: 1080 },
-    { height: 1200, id: "x-card", platform: "x", width: 1200 },
-  ],
-  templates: {
-    "bento-feature": {
-      componentPath: "./templates/bento-feature",
-      description: "Apple-style bento feature card.",
-    },
-  },
-};
+const config: StudioConfig = ${JSON.stringify(config, null, 2)};
 
 export default config;
 `;

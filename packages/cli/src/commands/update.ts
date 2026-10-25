@@ -9,7 +9,12 @@ import { updatePackageJsonDeps } from "./init/deps.js";
 import { mergeConfig } from "./init/merge-config.js";
 import type { Defaults, ChangeSummary } from "./init/merge-config.js";
 import { getLatestVersion } from "./init/registry.js";
-import { copyStaticAssets, getDefaults } from "./init/scaffold.js";
+import {
+  copyStaticAssets,
+  copyTemplateFiles,
+  getDefaults,
+  TEMPLATE_IDS,
+} from "./init/scaffold.js";
 import { getScaffoldVersion } from "./init/version.js";
 
 const DEPRECATED_PRESET_IDS = new Set<string>();
@@ -100,6 +105,9 @@ const printChanges = (summary: ChangeSummary, installedVersion: string) => {
   for (const id of summary.addedTemplates) {
     console.log(`  templates        +${id}`);
   }
+  for (const locale of summary.addedFontLocales) {
+    console.log(`  fonts            +${locale}`);
+  }
   console.log(
     "  assets           tsconfig.json, .gitignore, types.d.ts (overwrite)"
   );
@@ -117,6 +125,13 @@ export const applyUpdate = async (
 
   await writeFile(configPath, serializeConfig(plan.mergedConfig));
   await copyStaticAssets(dir);
+  // Registering a starter without its file would break `studio render`;
+  // files the user already has are never overwritten.
+  await copyTemplateFiles(
+    dir,
+    plan.summary.addedTemplates.filter((id) => TEMPLATE_IDS.includes(id)),
+    { overwrite: false }
+  );
 
   const pkgPath = path.resolve(dir, "package.json");
   if (existsSync(pkgPath)) {
@@ -162,6 +177,7 @@ export const update = async (
     plan.summary.addedPresets.length > 0 ||
     plan.summary.deprecatedPresets.length > 0 ||
     plan.summary.addedTemplates.length > 0 ||
+    plan.summary.addedFontLocales.length > 0 ||
     plan.summary.oldVersion !== plan.summary.newVersion;
 
   if (!hasChanges) {

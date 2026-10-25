@@ -118,7 +118,15 @@ export const init = async (
     console.log(`    ${pm} install`);
   }
   console.log(`    ${pm} run dev                         # live studio`);
-  console.log(`    ${pm} run render bento-feature        # render to ./out`);
+  const [first] = collected.templates;
+  if (first) {
+    console.log(`    ${pm} run render ${first}   # render to ./out`);
+    if (collected.locales.includes("ar")) {
+      console.log(
+        `    ${pm} run render ${first} --locale ar   # the Arabic, RTL version`
+      );
+    }
+  }
   console.log("");
 
   outro("Done");

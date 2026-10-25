@@ -467,3 +467,196 @@ html.light:has(#nd-docs-layout) ::selection {
     transparent 70%
   );
 }
+
+/* ============================================================
+   TEMPLATE RAIL — the `studio init` starters drifting past.
+   Constant motion is linear; everything the pointer triggers uses a
+   strong ease-out and stays under 250ms. Only transform and opacity
+   animate, so the drift never touches layout or paint.
+   ============================================================ */
+.template-rail {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --rail-gap: 1.25rem;
+  /* Keep in sync with CARD_HEIGHT_SM / CARD_HEIGHT in template-rail.tsx. */
+  --card-h: 13.75rem;
+}
+
+@media (min-width: 640px) {
+  .template-rail {
+    --card-h: 18.75rem;
+  }
+}
+
+.rail-viewport {
+  overflow: hidden;
+  /* Room above and below for the hovered card's lift and tilt. */
+  padding-block: 1.25rem;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+}
+
+.rail-track {
+  display: flex;
+  width: max-content;
+  animation: rail-scroll 90s linear infinite;
+}
+
+.rail-track[data-direction="reverse"] {
+  animation-direction: reverse;
+  animation-duration: 100s;
+}
+
+.template-rail[data-paused="true"] .rail-track {
+  animation-play-state: paused;
+}
+
+@keyframes rail-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.rail-set {
+  display: flex;
+  gap: var(--rail-gap);
+  margin: 0;
+  padding: 0;
+  /* The gap after the last card, so both sets are exactly equal widths. */
+  padding-inline-end: var(--rail-gap);
+  list-style: none;
+}
+
+.rail-card {
+  flex: none;
+  height: var(--card-h);
+  width: calc(var(--card-h) * var(--ratio));
+  transform: rotate(var(--tilt));
+  transition:
+    transform 240ms var(--ease-out),
+    opacity 240ms var(--ease-out);
+}
+
+.rail-card-frame {
+  position: relative;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.08),
+    0 24px 48px -24px rgb(0 0 0 / 0.9);
+}
+
+.rail-card-meta {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 2.75rem 0.875rem 0.75rem;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.88), transparent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.rail-meta-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  white-space: nowrap;
+}
+
+.rail-toggle {
+  transition:
+    transform 160ms var(--ease-out),
+    color 160ms ease;
+}
+
+.rail-toggle:active {
+  transform: scale(0.97);
+}
+
+.rail-cta-arrow {
+  display: inline-block;
+  transition: transform 200ms var(--ease-out);
+}
+
+/* Hover only where a real pointer exists: on touch screens a tap would
+   leave the card stuck in its hover state, so captions stay visible. */
+@media (hover: hover) and (pointer: fine) {
+  .rail-viewport:hover .rail-track {
+    animation-play-state: paused;
+  }
+
+  .rail-card-meta {
+    opacity: 0;
+    transition: opacity 200ms var(--ease-out);
+  }
+
+  .rail-meta-line {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
+  }
+
+  .rail-set:has(.rail-card:hover) .rail-card:not(:hover) {
+    opacity: 0.45;
+  }
+
+  .rail-card:hover {
+    transform: rotate(0deg) translateY(-6px) scale(1.04);
+  }
+
+  .rail-card:hover .rail-card-meta,
+  .rail-card:hover .rail-meta-line {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* The command line follows the title by a beat. */
+  .rail-card:hover .rail-meta-line + .rail-meta-line {
+    transition-delay: 50ms;
+  }
+
+  .rail-cta:hover .rail-cta-arrow {
+    transform: translateX(4px);
+  }
+}
+
+/* No drift: the rail becomes a plain scrollable strip with one set. */
+@media (prefers-reduced-motion: reduce) {
+  .rail-track {
+    animation: none;
+  }
+
+  .rail-viewport {
+    overflow-x: auto;
+    mask-image: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .rail-set[aria-hidden="true"] {
+    display: none;
+  }
+
+  .rail-card {
+    scroll-snap-align: start;
+  }
+
+  .rail-card:hover {
+    transform: rotate(var(--tilt));
+  }
+
+  .rail-toggle {
+    display: none;
+  }
+}

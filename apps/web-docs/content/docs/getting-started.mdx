@@ -102,11 +102,15 @@ npx @stdout-design/cli init
 
 <Files>
   <File name="studio.config.ts" />
+  <File name="README.md" />
   <File name="package.json" />
   <File name="tsconfig.json" />
   <File name="types.d.ts" />
   <Folder name="templates" defaultOpen>
+    <File name="launch-hero.tsx" />
     <File name="bento-feature.tsx" />
+    <File name="retro-poster.tsx" />
+    <File name="trend-poster.tsx" />
   </Folder>
   <Folder name="locales" defaultOpen>
     <File name="en.json" />
@@ -114,12 +118,12 @@ npx @stdout-design/cli init
   </Folder>
 </Files>
 
-- `studio.config.ts` the template registry, presets, and locales.
+- `studio.config.ts` the template registry, presets, and Google Fonts.
 - `types.d.ts` adds the `tw=` attribute type for React.
 - `templates/` your TSX components.
-- `locales/` translation files.
+- `locales/` translation files, keyed by template id.
 
-The scaffolded `studio.config.ts` registers a single `bento-feature` template with two presets (`instagram-square` 1080×1080 as default, and `x-card`).
+You get four starters: `launch-hero` (a streetwear landing page), `bento-feature` (a product bento grid), `retro-poster` (a cassette print poster), and `trend-poster` (an editorial six-item grid). Each one lays out at both presets, `instagram-square` (1080×1080, the default) and `x-card` (1200×675), and mirrors itself when rendered in Arabic. They're yours to rewrite or delete.
 
 </Step>
 <Step>
@@ -127,16 +131,22 @@ The scaffolded `studio.config.ts` registers a single `bento-feature` template wi
 ### Render your first image
 
 ```bash
-npx @stdout-design/cli render bento-feature --headline "Hello"
+npx @stdout-design/cli render launch-hero --headline "Hello there"
 ```
 
 By default `render` outputs one PNG for the config's `defaultPreset` (pass `--preset all` for every preset, and `--locale en,ar` for several locales), named like:
 
 ```
-out/bento-feature.default.instagram-square.0.png
+out/launch-hero.default.instagram-square.0.png
 ```
 
 It also writes a `manifest.json` alongside the images summarizing what was rendered.
+
+Render the Arabic version to see the same template right-to-left:
+
+```bash
+npx @stdout-design/cli render launch-hero --locale ar
+```
 
 </Step>
 <Step>

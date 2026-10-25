@@ -5,14 +5,14 @@ import { FeaturesGrid } from "@/components/marketing/features-grid";
 import { Hero } from "@/components/marketing/hero";
 import { InterfaceShowcase } from "@/components/marketing/interface-showcase";
 import { LogosStrip } from "@/components/marketing/logos-strip";
-// import { OutputGallery } from "@/components/marketing/output-gallery";
 import { PipelineShowcase } from "@/components/marketing/pipeline-showcase";
+import { TemplateRail } from "@/components/marketing/template-rail";
 import { appName } from "@/lib/shared";
 
 export const metadata: Metadata = {
   title: `${appName} — TSX to pixels, from your repo`,
   description:
-    "Render the TSX you already wrote into App Store screenshots, launch cards, and Open Graph images. One CLI command, no Figma, no drift.",
+    "Render the TSX you already wrote into App Store screenshots, launch cards, and Open Graph images, in any language, right-to-left included. One CLI command, no Figma, no drift.",
   openGraph: {
     images: "/og/home/image.webp",
   },
@@ -27,8 +27,8 @@ export default function HomePage() {
     <main>
       <Hero />
       <LogosStrip />
+      <TemplateRail />
       <PipelineShowcase />
-      {/* <OutputGallery /> */}
       <FeaturesGrid />
       <InterfaceShowcase />
       <CtaFooter />

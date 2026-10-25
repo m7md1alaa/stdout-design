@@ -58,8 +58,8 @@ export const features = {
     },
     {
       label: "Multi-target",
-      title: "One template, every canvas",
-      body: "App Store screenshots, Open Graph images, and launch cards from the same component. Each target gets its own size, preset, and crop.",
+      title: "One template, every canvas, every language",
+      body: "App Store screenshots, Open Graph images, and launch cards from the same component, in English and right-to-left Arabic. Each target gets its own size, preset, and crop.",
     },
     {
       label: "Type-safe templates",
@@ -86,7 +86,7 @@ export const showcase = {
       label: "CLI",
       file: "$ studio render",
       code: `$ npx @stdout-design/cli init
-✔ Created stdout.config.ts
+✔ Created studio.config.ts
 
 $ studio render bento-feature \\
     --data ./data/posts.csv \\
@@ -135,37 +135,24 @@ export function BentoFeature({ title, rows }: Props) {
   ],
 };
 
-export const gallery = {
-  eyebrow: "$ ls ./out/",
-  headline: "One bento-feature.tsx. Every crop it ships as.",
-  body: "Same component, same data file, rendered once per target — no manual re-export when a new placement shows up.",
-  items: [
-    {
-      file: "og-image.png",
-      dims: "1200×630",
-      ratio: 1200 / 630,
-      src: "/gallery/og-image.png",
-    },
-    {
-      file: "x-card.png",
-      dims: "1200×675",
-      ratio: 1200 / 675,
-      src: "/gallery/x-card.png",
-    },
-    {
-      file: "instagram-square.png",
-      dims: "1080×1080",
-      ratio: 1,
-      src: "/gallery/instagram-square.png",
-    },
-    {
-      file: "instagram-story.png",
-      dims: "1080×1920",
-      ratio: 1080 / 1920,
-      src: "/gallery/instagram-story.png",
-    },
+export const templateRail = {
+  eyebrow: "$ studio init",
+  headline: "You start with four posters, not a blank file.",
+  body: "Every new project ships four starters. Each one lays out for square and wide canvases and mirrors itself for Arabic. Hover a render to see the command that made it.",
+  stats: ["4 starters", "2 canvases each", "English + Arabic", "0 Figma files"],
+  rows: [
+    { dir: "ltr", label: "English · LTR", lang: "en", locale: "en" },
+    { dir: "rtl", label: "العربية · RTL", lang: "ar", locale: "ar" },
   ],
-};
+  templates: {
+    "bento-feature": "Product bento",
+    "launch-hero": "Streetwear drop",
+    "retro-poster": "Cassette poster",
+    "trend-poster": "Editorial grid",
+  },
+  cta: { href: "/docs/templates", label: "Write your own template" },
+  pause: { pause: "Pause", play: "Play" },
+} as const;
 
 export const footer = {
   headline: "Render your first asset tonight.",
