@@ -284,7 +284,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { __resetRendererForTesting } =
         await import("../engine/renderer.js");
       __resetRendererForTesting();
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
     });
 
@@ -439,7 +439,7 @@ describe("full-pipeline (real Takumi)", () => {
         width: 400,
       });
 
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
 
       const withDefault = await orchestrateRender({
@@ -471,7 +471,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { __resetRendererForTesting } =
         await import("../engine/renderer.js");
       __resetRendererForTesting();
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
     });
 
@@ -614,7 +614,7 @@ describe("full-pipeline (real Takumi)", () => {
         width: 200,
       });
 
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
 
       const arabicResult = await orchestrateRender({
@@ -644,7 +644,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { __resetRendererForTesting } =
         await import("../engine/renderer.js");
       __resetRendererForTesting();
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
     });
 
@@ -715,7 +715,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { __resetRendererForTesting } =
         await import("../engine/renderer.js");
       __resetRendererForTesting();
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
     });
 
@@ -812,7 +812,7 @@ describe("full-pipeline (real Takumi)", () => {
         width: 300,
       });
 
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
 
       const resultB = await orchestrateRender({
@@ -842,7 +842,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { __resetRendererForTesting } =
         await import("../engine/renderer.js");
       __resetRendererForTesting();
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
     });
 
@@ -946,7 +946,7 @@ describe("full-pipeline (real Takumi)", () => {
       const { __resetRendererForTesting } =
         await import("../engine/renderer.js");
       __resetRendererForTesting();
-      const { clearFontCache } = await import("../assets/assets-resolver.js");
+      const { clearFontCache } = await import("../assets/font-config.js");
       clearFontCache();
     });
 

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { Font } from "../engine/takumi-types-shim.js";
-import { clearFontCache, resolveAssetsForLocale } from "./assets-resolver.js";
+import { resolveAssetsForLocale } from "./assets-resolver.js";
+import { clearFontCache } from "./font-config.js";
 
 const stubFont: Font = { name: "test-font", weight: 400 } as Font;
 
@@ -147,22 +148,6 @@ describe("resolveAssetsForLocale", () => {
 
     expect(result.props).toEqual(props);
     expect(loadLocaleData).toHaveBeenCalledTimes(1);
-  });
-
-  it("memoizes font resolution per locale id", async () => {
-    const props = { title: "Hello" };
-    const fetchFonts = mock((_localeId: string) =>
-      Promise.resolve({
-        fontFamilies: ["Test"],
-        fonts: [stubFont],
-      })
-    );
-
-    await resolveAssetsForLocale("ar", props, { fetchFonts });
-    await resolveAssetsForLocale("ar", props, { fetchFonts });
-    await resolveAssetsForLocale("ar", { other: true }, { fetchFonts });
-
-    expect(fetchFonts).toHaveBeenCalledTimes(1);
   });
 
   it("uses preResolvedFonts and skips fetchFonts while still classifying lang", async () => {

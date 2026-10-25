@@ -1,7 +1,6 @@
-import { googleFonts } from "@takumi-rs/helpers";
-
-import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
-import { logDebug } from "../shared/logger.js";
+import type { Font } from "../engine/takumi-types-shim.js";
+import { fetchBuiltInFonts } from "./font-config.js";
+import { scriptOf } from "./locale-fonts.js";
 
 export interface AssetsForLocale {
   fonts: Font[];
@@ -23,35 +22,6 @@ export interface AssetsResolverOptions {
   preResolvedFontFamilies?: string[];
 }
 
-const isFontDescriptor = (f: Font): f is FontDescriptor =>
-  typeof f === "object" && !(f instanceof Uint8Array);
-
-const defaultFetchFonts = async (
-  localeId: string
-): Promise<{ fonts: Font[]; fontFamilies: string[] } | null> => {
-  try {
-    const fonts = await googleFonts([
-      { name: "Noto Sans Arabic", weight: [400, 700] },
-    ]);
-    const fontFamilies = fonts
-      .filter(isFontDescriptor)
-      .map((f) => String(f.name ?? ""))
-      .filter(Boolean);
-    logDebug("googleFonts resolved per locale", {
-      count: fonts.length,
-      localeId,
-      names: fonts.filter(isFontDescriptor).map((f) => f.name),
-    });
-    return { fontFamilies, fonts };
-  } catch (error) {
-    logDebug("googleFonts failed for locale", {
-      error: String(error),
-      localeId,
-    });
-    return null;
-  }
-};
-
 const mergeLocaleProps = (
   props: Record<string, unknown>,
   localeData?: Record<string, unknown>
@@ -72,39 +42,6 @@ const mergeLocaleProps = (
   return merged;
 };
 
-const classifyLocale = (
-  localeId: string
-): { lang: string | undefined; needsArabic: boolean } => {
-  const isArabic = localeId.startsWith("ar");
-  return {
-    lang: isArabic ? "ar" : undefined,
-    needsArabic: isArabic,
-  };
-};
-
-const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
-
-const cachedFetch = async (
-  key: string,
-  fetch: () => Promise<FontResolutionResult | null>
-): Promise<FontResolutionResult | null> => {
-  const cached = fontCache.get(key);
-  if (cached) {
-    return await cached;
-  }
-  const promise = fetch();
-  fontCache.set(key, promise);
-  const resolution = await promise;
-  if (!resolution) {
-    fontCache.delete(key);
-  }
-  return resolution;
-};
-
-export const clearFontCache = (): void => {
-  fontCache.clear();
-};
-
 export const resolveAssetsForLocale = async (
   localeId: string,
   props: Record<string, unknown>,
@@ -120,7 +57,7 @@ export const resolveAssetsForLocale = async (
   }
 
   const mergedProps = mergeLocaleProps(props, localeData);
-  const { lang, needsArabic } = classifyLocale(localeId);
+  const lang = scriptOf(localeId) === "arabic" ? "ar" : undefined;
 
   let fonts: Font[] = [];
   let fontFamilies: string[] | undefined;
@@ -129,20 +66,9 @@ export const resolveAssetsForLocale = async (
     fonts = options.preResolvedFonts;
     fontFamilies = options.preResolvedFontFamilies;
   } else {
-    // Config fonts apply to every locale; Arabic falls back to Noto Sans
-    // Arabic when the config has nothing for it.
-    let resolution = options?.fetchFonts
-      ? await cachedFetch(
-          `config:${localeId}`,
-          () => options.fetchFonts?.(localeId) ?? Promise.resolve(null)
-        )
-      : null;
-    if (!resolution && needsArabic) {
-      resolution = await cachedFetch(`arabic:${localeId}`, () =>
-        defaultFetchFonts(localeId)
-      );
-    }
-
+    // Without a `fonts` config, a locale still gets its script's built-in fonts.
+    const fetchFonts = options?.fetchFonts ?? fetchBuiltInFonts;
+    const resolution = await fetchFonts(localeId);
     if (resolution) {
       ({ fontFamilies, fonts } = resolution);
     }
