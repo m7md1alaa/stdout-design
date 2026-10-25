@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import { STARTER_IDS, STARTERS } from "./catalog.js";
 import { isInsideGitRepo } from "./git.js";
-import { TEMPLATE_CATALOG, TEMPLATE_IDS } from "./scaffold.js";
 import { validateProjectName } from "./validate.js";
 
 export interface ClackModule {
@@ -104,13 +104,13 @@ export const collectPrompts = async (
   }
 
   const templates = ciOrYes(options)
-    ? TEMPLATE_IDS
+    ? STARTER_IDS
     : await promptOrSkip(
         (p) =>
           p.multiselect({
-            initialValues: TEMPLATE_IDS,
+            initialValues: STARTER_IDS,
             message: "Which templates would you like to scaffold?",
-            options: TEMPLATE_CATALOG.map((t) => ({
+            options: STARTERS.map((t) => ({
               hint: t.hint,
               label: t.label,
               value: t.id,

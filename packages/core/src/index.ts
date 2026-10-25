@@ -46,6 +46,8 @@ export {
   createFetchFontsFromConfig,
 } from "./assets/font-config.js";
 export { resolveAssetsForLocale } from "./assets/assets-resolver.js";
+export { scriptOf } from "./assets/locale-fonts.js";
+export type { Script } from "./assets/locale-fonts.js";
 export type {
   AssetsForLocale,
   AssetsResolverOptions,

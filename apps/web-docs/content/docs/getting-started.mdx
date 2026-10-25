@@ -134,15 +134,16 @@ You get four starters: `launch-hero` (a streetwear landing page), `bento-feature
 npx @stdout-design/cli render launch-hero --headline "Hello there"
 ```
 
-By default `render` outputs one PNG for the config's `defaultPreset` (pass `--preset all` for every preset, and `--locale en,ar` for several locales), named like:
+By default `render` outputs one PNG per locale in the config's `locales` (the ones you picked at `init`), at the config's `defaultPreset`. Pass `--preset all` for every preset. The files are named like:
 
 ```
-out/launch-hero.default.instagram-square.0.png
+out/launch-hero.en.instagram-square.0.png
+out/launch-hero.ar.instagram-square.0.png
 ```
 
 It also writes a `manifest.json` alongside the images summarizing what was rendered.
 
-Render the Arabic version to see the same template right-to-left:
+The Arabic file is the same template laid out right to left. To render one locale, pass `--locale`:
 
 ```bash
 npx @stdout-design/cli render launch-hero --locale ar

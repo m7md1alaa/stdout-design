@@ -72,3 +72,23 @@ packages/cli/src/
 **Flags on `studio init` (`--update` / `--force`).** Rejected: conflates two distinct intents (create vs. upgrade) and `init` asks first-time questions that don't apply to upgrades.
 
 **Template-diff regeneration.** Rejected for v1: too much friction for a one-command operation. Programmatic merge is safe enough for the fields touched.
+
+## Amendment (2026-10-25): starters, locales and fonts follow the project's choices
+
+### Context
+
+The poster starters (four templates, Arabic copy, Google Fonts per starter) exposed a gap. `init` and `update` each built "what a project contains" their own way: `init` from the user's answers, `update` from a fixed `getDefaults()` that listed every starter and both locales' fonts. So `update` on a fresh English-only project added Arabic fonts, and brought back starters the user had left out. It also wrote the config with `JSON.stringify` while `init` wrote it by hand.
+
+### Decision
+
+- **One builder.** `buildProjectConfig(version, { starters, locales })` (`init/project-config.ts`) is the only place that decides a project's config. `init` writes its result; `update` builds it for the project's own choices and merges it in with the rules above.
+- **Choices are recorded, not guessed.** `init` writes `locales` into `studio.config.ts`. A project without it gets them from `locales/*.json`, and `update` writes them back.
+- **Starters carry the version that shipped them.** Each catalog entry (`init/catalog.ts`) has `since`. `update` offers only starters shipped after the project's `scaffoldVersion` and no later than the running CLI, so a starter the user left out at `init` is never re-added.
+- **Fonts follow starters.** Each starter lists the families it uses; the config gets only those, for the recorded locales. `update` adds missing families to an entry and never removes or reorders the user's.
+- **Template files are now in scope**, replacing the "out of scope for v1" row: a starter `update` registers gets its `.tsx` and its strings in each recorded locale file. Existing files and entries are never overwritten. Files are written before the config, so a failed copy leaves the config unchanged.
+- **One serializer.** Both commands print the config with `serializeConfig` (`init/serialize-config.ts`).
+
+### Consequences
+
+- `studio render <id>` in a new project renders every recorded locale, and the dev server lists them, instead of a single `default` render.
+- `since` only models additions. Removing or renaming a starter needs a `deprecated` marker like presets have.

@@ -12,7 +12,9 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 
 **Template**: A TSX component that defines rendered visual output. Has a `propsSchema` (Zod) and a default export. Lives in a project's `templates/` dir or the CLI's `template/` dir. _Avoid_: Component (ambiguous — in this context, "component" means Takumi node, not template)
 
-**Template directory** (`template/` in the CLI package): The source-of-truth files that get copied during scaffold. Not a separate publishable package. _Avoid_: starter, boilerplate, example
+**Template directory** (`template/` in the CLI package): The source-of-truth files that get copied during scaffold. Not a separate publishable package. _Avoid_: starter (that is one template in it), boilerplate, example
+
+**Starter**: One template in the template directory that `studio init` offers, listed in the CLI's starter catalog (`init/catalog.ts`) with the fonts it uses and `since`, the CLI version that first shipped it. _Avoid_: sample, demo template
 
 **Scaffold version**: The CLI version that created a project. Stored in `studio.config.ts` as `scaffoldVersion`. Used by `studio update` to compare against the current CLI version. _Avoid_: version, created-version
 
@@ -28,7 +30,7 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 
 **Scaffold warnings**: Messages printed during scaffold when something is unexpected but not blocking: directory exists, offline mode active, TypeScript config exists. Not errors. _Avoid_: warnings, notices
 
-**Studio update**: The `studio update` command that upgrades an existing studio project's scaffolded files to match the current CLI version. Updates `scaffoldVersion`, static assets, `package.json` deps, and merges new default presets/templates into the config. _Avoid_: upgrade, migrate, refresh
+**Studio update**: The `studio update` command that upgrades an existing studio project's scaffolded files to match the current CLI version. Updates `scaffoldVersion`, static assets, `package.json` deps, and merges in new default presets and the starters shipped since the project's `scaffoldVersion`, with their files, locale strings and fonts. See ADR-0015. _Avoid_: upgrade, migrate, refresh
 
 **Deprecated preset**: A preset (in `studio.config.ts`) that the CLI no longer recommends. Marked with `deprecated: true` during `studio update`. The rendering pipeline may emit warnings for deprecated presets. _Avoid_: removed, deleted, old
 
