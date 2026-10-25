@@ -72,3 +72,6 @@ export type {
 
 export { runBatch } from "./batch/batch.js";
 export type { BatchInput, BatchOutput } from "./batch/batch.js";
+
+export { classifyLocale, SCRIPTS } from "./shared/locale.js";
+export type { Direction, LocaleInfo, Script } from "./shared/locale.js";

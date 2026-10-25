@@ -32,10 +32,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.test.json",
     "check-types:tsgo": "tsgo --noEmit",
     "lint": "ultracite check",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "bun test"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

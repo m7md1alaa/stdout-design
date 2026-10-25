@@ -13,6 +13,7 @@ import {
   setNestedValue,
 } from "../lib/template-props";
 import { resolveLocale } from "../lib/utils";
+import type { LocaleSummary } from "../lib/utils";
 import type { SSEReloadEvent } from "./use-sse";
 import { useSSE } from "./use-sse";
 import type { PresetData, TemplateSchema } from "./use-templates";
@@ -38,7 +39,7 @@ const initialState: PersistedAppState = (() => {
 interface UseStudioStateArgs {
   templates: TemplateSchema[];
   presets: PresetData[];
-  locales: string[];
+  localeInfo: LocaleSummary[];
   defaultPreset: string | null;
   reload: () => void;
 }
@@ -53,7 +54,7 @@ interface UseStudioStateArgs {
 export const useStudioState = ({
   templates,
   presets,
-  locales,
+  localeInfo,
   defaultPreset,
   reload,
 }: UseStudioStateArgs) => {
@@ -100,7 +101,7 @@ export const useStudioState = ({
   const { locale: effectiveLocale, autoDetected } = resolveLocale(
     selectedLocale,
     propValues,
-    locales
+    localeInfo
   );
 
   useSSE(

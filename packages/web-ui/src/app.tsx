@@ -21,6 +21,7 @@ const App = () => {
     templates,
     presets,
     locales,
+    localeInfo,
     defaultPreset,
     initialLoading,
     reloading,
@@ -30,7 +31,7 @@ const App = () => {
 
   const studio = useStudioState({
     defaultPreset,
-    locales,
+    localeInfo,
     presets,
     reload,
     templates,

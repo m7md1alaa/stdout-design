@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import {
+  classifyLocale,
   clearFontCache,
   createFetchFontsFromConfig,
   logWarn,
@@ -164,6 +165,11 @@ export const createDevServer = async (options: DevServerOptions) => {
     const config = await templateLoader.getConfig();
     return c.json({
       defaultPreset: config.defaultPreset,
+      // Script and direction come from core, so the studio never guesses them.
+      localeInfo: (config.locales ?? []).map((id) => {
+        const { dir, script } = classifyLocale(id);
+        return { dir, id, script };
+      }),
       locales: config.locales,
       outDir: config.outDir,
       presets: config.presets,

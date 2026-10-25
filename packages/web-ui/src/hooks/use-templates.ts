@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 import { API_ROUTES } from "../constants";
 import { logError } from "../lib/logger";
+import type { LocaleSummary } from "../lib/utils";
 
 export interface TemplateSchema {
   id: string;
@@ -23,6 +24,7 @@ interface ConfigData {
   presets: PresetData[];
   defaultPreset: string | undefined;
   locales: string[];
+  localeInfo?: LocaleSummary[];
   outDir: string;
 }
 
@@ -104,6 +106,7 @@ export const useTemplates = () => {
     error,
     initialLoading,
     loading: initialLoading && !reloading,
+    localeInfo: config?.localeInfo ?? [],
     locales: config?.locales ?? [],
     presets: config?.presets ?? [],
     reload,

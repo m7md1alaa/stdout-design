@@ -4,6 +4,7 @@ import path from "node:path";
 import { googleFonts } from "@takumi-rs/helpers";
 
 import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
+import { classifyLocale } from "../shared/locale.js";
 import { logDebug } from "../shared/logger.js";
 import type { FontConfig } from "../shared/types.js";
 import type { FontResolutionResult } from "./assets-resolver.js";
@@ -29,16 +30,18 @@ const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
 
 /**
  * The `default` entry covers every locale without its own entry — and the
- * no-locale render, whose id is `default`. Arabic locales are excluded from
- * the fallback: a Latin display face has no Arabic glyphs, so they keep the
- * resolver's Noto Sans Arabic unless they declare fonts explicitly.
+ * no-locale render, whose id is `default`. Non-Latin locales are excluded
+ * from the fallback: a Latin display face has no Arabic or Hebrew glyphs, so
+ * they keep the resolver's Noto face unless they declare fonts explicitly.
  */
 const resolveLocaleFontConfigs = (
   fontsConfig: Record<string, FontConfig[]>,
   localeId: string
 ): FontConfig[] | undefined =>
   fontsConfig[localeId] ??
-  (localeId?.startsWith("ar") ? undefined : fontsConfig.default);
+  (classifyLocale(localeId).script === "latin"
+    ? fontsConfig.default
+    : undefined);
 
 export const createFetchFontsFromConfig = (
   fontsConfig?: Record<string, FontConfig[]> | undefined,
