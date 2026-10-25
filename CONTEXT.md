@@ -35,3 +35,9 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 **Agent Skill**: A `SKILL.md` file (at `skills/studio/SKILL.md`) installed into an agent's scope by the `skills` CLI (vercel-labs/skills). Contains instructions for how the agent should use `studio`. _Avoid_: skill (ambiguous), instruction set, prompt, agent config
 
 **Skill installer**: The module in `@stdout-design/cli` (`src/lib/skill.ts`) that detects whether the agent skill is installed, prompts the user, and runs `skills add`. _Avoid_: skill manager, agent setup, skill helper
+
+**Core layer**: One of the folders directly under `packages/core/src` (`shared`, `engine`, `project`, `assets`, `cache`, `orchestrate`, `batch`, `og`), each allowed to import only the layers ADR-0008 lists below it. _Avoid_: module (too general), tier
+
+**Boundary rules**: The tables in `packages/config/boundaries/rules.ts` that say which core layers, workspaces, and templates may import which. `boundaries.test.ts` fails on any import they don't allow. Changing a boundary means editing these tables. _Avoid_: lint rules, architecture config
+
+**Render context** (`ctx`): What the pipeline tells a template about the render it is part of: text direction, canvas size, script typography, fonts. Built once by `orchestrateRender` and passed to `defineTemplate`'s `render(props, ctx)`, never mixed into props (ADR-0019). _Avoid_: locale prop, render options, environment

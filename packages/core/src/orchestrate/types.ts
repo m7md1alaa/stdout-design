@@ -1,10 +1,10 @@
 import type { ComponentType } from "react";
 
 import type { FontResolutionResult } from "../assets/assets-resolver.js";
-import type { ImagePolicy } from "../assets/image-resolver.js";
 import type { RenderCache } from "../cache/render-cache.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import type { Font, RenderOptions } from "../engine/takumi-types-shim.js";
+import type { ImagePolicy } from "../shared/types.js";
 import type { PropSchema } from "../shared/validation.js";
 
 type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";

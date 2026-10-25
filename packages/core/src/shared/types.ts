@@ -1,6 +1,24 @@
+import type { EmojiType } from "@takumi-rs/helpers/emoji";
 import type { z } from "zod";
 
-import type { ImagePolicy } from "../assets/image-resolver.js";
+/** Fetch policy for remote images and emoji -- see docs/adr/0018-image-emoji-resolution-module.md. */
+export interface ImagePolicy {
+  /** Return true to permit fetching a URL. Unset denies every URL -- see assets/image-resolver.ts. */
+  allowUrl?: (url: string) => boolean;
+  /** Reject a fetched body past this size, by content-length or streamed. @default 32 MiB (the library default) */
+  maxBytes?: number;
+  /** Abort a fetch after this many milliseconds. @default 5000 (the library default) */
+  timeout?: number;
+  /** Custom fetch implementation. @default globalThis.fetch */
+  fetch?: typeof globalThis.fetch;
+  /**
+   * Emoji provider. `"from-font"` skips network extraction entirely and
+   * relies on a registered COLR font to supply emoji glyphs directly.
+   * Unset also skips extraction (emoji render as whatever glyph the
+   * fallback font stack provides, typically monochrome or missing).
+   */
+  emoji?: EmojiType | "from-font";
+}
 
 export interface FontConfig {
   family: string;

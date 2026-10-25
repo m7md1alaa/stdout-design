@@ -6,6 +6,7 @@ import { createFetchFontsFromConfig } from "../assets/font-config.js";
 import { openCache } from "../cache/open-cache.js";
 import { orchestrateRender } from "../orchestrate/orchestrate.js";
 import { ensureDir, tryWriteFile } from "../orchestrate/utils.js";
+import { generateOutputFilename } from "../shared/naming.js";
 import {
   importTemplateForBatch,
   loadConfig,
@@ -14,7 +15,6 @@ import {
 } from "./loaders.js";
 import { writeManifest } from "./manifest.js";
 import { expandMatrix } from "./matrix.js";
-import { generateOutputFilename } from "./naming.js";
 import type { Manifest } from "./types.js";
 
 export interface BatchInput {

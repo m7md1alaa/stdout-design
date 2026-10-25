@@ -2,10 +2,7 @@ import { createElement } from "react";
 
 import type { FontResolutionResult } from "../assets/assets-resolver.js";
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
-import type {
-  ImagePolicy,
-  ImageSourceEntry,
-} from "../assets/image-resolver.js";
+import type { ImageSourceEntry } from "../assets/image-resolver.js";
 import { resolveImages } from "../assets/image-resolver.js";
 import { RenderCache } from "../cache/render-cache.js";
 import { compileTemplate } from "../engine/render.js";
@@ -13,6 +10,7 @@ import type { CompiledTemplate } from "../engine/render.js";
 import { measureTemplate, renderToPixels } from "../engine/renderer.js";
 import type { Font } from "../engine/takumi-types-shim.js";
 import { logWarn } from "../shared/logger.js";
+import type { ImagePolicy } from "../shared/types.js";
 import type { PropSchema } from "../shared/validation.js";
 import { validateProps } from "../shared/validation.js";
 import type {
