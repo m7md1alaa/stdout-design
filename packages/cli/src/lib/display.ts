@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type { CacheStats, Manifest } from "@stdout-design/core";
 
 const formatBytes = (bytes: number): string => {
@@ -29,36 +31,57 @@ export const formatCacheStats = (stats: CacheStats): string => {
   return lines.join("\n");
 };
 
-export const formatManifestSummary = (manifest: Manifest): string => {
-  const { completedCount, totalCount, succeeded, failed } = manifest;
+const MAX_LISTED_FILES = 10;
+
+const plural = (count: number, word: string): string =>
+  `${count} ${word}${count === 1 ? "" : "s"}`;
+
+export const formatManifestSummary = (
+  manifest: Manifest,
+  cwd?: string
+): string => {
+  const { totalCount, succeeded, failed } = manifest;
   const cacheHits = succeeded.filter((s) => s.cacheHit).length;
+  const display = (filePath: string): string =>
+    cwd ? path.relative(cwd, filePath) || filePath : filePath;
 
-  const lines: string[] = [
-    "",
-    "Batch Render Complete",
-    "━━━━━━━━━━━━━━━━━━━━",
-    `  Status:    ${manifest.status}`,
-    `  Total:     ${totalCount}`,
-    `  Completed: ${completedCount}`,
-    `  Cache:     ${cacheHits} hits, ${succeeded.length - cacheHits} renders`,
-    `  Failed:    ${failed.length}`,
-    "",
-  ];
+  const lines: string[] = [""];
 
-  if (succeeded.length > 0 && succeeded.length <= 10) {
-    lines.push("Output files:");
-    for (const entry of succeeded) {
-      lines.push(`  ${entry.outputPath}`);
+  if (succeeded.length > 0) {
+    const cached = cacheHits > 0 ? ` (${cacheHits} from cache)` : "";
+    lines.push(
+      `✓ Rendered ${plural(succeeded.length, "image")} of ${totalCount}${cached}`
+    );
+    for (const entry of succeeded.slice(0, MAX_LISTED_FILES)) {
+      lines.push(`  ${display(entry.outputPath)}`);
+    }
+    const hidden = succeeded.length - MAX_LISTED_FILES;
+    if (hidden > 0) {
+      lines.push(
+        `  … and ${hidden} more (see manifest.json in the output dir)`
+      );
     }
     lines.push("");
   }
 
   if (failed.length > 0) {
-    lines.push("Failures:");
+    lines.push(`✗ ${plural(failed.length, "render")} failed:`);
     for (const f of failed) {
-      lines.push(`  Row ${f.rowIndex}, ${f.locale}, ${f.preset}: ${f.error}`);
+      lines.push(`  [${f.preset}, ${f.locale}, row ${f.rowIndex}] ${f.error}`);
     }
     lines.push("");
+  }
+
+  if (manifest.status === "aborted") {
+    const skipped = totalCount - succeeded.length - failed.length;
+    lines.push(
+      `Batch aborted after the first failure (--fail-fast); ${skipped} skipped.`,
+      ""
+    );
+  }
+
+  if (totalCount === 0) {
+    lines.push("Nothing to render — the data file has no rows.", "");
   }
 
   return lines.join("\n");

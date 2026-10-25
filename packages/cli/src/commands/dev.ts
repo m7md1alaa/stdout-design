@@ -1,5 +1,21 @@
+import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
+
+import { requireProjectRoot } from "../lib/project-root.js";
+
+const openInBrowser = (url: string): void => {
+  const commands: Record<string, [string, string[]]> = {
+    darwin: ["open", [url]],
+    win32: ["cmd", ["/c", "start", "", url]],
+  };
+  const [command, args] = commands[process.platform] ?? ["xdg-open", [url]];
+  const child = spawn(command, args, { detached: true, stdio: "ignore" });
+  child.on("error", () => {
+    console.log(`Could not open a browser — visit ${url}`);
+  });
+  child.unref();
+};
 
 const findWebUiDist = (): string | undefined => {
   try {
@@ -16,7 +32,7 @@ const findWebUiDist = (): string | undefined => {
 
 export const dev = async (
   rootDir: string | undefined,
-  options: Record<string, string | undefined>
+  options: { port?: string; open?: boolean }
 ): Promise<void> => {
   const { startStandaloneServer } =
     await import("@stdout-design/dev-server").catch(() => {
@@ -32,7 +48,7 @@ export const dev = async (
       );
     });
 
-  const resolvedRoot = rootDir ?? process.cwd();
+  const resolvedRoot = requireProjectRoot(rootDir);
   const port = Number(options.port ?? "3030");
   const webUiDist = findWebUiDist();
 
@@ -43,4 +59,8 @@ export const dev = async (
     rootDir: resolvedRoot,
     webUiDist,
   });
+
+  if (options.open) {
+    openInBrowser(`http://localhost:${port}`);
+  }
 };

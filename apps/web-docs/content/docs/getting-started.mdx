@@ -127,14 +127,13 @@ The scaffolded `studio.config.ts` registers a single `bento-feature` template wi
 ### Render your first image
 
 ```bash
-npx @stdout-design/cli render bento-feature --title "Hello" --out-dir out
+npx @stdout-design/cli render bento-feature --headline "Hello"
 ```
 
-By default `render` outputs one PNG **per configured preset** (and per locale), named like:
+By default `render` outputs one PNG for the config's `defaultPreset` (pass `--preset all` for every preset, and `--locale en,ar` for several locales), named like:
 
 ```
-out/bento-feature.en.instagram-square.0.png
-out/bento-feature.en.x-card.0.png
+out/bento-feature.default.instagram-square.0.png
 ```
 
 It also writes a `manifest.json` alongside the images summarizing what was rendered.

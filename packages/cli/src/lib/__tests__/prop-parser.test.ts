@@ -4,9 +4,9 @@ import { mergeDefaultProps, parsePropArgs } from "../prop-parser.js";
 import type { JsonSchemaShape } from "../prop-parser.js";
 
 describe("parsePropArgs", () => {
-  test("flag-style arg without = sets value to true", () => {
+  test("flag-style arg without a value sets it to true", () => {
     const result = parsePropArgs(["--verbose"], { properties: {} });
-    expect(result).toEqual({ "--verbose": true });
+    expect(result).toEqual({ verbose: true });
   });
 
   test("coerces number type", () => {
@@ -88,6 +88,30 @@ describe("parsePropArgs", () => {
     const schema: JsonSchemaShape = { properties: {} };
     const result = parsePropArgs(["custom=hello"], schema);
     expect(result).toEqual({ custom: "hello" });
+  });
+
+  test("rejects keys the schema does not declare, with a suggestion", () => {
+    const schema: JsonSchemaShape = {
+      properties: { headline: { type: "string" } },
+    };
+    expect(() => parsePropArgs(["headlin=Hi"], schema)).toThrow(
+      'Unknown prop "headlin". Did you mean "headline"?'
+    );
+  });
+
+  test("accepts --key value and --key=value", () => {
+    const schema: JsonSchemaShape = {
+      properties: {
+        count: { type: "number" },
+        dark: { type: "boolean" },
+        headline: { type: "string" },
+      },
+    };
+    const result = parsePropArgs(
+      ["--headline", "Hello world", "--count=3", "--dark"],
+      schema
+    );
+    expect(result).toEqual({ count: 3, dark: true, headline: "Hello world" });
   });
 
   test("coerces multiple args with different types", () => {

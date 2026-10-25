@@ -40,6 +40,7 @@ export const resolveTemplate = (
 
 export const resolveBatchOptions = (
   config: {
+    defaultPreset?: string;
     outDir?: string;
     presets: { id: string }[];
   },
@@ -52,9 +53,16 @@ export const resolveBatchOptions = (
     preset?: string;
   }
 ): ResolvedBatchOptions => {
-  const presetIds = options?.preset
-    ? options.preset.split(",").map((s) => s.trim())
-    : config.presets.map((p) => p.id);
+  const allPresetIds = config.presets.map((p) => p.id);
+  const defaultPresetIds = config.defaultPreset
+    ? [config.defaultPreset]
+    : allPresetIds;
+  let presetIds = defaultPresetIds;
+  if (options?.preset === "all") {
+    presetIds = allPresetIds;
+  } else if (options?.preset) {
+    presetIds = options.preset.split(",").map((s) => s.trim());
+  }
 
   const localeIds = options?.locale
     ? options.locale.split(",").map((s) => s.trim())

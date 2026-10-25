@@ -21,6 +21,22 @@ describe("resolveBatchOptions", () => {
     expect(result.failFast).toBeUndefined();
   });
 
+  it("renders only defaultPreset when the config sets one", () => {
+    const config = {
+      defaultPreset: "medium",
+      presets: [
+        { height: 100, id: "small", platform: "test", width: 100 },
+        { height: 200, id: "medium", platform: "test", width: 200 },
+      ],
+    };
+
+    expect(resolveBatchOptions(config, {}).presets).toEqual(["medium"]);
+    expect(resolveBatchOptions(config, { preset: "all" }).presets).toEqual([
+      "small",
+      "medium",
+    ]);
+  });
+
   it("overrides presets from --preset flag", () => {
     const config = {
       outDir: "./out",

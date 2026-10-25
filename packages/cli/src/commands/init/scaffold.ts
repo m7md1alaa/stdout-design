@@ -155,16 +155,26 @@ const createLocaleFiles = async (
   const localesDir = path.resolve(dir, "locales");
   await mkdir(localesDir, { recursive: true });
 
+  // Locale files are keyed by template id; each entry overrides that
+  // template's string props when rendering with `--locale <code>`.
+  const english = {
+    description: "A beautiful description goes here.",
+    headline: "Featured App",
+  };
   const localeData: Record<string, Record<string, string>> = {
-    ar: { title: "التطبيق المميز" },
-    en: { title: "Featured App" },
+    ar: { description: "وصف جميل يظهر هنا.", headline: "التطبيق المميز" },
+    en: english,
   };
 
   await Promise.all(
     locales.map((locale) =>
       writeFile(
         path.resolve(localesDir, `${locale}.json`),
-        JSON.stringify(localeData[locale] ?? { title: "Featured App" }, null, 2)
+        JSON.stringify(
+          { "bento-feature": localeData[locale] ?? english },
+          null,
+          2
+        )
       )
     )
   );

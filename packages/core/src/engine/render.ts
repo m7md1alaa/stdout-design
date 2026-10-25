@@ -14,6 +14,6 @@ export const compileTemplate = async (
 
   return {
     node: result.node,
-    stylesheets: result.stylesheets,
+    stylesheets: result.css,
   };
 };

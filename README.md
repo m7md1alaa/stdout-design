@@ -12,22 +12,20 @@
 
 > Storybook for images — in your repo and speaking to your agents.
 
-An open-source, local-first studio that renders your own TSX components into pixel-perfect social and marketing images. CLI for scripting, live UI for iteration, MCP server for AI agents.
+An open-source, local-first studio that renders your own TSX components into pixel-perfect social and marketing images. CLI for scripting, live UI for iteration, and an agent skill for AI coding agents.
 
 ## Quick start
 
 ```bash
-# Install
-bun add -d @stdout-design/cli
+# Scaffold a project (installs dependencies with the package manager you ran it with)
+bunx @stdout-design/cli init my-studio
+cd my-studio
 
-# Scaffold a project
-npx @stdout-design/cli init
+# Render an image → out/bento-feature.default.instagram-square.0.png
+bun run render bento-feature --headline "Hello"
 
-# Render an image
-npx @stdout-design/cli render bento-feature --title "Hello" --out hello.png
-
-# Or open the live studio
-npx @stdout-design/cli dev
+# Or open the live studio on http://localhost:3030
+bun run dev
 ```
 
 ## Installation
@@ -43,42 +41,43 @@ bun add -d @stdout-design/cli
 - **Render from TSX** — plain React components. No custom DSL.
 - **Batch & data-driven** — `--data posts.csv` renders one asset per row.
 - **Live studio** — hot-reload, auto-generated prop panel, side-by-side preset preview.
-- **Agent-ready** — MCP server so agents can discover templates and render assets.
-- **Platform presets** — Instagram, X, LinkedIn, OG, App Store, Play Store.
+- **Agent-ready** — installable agent skill, deterministic output paths, and `--json` output.
+- **Any size** — define presets for Instagram, X, LinkedIn, OG, store screenshots, or anything else.
 - **i18n** — `--locales en,ar,es`, RTL support, tofu detection for missing glyphs.
 - **Built-in cache** — fast re-renders without regenerating unchanged assets.
 
 ## CLI
 
-| Command                    | Description                       |
-| -------------------------- | --------------------------------- |
-| `studio init`              | Scaffold a new studio project     |
-| `studio dev`               | Start the live preview studio     |
-| `studio render <template>` | Render a single template or batch |
-| `studio cache stats`       | Show cache statistics             |
-| `studio cache clean`       | Clear the render cache            |
-| `studio lint`              | Check templates for compatibility |
+| Command                    | Description                        |
+| -------------------------- | ---------------------------------- |
+| `studio init`              | Scaffold a new studio project      |
+| `studio dev`               | Start the live preview studio      |
+| `studio render <template>` | Render a single template or batch  |
+| `studio cache stats`       | Show cache statistics              |
+| `studio cache clean`       | Clear the render cache             |
+| `studio update`            | Update a project to the latest CLI |
+| `studio skill install`     | Install the agent skill            |
 
-Run commands with `npx @stdout-design/cli <command>`, or install globally with `bun add -g @stdout-design/cli` to use `studio <command>` directly.
+Inside a scaffolded project, run them through your package manager (`bun run render …`, `bunx studio …`). Commands work from any subdirectory of the project. Set `STUDIO_DEBUG=1` for verbose logs.
 
 ### studio render
 
 ```bash
-studio render <template> [options]
+studio render <template> [props...] [options]
 ```
 
-| Option            | Description                        |
-| ----------------- | ---------------------------------- |
-| `--key value`     | Pass props to the template         |
-| `--data file.csv` | Batch render from CSV or JSON      |
-| `--preset name`   | Output preset (default: og)        |
-| `--locale lang`   | Locale for i18n                    |
-| `--out-dir path`  | Output directory (default: ./out/) |
-| `--out file.png`  | Single output file                 |
+| Option | Description |
+| --- | --- |
+| `key=value` / `--key value` | Template props, validated against the template's `propsSchema` |
+| `--data file.csv` | Batch render: one image per CSV/JSON row |
+| `--preset ids` | Comma-separated preset IDs, or `all` (default: `defaultPreset`) |
+| `--locale en,ar` | Render once per locale, using `locales/<code>.json` |
+| `--out-dir path` | Output directory (default: config `outDir`, else `./out`) |
+| `--json` | Print the render manifest as JSON on stdout |
 
 ### studio dev
 
-Starts a dev server on `localhost:3000` with:
+Starts a dev server on `localhost:3030` (`--port` to change, `--open` to open a browser) with:
 
 - Hot-reload when templates change
 - Auto-generated prop panel
@@ -87,42 +86,44 @@ Starts a dev server on `localhost:3000` with:
 
 ## Writing templates
 
-A template is a TSX component with typed props:
+A template is a TSX component plus a Zod `propsSchema`, styled with Tailwind classes on the `tw` prop:
 
 ```tsx
-type Props = {
-  title: string;
-  stat: string;
-};
+// templates/milestone-card.tsx
+import { defineSchema } from "@stdout-design/cli/schema";
+import { z } from "zod";
 
-export default function MilestoneCard({ title, stat }: Props) {
+export const propsSchema = defineSchema(
+  z.object({
+    title: z.string().default("Milestone"),
+    stat: z.string().default("10k users"),
+  })
+);
+
+export default function MilestoneCard({
+  title,
+  stat,
+}: z.infer<typeof propsSchema>) {
   return (
-    <div className="rounded-2xl bg-black p-8 text-white">
-      <h1 className="text-4xl font-bold">{title}</h1>
-      <p className="mt-2 text-lg">{stat}</p>
+    <div tw="flex flex-col w-full h-full justify-center bg-black p-16 text-white">
+      <h1 tw="text-6xl font-bold">{title}</h1>
+      <p tw="mt-4 text-3xl">{stat}</p>
     </div>
   );
 }
 ```
 
-Drop it in `templates/` and it's immediately renderable.
+Register it in `studio.config.ts` under `templates` (`"milestone-card": { componentPath: "./templates/milestone-card" }`), then `studio render milestone-card stat="50k users"`.
 
 ## AI agent integration
 
-Add to your agent's MCP config:
+Install the agent skill so coding agents (Claude Code, Cursor, …) know how to work with a studio project:
 
-```json
-{
-  "mcpServers": {
-    "stdout-design": {
-      "command": "npx",
-      "args": ["-y", "@stdout-design/cli", "mcp"]
-    }
-  }
-}
+```bash
+studio skill install        # or: init --install-skill
 ```
 
-**Available tools:** `list_templates`, `render`, `render_batch`, `list_presets`
+Output paths are deterministic (`<template>.<locale>.<preset>.<row>.png`), and `render --json` prints a machine-readable manifest.
 
 ## Project structure
 
@@ -131,25 +132,39 @@ my-project/
 ├── studio.config.ts      template registry, presets, locales
 ├── templates/            your TSX components
 ├── data/                 CSV/JSON for batch renders
-├── locales/              translation files
+├── locales/              per-locale prop overrides, keyed by template id
 └── out/                  rendered assets (gitignored)
 ```
 
 ## Configuration
 
 ```ts
-export default {
-  templates: "./templates",
-  presets: [
-    { name: "og", width: 1200, height: 630 },
-    { name: "instagram", width: 1080, height: 1080 },
-  ],
-  locales: ["en", "ar"],
+import type { StudioConfig } from "@stdout-design/cli";
+
+const config: StudioConfig = {
+  defaultPreset: "og",
   outDir: "./out",
+  presets: [
+    { id: "og", platform: "web", width: 1200, height: 630 },
+    { id: "instagram", platform: "instagram", width: 1080, height: 1080 },
+  ],
+  templates: {
+    "bento-feature": { componentPath: "./templates/bento-feature" },
+  },
 };
+
+export default config;
 ```
 
-## Platform presets
+Locale files map template ids to prop overrides, e.g. `locales/ar.json`:
+
+```json
+{ "bento-feature": { "headline": "التطبيق المميز" } }
+```
+
+## Common preset sizes
+
+Presets are whatever you define in `studio.config.ts`; these are handy sizes to copy:
 
 | Preset          | Size      | Use                       |
 | --------------- | --------- | ------------------------- |

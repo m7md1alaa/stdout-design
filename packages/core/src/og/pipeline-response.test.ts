@@ -4,7 +4,7 @@ import { createElement } from "react";
 
 mock.module("takumi-js/helpers/jsx", () => ({
   fromJsx: mock(() =>
-    Promise.resolve({ node: { type: "container" }, stylesheets: [] })
+    Promise.resolve({ css: [], node: { type: "container" } })
   ),
 }));
 

@@ -375,10 +375,25 @@ export const startStandaloneServer = async (
 ): Promise<{ close: () => Promise<void> }> => {
   const server = await createDevServer(options);
 
-  Bun.serve({
-    fetch: server.app.fetch,
-    port: server.port,
-  });
+  try {
+    Bun.serve({
+      fetch: server.app.fetch,
+      port: server.port,
+    });
+  } catch (error) {
+    await server.close();
+    const inUse =
+      error instanceof Error &&
+      ((error as NodeJS.ErrnoException).code === "EADDRINUSE" ||
+        error.message.includes("in use"));
+    if (inUse) {
+      throw new Error(
+        `Port ${server.port} is already in use. Stop the other process or pick another port with --port <number>.`,
+        { cause: error }
+      );
+    }
+    throw error;
+  }
 
   console.log(`Studio dev server running on http://localhost:${server.port}`);
 

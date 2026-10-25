@@ -6,6 +6,7 @@ import {
 } from "@stdout-design/core";
 
 import { formatManifestSummary } from "../lib/display.js";
+import { requireProjectRoot } from "../lib/project-root.js";
 import { parsePropArgs, mergeDefaultProps } from "../lib/prop-parser.js";
 import { resolveBatchOptions, resolveTemplate } from "./resolver.js";
 
@@ -24,7 +25,7 @@ export const render = async (
   propArgs: string[],
   options: RenderOptions
 ): Promise<void> => {
-  const rootDir = process.cwd();
+  const rootDir = requireProjectRoot();
 
   const config = await loadConfig(rootDir);
 
@@ -68,7 +69,7 @@ export const render = async (
   if (options.json) {
     console.log(JSON.stringify(manifest, null, 2));
   } else {
-    console.log(formatManifestSummary(manifest));
+    console.log(formatManifestSummary(manifest, process.cwd()));
   }
 
   if (manifest.failed.length > 0) {

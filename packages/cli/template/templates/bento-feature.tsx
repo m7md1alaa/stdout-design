@@ -59,7 +59,7 @@ const BentoFeature = ({
           tw="flex items-center justify-center w-16 h-16 rounded-full mb-6"
           style={{ backgroundColor: accentColor }}
         >
-          <span tw="text-3xl text-white">✦</span>
+          <div tw="w-6 h-6 rounded-md bg-white" />
         </div>
         <h2
           tw="text-4xl font-bold tracking-tight text-center mb-2"

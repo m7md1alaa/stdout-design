@@ -4,7 +4,10 @@ import path from "node:path";
 
 import type { AgentName } from "package-manager-detector";
 import { resolveCommand } from "package-manager-detector/commands";
-import { detect as detectPM } from "package-manager-detector/detect";
+import {
+  detect as detectPM,
+  getUserAgent,
+} from "package-manager-detector/detect";
 
 import { maybeInstallSkill } from "../lib/skill.js";
 import { tryGitInit } from "./init/git.js";
@@ -20,16 +23,19 @@ const detectPackageManager = async (cwd?: string): Promise<PackageManager> => {
     return detected.name;
   }
 
-  return "npm";
+  // No lockfile around (a fresh directory): fall back to the package manager
+  // that launched us (`bunx`, `pnpm dlx`, ...) rather than assuming npm.
+  return getUserAgent() ?? "npm";
 };
 
-const runInstall = (dir: string, pm: PackageManager): void => {
+const runInstall = (dir: string, pm: PackageManager): boolean => {
   const resolved = resolveCommand(pm, "install", []);
   if (!resolved) {
-    return;
+    return false;
   }
   const { command, args } = resolved;
-  spawnSync(command, args, { cwd: dir, stdio: "inherit" });
+  const result = spawnSync(command, args, { cwd: dir, stdio: "inherit" });
+  return result.status === 0;
 };
 
 export { scaffold } from "./init/scaffold.js";
@@ -40,7 +46,7 @@ export const init = async (
   projectDir: string | undefined,
   options?: { yes?: boolean; installSkill?: boolean }
 ): Promise<void> => {
-  const { intro, outro, spinner } = await import("@clack/prompts");
+  const { intro, log, outro, spinner } = await import("@clack/prompts");
 
   intro("studio init");
 
@@ -79,11 +85,19 @@ export const init = async (
 
   const pm = await detectPackageManager(cwd);
 
+  let installFailed = false;
   if (collected.shouldInstall) {
-    const installSpinner = spinner();
-    installSpinner.start("Installing dependencies...");
-    runInstall(collected.resolvedDir, pm);
-    installSpinner.stop("Dependencies installed");
+    // No spinner here: the install streams its own output, and a spinner
+    // redrawing over it garbles the terminal.
+    log.step(`Installing dependencies with ${pm}...`);
+    installFailed = !runInstall(collected.resolvedDir, pm);
+    if (installFailed) {
+      log.error(
+        `Dependency install failed. Fix the error above, then run \`${pm} install\` in the project.`
+      );
+    } else {
+      log.success("Dependencies installed");
+    }
   }
 
   await maybeInstallSkill({
@@ -95,10 +109,21 @@ export const init = async (
   console.log("");
   console.log(`  Created project at ${collected.resolvedDir}`);
   console.log("");
+  const relativeDir = path.relative(cwd, collected.resolvedDir);
   console.log("  Next steps:");
-  console.log(`    cd ${path.relative(cwd, collected.resolvedDir) || "."}`);
-  console.log(`    ${pm} run dev`);
+  if (relativeDir) {
+    console.log(`    cd ${relativeDir}`);
+  }
+  if (installFailed || !collected.shouldInstall) {
+    console.log(`    ${pm} install`);
+  }
+  console.log(`    ${pm} run dev                         # live studio`);
+  console.log(`    ${pm} run render bento-feature        # render to ./out`);
   console.log("");
 
   outro("Done");
+
+  if (installFailed) {
+    process.exitCode = 1;
+  }
 };

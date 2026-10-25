@@ -1,12 +1,13 @@
 import { openCache } from "@stdout-design/core";
 
 import { formatCacheStats, formatCacheCleanResult } from "../lib/display.js";
+import { findProjectRoot } from "../lib/project-root.js";
 
 export const cacheStats = async (
   rootDir: string | undefined,
   options: { json?: boolean }
 ): Promise<void> => {
-  const cache = await openCache(rootDir ?? process.cwd());
+  const cache = await openCache(rootDir ?? findProjectRoot());
   const stats = await cache.stats();
   cache.close();
 
@@ -21,7 +22,7 @@ export const cacheClean = async (
   rootDir: string | undefined,
   options: { json?: boolean }
 ): Promise<void> => {
-  const cache = await openCache(rootDir ?? process.cwd());
+  const cache = await openCache(rootDir ?? findProjectRoot());
   const result = await cache.clean();
   cache.close();
 

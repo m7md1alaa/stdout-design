@@ -89,7 +89,13 @@ describe("scaffold", () => {
     expect(existsSync(path.join(dir, "locales", "ar.json"))).toBe(true);
 
     const en = readFileSync(path.join(dir, "locales", "en.json"), "utf-8");
-    expect(JSON.parse(en)).toEqual({ title: "Featured App" });
+    // Keyed by template id, with keys matching the template's props.
+    expect(JSON.parse(en)).toEqual({
+      "bento-feature": {
+        description: "A beautiful description goes here.",
+        headline: "Featured App",
+      },
+    });
 
     rmSync(dir, { force: true, recursive: true });
   });
@@ -196,7 +202,12 @@ describe("scaffold", () => {
     const fr = JSON.parse(
       readFileSync(path.join(dir, "locales", "fr.json"), "utf-8")
     );
-    expect(fr).toEqual({ title: "Featured App" });
+    expect(fr).toEqual({
+      "bento-feature": {
+        description: "A beautiful description goes here.",
+        headline: "Featured App",
+      },
+    });
 
     rmSync(dir, { force: true, recursive: true });
   });

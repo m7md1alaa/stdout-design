@@ -101,10 +101,7 @@ describe("formatManifestSummary", () => {
       totalCount: 1,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).toContain("Batch Render Complete");
-    expect(result).toContain("completed");
-    expect(result).toContain("1 hits, 0 renders");
-    expect(result).toContain("Output files:");
+    expect(result).toContain("Rendered 1 image of 1 (1 from cache)");
     expect(result).toContain("output/image.png");
   });
 
@@ -117,10 +114,11 @@ describe("formatManifestSummary", () => {
       totalCount: 0,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).not.toContain("Output files:");
+    expect(result).not.toContain("Rendered");
+    expect(result).toContain("Nothing to render");
   });
 
-  test("omits Output files section when more than 10 succeeded", () => {
+  test("lists the first 10 files and summarizes the rest", () => {
     const manySucceeded = Array.from({ length: 11 }, (_, i) => ({
       cacheHit: false,
       locale: "en",
@@ -136,7 +134,22 @@ describe("formatManifestSummary", () => {
       totalCount: 11,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).not.toContain("Output files:");
+    expect(result).toContain("output/9.png");
+    expect(result).not.toContain("output/10.png");
+    expect(result).toContain("and 1 more");
+  });
+
+  test("shows output paths relative to cwd", () => {
+    const manifest: Manifest = {
+      completedCount: 1,
+      failed: [],
+      status: "completed",
+      succeeded: [{ ...succeededEntry, outputPath: "/proj/out/a.png" }],
+      totalCount: 1,
+    };
+    const result = formatManifestSummary(manifest, "/proj");
+    expect(result).toContain("  out/a.png");
+    expect(result).not.toContain("/proj/out/a.png");
   });
 
   test("includes cache hit count", () => {
@@ -152,7 +165,7 @@ describe("formatManifestSummary", () => {
       totalCount: 3,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).toContain("2 hits, 1 renders");
+    expect(result).toContain("Rendered 3 images of 3 (2 from cache)");
   });
 
   test("includes Failures section when there are failures", () => {
@@ -164,8 +177,8 @@ describe("formatManifestSummary", () => {
       totalCount: 2,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).toContain("Failures:");
-    expect(result).toContain("Row 1, en, square: Render timeout");
+    expect(result).toContain("1 render failed:");
+    expect(result).toContain("[square, en, row 1] Render timeout");
   });
 
   test("omits Failures section when failed is empty", () => {
@@ -177,7 +190,7 @@ describe("formatManifestSummary", () => {
       totalCount: 1,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).not.toContain("Failures:");
+    expect(result).not.toContain("failed");
   });
 
   test("shows aborted status", () => {
@@ -193,7 +206,8 @@ describe("formatManifestSummary", () => {
     };
     const result = formatManifestSummary(manifest);
     expect(result).toContain("aborted");
-    expect(result).toContain("0 hits, 2 renders");
+    expect(result).toContain("7 skipped");
+    expect(result).toContain("Rendered 2 images of 10");
   });
 
   test("renders multiple failed entries", () => {
@@ -208,8 +222,9 @@ describe("formatManifestSummary", () => {
       totalCount: 3,
     };
     const result = formatManifestSummary(manifest);
-    expect(result).toContain("Row 1, en, square: Render timeout");
-    expect(result).toContain("Row 2, ar, wide: Missing font");
+    expect(result).toContain("2 renders failed:");
+    expect(result).toContain("[square, en, row 1] Render timeout");
+    expect(result).toContain("[wide, ar, row 2] Missing font");
   });
 });
 

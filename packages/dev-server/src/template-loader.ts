@@ -76,7 +76,9 @@ export class TemplateLoader {
       optimizeDeps: { noDiscovery: true },
       plugins: [react()],
       root: this.rootDir,
-      server: { hmr: false, middlewareMode: true },
+      // No HMR and no WebSocket: this Vite instance only compiles templates
+      // and never talks to a browser.
+      server: { hmr: false, middlewareMode: true, ws: false },
       ssr: {
         external: ["@stdout-design/core"],
         optimizeDeps: { include: ["zod"] },

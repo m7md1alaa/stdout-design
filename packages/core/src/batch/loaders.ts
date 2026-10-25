@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { resolveProjectPaths } from "../project/project-paths.js";
 import { parseStudioConfig } from "../shared/config-schema.js";
 import { AppError, ErrorCode } from "../shared/error-codes.js";
-import { logDebug } from "../shared/logger.js";
+import { logDebug, logWarn } from "../shared/logger.js";
 import type { StudioConfig, TemplateModule } from "../shared/types.js";
 import { isZodObject } from "../shared/validation.js";
 
@@ -159,17 +159,33 @@ export const resolveLocales = async (
   const entries = await Promise.all(
     localeCodes.map(async (code) => {
       const localePath = path.resolve(localesDir, `${code}.json`);
+      let content: string;
       try {
-        const content = await readFile(localePath, "utf-8");
-        const parsed = JSON.parse(content) as Record<
-          string,
-          Record<string, unknown>
-        >;
-        const data = parsed[templateId];
-        return { data, id: code };
+        content = await readFile(localePath, "utf-8");
       } catch {
+        logWarn(
+          `No locales/${code}.json found — rendering "${code}" with untranslated props.`
+        );
         return { id: code };
       }
+
+      let parsed: Record<string, Record<string, unknown>>;
+      try {
+        parsed = JSON.parse(content) as Record<string, Record<string, unknown>>;
+      } catch (error) {
+        throw new AppError(
+          ErrorCode.CONFIG_INVALID,
+          `locales/${code}.json is not valid JSON: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+
+      const data = parsed[templateId];
+      if (!data) {
+        logWarn(
+          `locales/${code}.json has no "${templateId}" entry — expected { "${templateId}": { ...props } }.`
+        );
+      }
+      return { data, id: code };
     })
   );
 

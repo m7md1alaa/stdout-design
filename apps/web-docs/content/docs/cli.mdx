@@ -102,11 +102,14 @@ Render a template single, or batch with `--data`.
 studio render <template> [props...] [options]
 ```
 
-`<template>` is the template ID from `studio.config.ts`. Props are passed as `key=value` pairs:
+`<template>` is the template ID from `studio.config.ts`. Props are passed as `key=value` or `--key value`, and are checked against the template's `propsSchema`: an unknown prop is an error, with a suggestion for likely typos.
 
 ```bash
-studio render bento-feature title="Hello" stat="10k users"
+studio render bento-feature headline="Hello" description="10k users"
+studio render bento-feature --headline "Hello" --description "10k users"
 ```
+
+`render` works from any subdirectory of the project. It looks for the nearest `studio.config.ts` in the current directory or a parent. Set `STUDIO_DEBUG=1` for verbose logs.
 
 <TypeTable
   type={{
@@ -116,8 +119,8 @@ studio render bento-feature title="Hello" stat="10k users"
     },
     "--preset <ids>": {
       type: "string",
-      description: "Comma-separated preset IDs.",
-      default: "all presets",
+      description: 'Comma-separated preset IDs, or "all" for every preset.',
+      default: "config.defaultPreset, else all presets",
     },
     "--locale <locales>": {
       type: "string",
@@ -207,7 +210,7 @@ studio dev [rootDir] [options]
   }}
 />
 
-`--open` is accepted but currently a no-op open `http://localhost:3030` manually.
+`--open` opens the studio in your default browser once the server is up. Like `render`, `dev` finds the nearest `studio.config.ts` from the current directory upward, and exits with a clear error if the port is already in use.
 
 `-p`/`--port` always wins over any environment variable if you're starting the dev server yourself (not through `studio dev`) rather than importing `startStandaloneServer`, it also reads a `PORT` environment variable when no port argument is given.
 

@@ -73,7 +73,10 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
   const presets = presetIds.map((id) => {
     const p = config.presets.find((preset) => preset.id === id);
     if (!p) {
-      throw new Error(`Preset not found: ${id}`);
+      const available = config.presets.map((preset) => preset.id).join(", ");
+      throw new Error(
+        `Preset "${id}" not found in studio.config.ts. Available presets: ${available}`
+      );
     }
     return { height: p.height, id: p.id, width: p.width };
   });

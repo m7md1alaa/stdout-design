@@ -31,14 +31,34 @@ program
   .command("render")
   .description("Render a template — single or batch with --data")
   .argument("<template>", "Template ID from studio.config.ts")
-  .argument("[props...]", 'Props as key=value pairs (e.g. title="Hello")')
+  .argument(
+    "[props...]",
+    'Template props as key=value or --key value (e.g. headline="Hello")'
+  )
   .option("--data <path>", "CSV or JSON data file for batch rendering")
-  .option("--preset <ids>", "Comma-separated preset IDs")
+  .option(
+    "--preset <ids>",
+    'Comma-separated preset IDs, or "all" (default: config defaultPreset)'
+  )
   .option("--locale <locales>", "Comma-separated locale codes")
   .option("--out-dir <path>", "Output directory")
   .option("--concurrency <n>", "Max concurrent renders in batch mode", "4")
   .option("--fail-fast", "Stop batch on first error")
   .option("--json", "Output results as JSON")
+  // Unknown --flags are template props (`--headline Hello`), parsed later
+  // against the template's schema.
+  .allowUnknownOption()
+  .addHelpText(
+    "after",
+    `
+Examples:
+  $ studio render bento-feature
+  $ studio render bento-feature headline="Hello" --preset all
+  $ studio render bento-feature --headline Hello --locale en,ar
+  $ studio render bento-feature --data posts.csv
+
+Set STUDIO_DEBUG=1 for verbose logs.`
+  )
   .action(run("render"));
 
 // ── cache
@@ -60,9 +80,9 @@ cacheCmd
   .argument("[rootDir]", "Project root directory (default: cwd)")
   .action(run("cache", "cacheClean"));
 
-// ── lint
+// ── lint (not implemented yet — hidden from help)
 program
-  .command("lint")
+  .command("lint", { hidden: true })
   .description("Check templates for compatibility (coming soon)")
   .argument("[rootDir]", "Project root directory (default: cwd)")
   .action(run("lint"));

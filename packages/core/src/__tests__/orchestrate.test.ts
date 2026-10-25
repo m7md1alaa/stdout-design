@@ -14,8 +14,8 @@ import { prepareImagesMock } from "./test-helpers/takumi-helpers-mock.js";
 mock.module("takumi-js/helpers/jsx", () => ({
   fromJsx: mock(() =>
     Promise.resolve({
+      css: [] as string[],
       node: { type: "container" },
-      stylesheets: [] as string[],
     })
   ),
 }));
