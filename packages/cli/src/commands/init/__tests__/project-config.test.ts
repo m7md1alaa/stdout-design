@@ -2,8 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { STARTER_IDS } from "../catalog.js";
+import { STARTERS, STARTER_IDS } from "../catalog.js";
 import { buildProjectConfig, startersSince } from "../project-config.js";
+import { compareVersions } from "../version.js";
 
 const families = (entries: { family: string }[] | undefined) =>
   entries?.map((e) => e.family);
@@ -86,6 +87,27 @@ describe("catalog", () => {
     JSON.parse(
       readFileSync(path.join(templateDir, "locales", `${locale}.json`), "utf-8")
     );
+
+  // `update` offers a starter to projects scaffolded before its `since`. A
+  // `since` past the next release would make `update` later re-add a
+  // starter the user left out at `init`, so it can be at most the next
+  // minor (the pending changesets bump the fixed group by a minor).
+  test.each(STARTERS.map((s) => [s.id, s.since]))(
+    "%s ships no later than the next minor release (since %s)",
+    (_id, since) => {
+      const { version } = JSON.parse(
+        readFileSync(
+          path.resolve(import.meta.dirname, "../../../../package.json"),
+          "utf-8"
+        )
+      ) as { version: string };
+      const [major = 0, minor = 0] = version.split(".").map(Number);
+
+      expect(
+        compareVersions(since, `${major}.${minor + 1}.0`)
+      ).toBeLessThanOrEqual(0);
+    }
+  );
 
   test.each(STARTER_IDS)(
     "%s ships a template and English and Arabic copy",
