@@ -60,7 +60,7 @@ describe("scaffold", () => {
       "utf-8"
     );
     expect(content).toContain("defineSchema");
-    expect(content).toContain("function BentoFeature");
+    expect(content).toContain("const BentoFeature");
 
     rmSync(dir, { force: true, recursive: true });
   });
@@ -82,20 +82,25 @@ describe("scaffold", () => {
       dir,
       defaultOptions({
         locales: ["en", "ar"],
+        templates: ["bento-feature"],
       })
     );
 
     expect(existsSync(path.join(dir, "locales", "en.json"))).toBe(true);
     expect(existsSync(path.join(dir, "locales", "ar.json"))).toBe(true);
 
-    const en = readFileSync(path.join(dir, "locales", "en.json"), "utf-8");
-    // Keyed by template id, with keys matching the template's props.
-    expect(JSON.parse(en)).toEqual({
-      "bento-feature": {
-        description: "A beautiful description goes here.",
-        headline: "Featured App",
-      },
-    });
+    // Keyed by template id, with keys matching the template's props, and
+    // limited to the templates that were scaffolded.
+    const en = JSON.parse(
+      readFileSync(path.join(dir, "locales", "en.json"), "utf-8")
+    );
+    expect(Object.keys(en)).toEqual(["bento-feature"]);
+    expect(en["bento-feature"].headline).toBe("Know where every dollar goes");
+
+    const ar = JSON.parse(
+      readFileSync(path.join(dir, "locales", "ar.json"), "utf-8")
+    );
+    expect(ar["bento-feature"].headline).toBe("اعرف أين يذهب كل دينار");
 
     rmSync(dir, { force: true, recursive: true });
   });
@@ -197,17 +202,16 @@ describe("scaffold", () => {
   test("falls back to default content for unknown locale", async () => {
     const dir = inTempDir();
 
-    await scaffold(dir, defaultOptions({ locales: ["fr"] }));
+    await scaffold(
+      dir,
+      defaultOptions({ locales: ["fr"], templates: ["launch-hero"] })
+    );
 
     const fr = JSON.parse(
       readFileSync(path.join(dir, "locales", "fr.json"), "utf-8")
     );
-    expect(fr).toEqual({
-      "bento-feature": {
-        description: "A beautiful description goes here.",
-        headline: "Featured App",
-      },
-    });
+    expect(Object.keys(fr)).toEqual(["launch-hero"]);
+    expect(fr["launch-hero"].headline).toBe("Wear It Loud");
 
     rmSync(dir, { force: true, recursive: true });
   });

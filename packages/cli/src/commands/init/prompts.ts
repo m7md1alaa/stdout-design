@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { isInsideGitRepo } from "./git.js";
+import { TEMPLATE_CATALOG, TEMPLATE_IDS } from "./scaffold.js";
 import { validateProjectName } from "./validate.js";
 
 export interface ClackModule {
@@ -11,6 +12,7 @@ export interface ClackModule {
     message: string;
   }) => Promise<boolean | symbol>;
   multiselect: (opts: {
+    initialValues?: string[];
     message: string;
     options: { label: string; value: string; hint?: string }[];
   }) => Promise<string[] | symbol>;
@@ -102,18 +104,17 @@ export const collectPrompts = async (
   }
 
   const templates = ciOrYes(options)
-    ? ["bento-feature"]
+    ? TEMPLATE_IDS
     : await promptOrSkip(
         (p) =>
           p.multiselect({
+            initialValues: TEMPLATE_IDS,
             message: "Which templates would you like to scaffold?",
-            options: [
-              {
-                hint: "Apple-style feature card",
-                label: "Bento Feature",
-                value: "bento-feature",
-              },
-            ],
+            options: TEMPLATE_CATALOG.map((t) => ({
+              hint: t.hint,
+              label: t.label,
+              value: t.id,
+            })),
           }),
         clack
       );
@@ -123,6 +124,7 @@ export const collectPrompts = async (
     : await promptOrSkip(
         (p) =>
           p.multiselect({
+            initialValues: ["en", "ar"],
             message: "Which locales would you like to include?",
             options: [
               { label: "English", value: "en" },

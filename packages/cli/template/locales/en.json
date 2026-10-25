@@ -1,0 +1,49 @@
+{
+  "launch-hero": {
+    "badge": "Drop 07",
+    "categories": ["Tees", "Hoodies", "Caps"],
+    "cta": "Shop now",
+    "headline": "Wear It Loud",
+    "links": ["Drops", "Archive", "Club"],
+    "note": "Ships worldwide",
+    "stats": ["12 drops a year", "0 restocks", "100% cotton"],
+    "subheadline": "Small-batch streetwear, printed in a city that never whispers."
+  },
+  "bento-feature": {
+    "chartLabel": "Spending by week",
+    "description": "Every card, every bill, sorted the second it lands.",
+    "gaugeLabel": "Budget used",
+    "headline": "Know where every dollar goes",
+    "metricDelta": "+18%",
+    "metricLabel": "Saved this month",
+    "metricValue": "$1,240",
+    "ratingLabel": "App Store rating",
+    "receipt": ["Coffee 4.50", "Groceries 62.10", "Metro 2.75"],
+    "receiptNote": "Sorted automatically"
+  },
+  "retro-poster": {
+    "body": "Ninety minutes, two sides, zero skips. Hand-picked tracks, hand-written labels, and a pencil for when the tape gets tangled.",
+    "headline": "Mixtape Club",
+    "label": "Summer mix '89",
+    "stamp": "Limited edition",
+    "stampNote": "No. 0042 / 5000",
+    "tagline": "Analog since forever",
+    "title": "Press Play"
+  },
+  "trend-poster": {
+    "aside": "to steal & remix",
+    "cta": "Save for later",
+    "footer": "Make the thumb stop.",
+    "headline": "Ways to stop the scroll",
+    "issue": "Issue 07",
+    "items": [
+      "Loud type",
+      "Halftone",
+      "Clashing color",
+      "Raw collage",
+      "Stickers",
+      "Big shapes"
+    ],
+    "strap": "A field guide for the feed"
+  }
+}
