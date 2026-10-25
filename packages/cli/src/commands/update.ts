@@ -6,6 +6,7 @@ import { loadConfig } from "@stdout-design/core";
 import type { StudioConfig } from "@stdout-design/core";
 
 import { isStarterId } from "./init/catalog.js";
+import type { StarterId } from "./init/catalog.js";
 import { updatePackageJsonDeps } from "./init/deps.js";
 import { hasChanges, mergeConfig } from "./init/merge-config.js";
 import type { Defaults, ChangeSummary } from "./init/merge-config.js";
@@ -37,6 +38,10 @@ export interface UpdatePlan {
   mergedConfig: StudioConfig;
   summary: ChangeSummary;
   installedVersion: string;
+  /** The starters this update registers, whose files it writes. */
+  starters: StarterId[];
+  /** The project's locales, which get the new starters' strings. */
+  locales: string[];
 }
 
 export interface UpdateDeps {
@@ -56,7 +61,13 @@ export const planUpdate = (
     installedVersion,
     deprecatedPresetIds
   );
-  return { installedVersion, mergedConfig, summary };
+  return {
+    installedVersion,
+    locales: mergedConfig.locales ?? [],
+    mergedConfig,
+    starters: summary.addedTemplates.filter(isStarterId),
+    summary,
+  };
 };
 
 const resolveVersion = async (
@@ -120,9 +131,8 @@ export const applyUpdate = async (
   // Files first, config last: if copying fails, the config still matches
   // what is on disk. A registered starter needs its template and its copy;
   // files and entries the project already has are never overwritten.
-  const starters = plan.summary.addedTemplates.filter(isStarterId);
-  await copyStarterFiles(dir, starters, { force: false });
-  await addStarterLocaleStrings(dir, plan.mergedConfig.locales ?? [], starters);
+  await copyStarterFiles(dir, plan.starters, { force: false });
+  await addStarterLocaleStrings(dir, plan.locales, plan.starters);
   await copyStaticAssets(dir);
   await writeFile(
     path.resolve(dir, "studio.config.ts"),
