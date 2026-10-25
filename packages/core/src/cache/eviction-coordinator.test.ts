@@ -15,6 +15,26 @@ const makeTempDir = (): string =>
 const rmDir = (dir: string): void =>
   rmSync(dir, { force: true, recursive: true });
 
+const POLL_MS = 5;
+const WAIT_TIMEOUT_MS = 2000;
+
+/**
+ * Polls `condition` until it holds. A sweep takes a real file lock, so its
+ * duration varies with disk speed; a fixed sleep is flaky on slow CI.
+ */
+const waitUntil = async (
+  condition: () => boolean,
+  deadline = Date.now() + WAIT_TIMEOUT_MS
+): Promise<void> => {
+  if (condition() || Date.now() >= deadline) {
+    return;
+  }
+  const { promise, resolve } = Promise.withResolvers<undefined>();
+  setTimeout(resolve, POLL_MS);
+  await promise;
+  await waitUntil(condition, deadline);
+};
+
 // ---------------------------------------------------------------------
 // Debounce/batching logic: real timers replaced with fake ones, so these
 // run instantly and deterministically instead of needing real sleep()
@@ -165,15 +185,11 @@ describe("EvictionCoordinator: debounce behavior (real timers)", () => {
     });
 
     coordinator.requestEviction();
-    const { promise: p1, resolve: r1 } = Promise.withResolvers<undefined>();
-    setTimeout(r1, 20);
-    await p1;
+    await waitUntil(() => sweepCalls === 1);
     expect(sweepCalls).toBe(1);
 
     coordinator.requestEviction();
-    const { promise: p2, resolve: r2 } = Promise.withResolvers<undefined>();
-    setTimeout(r2, 20);
-    await p2;
+    await waitUntil(() => sweepCalls === 2);
     expect(sweepCalls).toBe(2);
   });
 });
