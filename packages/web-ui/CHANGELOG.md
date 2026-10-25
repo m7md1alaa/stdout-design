@@ -1,5 +1,11 @@
 # @stdout-design/web-ui
 
+## 0.5.0
+
+### Minor Changes
+
+- Align the version with `@stdout-design/cli`, `core` and `dev-server` (0.5.0). No code changes since 0.4.2.
+
 ## 0.4.2
 
 ### Patch Changes
