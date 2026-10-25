@@ -1,0 +1,13 @@
+{
+  "extends": "@stdout-design/config/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM"],
+    "types": [],
+    "paths": {
+      "@stdout-design/cli/template": ["./src/template.ts"]
+    }
+  },
+  "include": ["template/templates", "template/types.d.ts"]
+}

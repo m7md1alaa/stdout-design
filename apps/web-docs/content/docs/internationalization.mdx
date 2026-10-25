@@ -16,7 +16,7 @@ const config: StudioConfig = {
 };
 ```
 
-The CLI and studio then expose these locales (CLI `--locale en,ar`, studio locale tabs) and inject the current `locale` into every render's props.
+The CLI and studio then expose these locales (CLI `--locale en,ar`, studio locale tabs), and every render's `ctx.locale` says which one it is.
 
 ## Translation files
 
@@ -54,53 +54,101 @@ The top-level key is the **template ID**; its value is a set of prop overrides.
 
 ### Merge rules
 
-When rendering locale `ar`, the section for the current template is loaded and merged into the render's props:
+When rendering locale `ar`, the current template's section is merged into the props, following the schema:
 
-- **String → string** props are overridden (this is the translation case).
-- **Array → array** props are overridden too (e.g. translated tag lists).
-- Other value types and unknown keys are ignored locale data never introduces new props or overrides numbers/booleans.
+- **Text fields** (`field.text`) are replaced, at any depth: inside `field.object` groups and inside each item of a `field.list`.
+- **Everything else stays**: colors, numbers, booleans, selects, and text marked `translatable: false` (URLs, brand names, prices).
+- **List lengths never change.** A translation covers the items it lists, by position; extra items are ignored and missing ones keep their value.
+- **Unknown keys are ignored.** Locale data never adds props.
+- **Translations are validated** like any other content, so a translation that breaks a field's `max` fails the render with a `PropValidationError` naming the field.
 
-So props that aren't translated (colors, booleans, numbers) keep their data-file or default values, and props you don't override in a given locale fall back to the base props.
-
-## RTL
-
-Templates receive the `locale` prop, so you flip the layout yourself:
-
-```tsx
-export default function BentoFeature({ headline, description, locale }: Props) {
-  const isRtl = locale?.startsWith("ar");
-
-  return (
-    <div dir={isRtl ? "rtl" : "ltr"} tw="flex ...">
-      ...
-    </div>
-  );
+```json
+// locales/ar.json: only the labels change; the amounts aren't translatable
+{
+  "bento-feature": {
+    "receipt": [{ "item": "قهوة" }, { "item": "بقالة" }, { "item": "مترو" }]
+  }
 }
 ```
 
-For Arabic locales the renderer is also told the text direction (`lang: "ar"`), so text shaping is handled correctly.
+Templates written before `defineTemplate` keep the older rule: a top-level string replaces a string, and an array replaces an array.
+
+## Right-to-left
+
+Each locale maps to a script and a direction: Arabic, Persian, Urdu, Pashto, Sindhi, Uyghur, and Kurdish (Sorani) are Arabic script; Hebrew and Yiddish are Hebrew script; both run right to left. An explicit script subtag (`az-Arab`, `ku-Latn`) wins over the language.
+
+The root element of every render gets `dir` and `lang`, so these mirror without any code:
+
+- flex rows and text alignment
+- logical CSS properties: `insetInlineStart`/`insetInlineEnd`, `marginInlineStart`/`marginInlineEnd`, `paddingInlineStart`/`paddingInlineEnd`, `borderInlineStart`/`borderInlineEnd`
+
+Physical `left`/`right` don't mirror; use them only for things that shouldn't, like a label printed on a drawn object. For what CSS can't mirror, `ctx.flip(value)` negates a value in right-to-left renders:
+
+```tsx
+<div style={{ transform: `rotate(${ctx.flip(-6)}deg)` }} />
+```
+
+Wrap brand names and numbers like `+18%` in `<span dir="ltr">` to keep bidi from reordering them.
+
+## Typography
+
+`ctx.type(spec)` takes a text style written for Latin and adapts it to the render's script:
+
+```tsx
+<span
+  style={ctx.type({
+    font: "display",
+    size: 96,
+    leading: 0.9,
+    tracking: -0.04,
+    uppercase: true,
+  })}
+>
+  {props.headline}
+</span>
+```
+
+| Script | Size     | Line height   | Letter spacing, italics, uppercase |
+| ------ | -------- | ------------- | ---------------------------------- |
+| Latin  | as given | as given      | applied                            |
+| Arabic | × 0.88   | at least 1.15 | dropped                            |
+| Hebrew | × 0.94   | at least 1.05 | dropped                            |
+
+Leave `size` out to adapt only the styling. When a face doesn't suit the table, set exact values for one script: `scripts: { arabic: { size: 100, leading: 1 } }`.
 
 ## Fonts
 
-Arabic (and any locale whose code starts with `ar`) triggers automatic font loading. By default the renderer pulls **Noto Sans Arabic** from Google Fonts. To use your own fonts, configure them per locale:
+A template declares its fonts by role, Latin face first:
+
+```tsx
+export default defineTemplate({
+  fonts: {
+    display: { faces: ["Archivo Black", "Lalezar"] },
+    body: { faces: [{ family: "IBM Plex Sans Arabic", weights: [400, 700] }] },
+  },
+  // ...
+});
+```
+
+`ctx.fonts.display` is then `"Archivo Black, Lalezar, sans-serif"`: a glyph the first face lacks falls through to the next. Every declared face loads from Google Fonts on every locale, once per process.
+
+A render's fonts are, in order:
+
+1. the `fonts` entry in `studio.config.ts` for the locale (or `default`, for Latin locales without one)
+2. the template's declared faces, except any family the config already loads, so the config can swap in a local file
+3. for an Arabic- or Hebrew-script locale with no config entry, Noto Sans Arabic or Noto Sans Hebrew, unless the template names it
+
+To override a family with a local file:
 
 ```ts
 const config: StudioConfig = {
   fonts: {
     ar: [
       {
-        family: "Doran",
-        path: "./Doran-Bold.ttf",
+        family: "Lalezar",
+        path: "./fonts/Lalezar-Regular.ttf",
         source: "local",
-        weights: [700],
-      },
-    ],
-    en: [
-      {
-        family: "Doran",
-        path: "./Doran-Bold.ttf",
-        source: "local",
-        weights: [700],
+        weights: [400],
       },
     ],
   },
@@ -111,18 +159,12 @@ Each font entry supports:
 
 | Field | Description |
 | --- | --- |
-| `family` | Font family name used in your template's `fontFamily` |
+| `family` | Font family name, as the template names it |
 | `path` | Path to a local font file (`.ttf`/`.woff2`); required when `source: "local"` |
 | `source` | `"local"` or `"google"` (default) |
 | `weights` | Font weights to load (e.g. `[400, 700]`) |
 
-Reference the family in your template with inline styles:
-
-```tsx
-<div style={{ fontFamily: "Doran, sans-serif" }} ...>
-```
-
-The `fonts` map is keyed by locale code, so you can serve different families or weights per language. Rendered images are cached per locale, so switching languages in the studio doesn't re-fetch fonts every time.
+Rendered images are cached per locale and font set, so switching languages in the studio doesn't re-fetch fonts, and changing fonts never serves an image rendered with the old ones.
 
 ## Rendering across locales
 

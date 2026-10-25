@@ -2,8 +2,6 @@ import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { StudioConfig } from "@stdout-design/core";
-
 import { getScaffoldVersion } from "./version.js";
 
 export interface ScaffoldOptions {
@@ -13,8 +11,6 @@ export interface ScaffoldOptions {
   install: boolean;
   git: boolean;
 }
-
-type FontConfig = NonNullable<StudioConfig["fonts"]>[string][number];
 
 /** The starter templates `studio init` offers, in prompt order. */
 export const TEMPLATE_CATALOG = [
@@ -49,29 +45,6 @@ export const TEMPLATE_CATALOG = [
 
 export const TEMPLATE_IDS: string[] = TEMPLATE_CATALOG.map((t) => t.id);
 
-const LATIN_FONTS: FontConfig[] = [
-  { family: "Archivo Black", source: "google", weights: [400] },
-  { family: "Anton", source: "google", weights: [400] },
-  { family: "Bricolage Grotesque", source: "google", weights: [400, 700] },
-  { family: "Instrument Serif", source: "google", weights: [400] },
-  { family: "Space Mono", source: "google", weights: [400, 700] },
-];
-
-// Arabic locales don't fall back to `default`, so they repeat the Latin
-// faces (for brand names and numbers) and add Arabic ones the templates
-// list second in each font stack.
-const ARABIC_FONTS: FontConfig[] = [
-  ...LATIN_FONTS,
-  { family: "Lalezar", source: "google", weights: [400] },
-  { family: "IBM Plex Sans Arabic", source: "google", weights: [400, 700] },
-  { family: "Amiri", source: "google", weights: [400, 700] },
-];
-
-const getFonts = (locales: string[]): Record<string, FontConfig[]> => ({
-  default: LATIN_FONTS,
-  ...(locales.includes("ar") ? { ar: ARABIC_FONTS } : {}),
-});
-
 const getTemplateEntries = (ids: string[]) =>
   Object.fromEntries(
     TEMPLATE_CATALOG.filter((t) => ids.includes(t.id)).map((t) => [
@@ -87,7 +60,6 @@ const PRESETS = [
 
 export const getDefaults = () => ({
   defaultPreset: "instagram-square" as const,
-  fonts: getFonts(["ar"]),
   presets: PRESETS,
   templates: getTemplateEntries(TEMPLATE_IDS),
 });
@@ -122,20 +94,15 @@ const toLiteral = (value: unknown, depth = 0): string => {
   return `${open.trim()}\n${entries.map((e) => `${pad}${e},`).join("\n")}\n${"  ".repeat(depth)}${close.trim()}`;
 };
 
-const getConfigTemplate = (
-  version: string,
-  templates: string[],
-  locales: string[]
-) =>
+const getConfigTemplate = (version: string, templates: string[]) =>
   `import type { StudioConfig } from "@stdout-design/cli";
 
 const config: StudioConfig = {
   scaffoldVersion: "${version}",
   defaultPreset: "instagram-square",
   outDir: "./out",
-  // Google Fonts, fetched on first render. \`default\` covers every locale
-  // without its own entry; Arabic needs its own (see README).
-  fonts: ${toLiteral(getFonts(locales), 1)},
+  // Each template declares and loads its own fonts. Add a \`fonts\` block
+  // only to override one, e.g. with a local file (see README).
   presets: ${toLiteral(PRESETS, 1)},
   templates: ${toLiteral(getTemplateEntries(templates), 1)},
 };
@@ -191,7 +158,7 @@ const generateConfig = async (
 ): Promise<void> => {
   await writeFile(
     path.resolve(dir, "studio.config.ts"),
-    getConfigTemplate(version, options.templates, options.locales)
+    getConfigTemplate(version, options.templates)
   );
 };
 

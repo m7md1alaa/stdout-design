@@ -21,7 +21,7 @@ A review of the four poster starters (`launch-hero`, `bento-feature`, `retro-pos
 3. **`classifyLocale` in `shared/locale.ts` (pure, so every layer may use it) is the only place that maps a locale to script and direction**, through closed lookup tables (`Record<Script, Direction>`) the compiler checks for completeness. dev-server's `/config` sends each locale's `dir` so web-ui stops testing for `"ar"`.
 4. **Schema fields record their kind** (`field.color()`, `field.text()`, `field.list()`, `field.object()`) and whether they are translatable, via zod metadata that reaches web-ui through the JSON schema. The studio reads the kind; `applyTranslations` walks the schema and replaces only translatable text, at any depth, without changing list lengths. Translated props are validated again.
 5. **Templates declare their fonts**; the pipeline loads the declared families on every locale, and `studio.config.ts` fonts become overrides: a family the config loads is the config's to define (a local file wins over Google). A non-Latin locale with no config entry also gets its script's Noto face, unless the template names that face.
-6. **Module boundaries are data plus a test.** `packages/config/boundaries/rules.ts` holds the core layer graph (with `types`-only edges, e.g. `assets → engine`), the I/O-free layers, the workspace dependency graph, the template import allowlist, and a list of deliberate exceptions, each with a reason. `boundaries.test.ts` walks every source file with a real parser and fails on any edge the tables don't allow, on a core folder or workspace missing from the tables, and on an exception nothing uses anymore. It runs in `turbo test`, so CI enforces it.
+6. **Module boundaries are data plus a test.** `packages/config/boundaries/rules.ts` holds the core layer graph (with `types`-only edges, e.g. `assets → engine`), the I/O-free layers, the workspace dependency graph, the template import allowlist, and a list of deliberate exceptions, each with a reason. `boundaries.test.ts` walks every source file with a real parser and fails on any edge the tables don't allow, on a core folder or workspace missing from the tables, and on an exception nothing uses anymore. It also fails on any line matching `FORBIDDEN_PATTERNS`, code that re-decides a rule owned elsewhere (a `startsWith("ar")` locale test). It runs in `turbo test`, so CI enforces it.
 7. **Legacy templates keep working until 1.0.** A template not built with `defineTemplate` still receives `props.locale`, now on both paths, with a one-time deprecation warning.
 
 ## Consequences
@@ -35,13 +35,13 @@ A review of the four poster starters (`launch-hero`, `bento-feature`, `retro-pos
 **Negative / risk**
 
 - Templates written with `defineTemplate` are no longer plain React components; they need the pipeline (or a test helper) to supply `ctx`.
-- The per-script typography table is opinionated; authors who want different Arabic leading need an override.
+- The per-script typography table is opinionated. A face it doesn't suit takes exact per-script values: `ctx.type({ …, scripts: { arabic: { size: 100, leading: 1 } } })`.
 - The boundary test reads static imports and literal dynamic imports. A computed `import(path)` is invisible to it; `batch/loaders.ts` uses one deliberately, to load user templates.
-- Arabic and Hebrew renders now load the template's declared faces alongside the Noto fallback, so more fonts download per render (once per process, cached by family set).
+- Every render loads every face its template declares, so a Latin render of a bilingual template also downloads its Arabic faces (once per process, cached by family set).
 
 ## Rollout
 
-Seven slices, each landing alone: (1) boundary rules and test, fixing the two live violations; (2) `classifyLocale`; (3) `defineTemplate`, `ctx`, `field.*`; (4) schema-driven merge and field kinds in web-ui; (5) template-declared fonts; (6) port the four starters and the docs, plus a render test over every starter × locale × preset; (7) a small authoring kit (`keyed`, `words`, a self-mirroring `Arrow`, `halftone`, `starburst`). The starters from PR #7 may merge before slice 6, but no CLI release ships them until slice 6 lands.
+Seven slices, each landing alone: (1) boundary rules and test, fixing the two live violations; (2) `classifyLocale`; (3) `defineTemplate`, `ctx`, `field.*`; (4) schema-driven merge and field kinds in web-ui; (5) template-declared fonts; (6) port the four starters and the docs, plus a render test over every starter × locale × preset; (7) a small authoring kit (`keyed`, `words`, a self-mirroring `Arrow`, `Sparkle`, `halftone`, `starburst`). Slice 7 landed before slice 6, so the ported starters use the kit. The starters from PR #7 may merge before slice 6, but no CLI release ships them until slice 6 lands.
 
 ## Alternatives Considered
 

@@ -1,93 +1,31 @@
-import { defineSchema } from "@stdout-design/cli/schema";
-import { z } from "zod";
-
-export const templateId = "trend-poster" as const;
-
-export const propsSchema = defineSchema(
-  z.object({
-    aside: z
-      .string()
-      .default("to steal & remix")
-      .describe("Serif aside next to the edition"),
-    cta: z
-      .string()
-      .default("Save for later")
-      .describe("Button label in the footer"),
-    edition: z
-      .string()
-      .default("2027")
-      .describe("Big outlined word under the headline"),
-    footer: z
-      .string()
-      .default("Make the thumb stop.")
-      .describe("Serif line in the footer"),
-    headline: z
-      .string()
-      .min(1)
-      .default("Ways to stop the scroll")
-      .describe("Headline — prefixed with the number of items"),
-    highlight: z
-      .string()
-      .default("#ff6a3d")
-      .describe("Highlight color for the edition and button"),
-    issue: z.string().default("Issue 07").describe("Small label top-start"),
-    items: z
-      .array(z.string())
-      .default([
-        "Loud type",
-        "Halftone",
-        "Clashing color",
-        "Raw collage",
-        "Stickers",
-        "Big shapes",
-      ])
-      .describe("Six item names, one per grid cell"),
-    locale: z
-      .string()
-      .optional()
-      .describe("Current locale code for RTL support"),
-    strap: z
-      .string()
-      .default("A field guide for the feed")
-      .describe("Small line top-end"),
-  })
-);
-
-export type Props = z.infer<typeof propsSchema>;
+import {
+  Arrow,
+  defineTemplate,
+  field,
+  halftone,
+  keyed,
+  Sparkle,
+  starburst,
+} from "@stdout-design/cli/template";
 
 const INK = "#121212";
 const PAPER = "#efece4";
 const COBALT = "#3046ff";
-// Latin face first; Arabic glyphs fall through to the Arabic face.
-const TITLE = "Anton, Lalezar, sans-serif";
-const HEAVY = "Archivo Black, Lalezar, sans-serif";
-const SERIF = "Instrument Serif, Amiri, serif";
-const MONO = "Space Mono, IBM Plex Sans Arabic, monospace";
 const CELLS_PER_ROW = 3;
+const CELL_COUNT = CELLS_PER_ROW * 2;
 const SPECIMEN_SIZE = 120;
-
-const starburst = (spikes: number, outer: number, inner: number): string =>
-  Array.from({ length: spikes * 2 }, (_, index) => {
-    const radius = index % 2 === 0 ? outer : inner;
-    const angle = (Math.PI * index) / spikes - Math.PI / 2;
-    return `${50 + radius * Math.cos(angle)},${50 + radius * Math.sin(angle)}`;
-  }).join(" ");
-
-const Sparkle = ({ color }: { color: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24">
-    <path d="M12 0 15 9 24 12 15 15 12 24 9 15 0 12 9 9Z" fill={color} />
-  </svg>
-);
 
 /** One small specimen per cell, picked by position so any six labels work. */
 const Specimen = ({
   highlight,
   index,
+  font,
 }: {
   highlight: string;
   index: number;
+  font: string;
 }) => {
-  switch (index % 6) {
+  switch (index % CELL_COUNT) {
     case 0: {
       return (
         <div
@@ -101,7 +39,7 @@ const Specimen = ({
           <span
             style={{
               color: PAPER,
-              fontFamily: HEAVY,
+              fontFamily: font,
               fontSize: 60,
               lineHeight: 1,
             }}
@@ -116,8 +54,7 @@ const Specimen = ({
         <div
           tw="flex"
           style={{
-            backgroundImage: `radial-gradient(${INK} 34%, transparent 36%)`,
-            backgroundSize: "10px 10px",
+            ...halftone({ color: INK, dot: 0.34, spacing: 10 }),
             borderRadius: "60px 60px 0 60px",
             height: SPECIMEN_SIZE,
             width: SPECIMEN_SIZE,
@@ -215,169 +152,194 @@ const Specimen = ({
   }
 };
 
-const TrendPoster = ({
-  aside,
-  cta,
-  edition,
-  footer,
-  headline,
-  highlight,
-  issue,
-  items,
-  locale,
-  strap,
-}: Props) => {
-  const isRtl = locale?.startsWith("ar") ?? false;
-  // Flex rows mirror themselves under dir="rtl"; absolute offsets don't.
-  const end = isRtl ? "left" : "right";
-  const rows = [
-    items.slice(0, CELLS_PER_ROW),
-    items.slice(CELLS_PER_ROW, CELLS_PER_ROW * 2),
-  ];
+// oxlint-disable-next-line sort-keys -- schema reads before the render that uses it
+export default defineTemplate({
+  // Latin face first; Arabic glyphs fall through to the Arabic face.
+  fonts: {
+    heavy: { faces: ["Archivo Black", "Lalezar"] },
+    mono: {
+      faces: [
+        { family: "Space Mono", weights: [400, 700] },
+        { family: "IBM Plex Sans Arabic", weights: [400, 700] },
+      ],
+      generic: "monospace",
+    },
+    serif: { faces: ["Instrument Serif", "Amiri"], generic: "serif" },
+    title: { faces: ["Anton", "Lalezar"] },
+  },
+  schema: {
+    aside: field.text("to steal & remix", {
+      description: "Serif aside next to the edition",
+    }),
+    cta: field.text("Save for later", {
+      description: "Button label in the footer",
+    }),
+    edition: field.text("2027", {
+      description: "Big outlined word under the headline",
+    }),
+    footer: field.text("Make the thumb stop.", {
+      description: "Serif line in the footer",
+    }),
+    headline: field.text("Ways to stop the scroll", {
+      description: "Headline, prefixed with the number of items",
+      min: 1,
+    }),
+    highlight: field.color("#ff6a3d", {
+      description: "Highlight color for the edition and button",
+    }),
+    issue: field.text("Issue 07", { description: "Small label top-start" }),
+    items: field.list(field.text("Item"), {
+      default: [
+        "Loud type",
+        "Halftone",
+        "Clashing color",
+        "Raw collage",
+        "Stickers",
+        "Big shapes",
+      ],
+      description: "One name per grid cell",
+      length: CELL_COUNT,
+    }),
+    strap: field.text("A field guide for the feed", {
+      description: "Small line top-end",
+    }),
+  },
+  render: (props, ctx) => {
+    const { fonts } = ctx;
+    const cells = keyed(props.items);
+    const rows = [
+      cells.slice(0, CELLS_PER_ROW),
+      cells.slice(CELLS_PER_ROW, CELL_COUNT),
+    ];
 
-  return (
-    <div
-      lang={isRtl ? "ar" : undefined}
-      dir={isRtl ? "rtl" : "ltr"}
-      tw="flex flex-col w-full h-full px-12 py-10"
-      style={{ backgroundColor: PAPER, color: INK, fontFamily: MONO }}
-    >
+    return (
       <div
-        tw="flex items-center justify-between text-lg mb-3"
-        style={{ flexShrink: 0 }}
+        tw="flex flex-col w-full h-full px-12 py-10"
+        style={{ backgroundColor: PAPER, color: INK, fontFamily: fonts.mono }}
       >
-        <div tw="flex items-center" style={{ gap: 12 }}>
-          <span style={{ fontWeight: 700 }}>STDOUT</span>
-          <Sparkle color={INK} />
-          <span>{issue.toUpperCase()}</span>
-        </div>
-        <span>{strap.toUpperCase()}</span>
-      </div>
-
-      <div tw="flex flex-col" style={{ flexShrink: 0 }}>
-        <span
-          style={{
-            fontFamily: TITLE,
-            fontSize: isRtl ? 92 : 96,
-            lineHeight: isRtl ? 1.2 : 0.9,
-            textTransform: "uppercase",
-          }}
+        <div
+          tw="flex items-center justify-between text-lg mb-3"
+          style={{ flexShrink: 0 }}
         >
-          {`${items.length} ${headline}`}
-        </span>
-        <div tw="flex items-end" style={{ gap: 24 }}>
-          <span
-            style={{
-              WebkitTextStroke: `3px ${INK}`,
-              color: highlight,
-              fontFamily: HEAVY,
-              fontSize: 104,
-              letterSpacing: isRtl ? 0 : "-0.04em",
-              lineHeight: 1,
-              textShadow: `5px 5px 0 ${INK}`,
-            }}
-          >
-            {edition}
-          </span>
-          <span
-            tw="mb-3"
-            style={{
-              fontFamily: SERIF,
-              fontSize: 42,
-              fontStyle: isRtl ? "normal" : "italic",
-            }}
-          >
-            {aside}
-          </span>
+          <div tw="flex items-center" style={{ gap: 12 }}>
+            <span style={{ fontWeight: 700 }}>STDOUT</span>
+            <Sparkle color={INK} />
+            <span style={{ textTransform: "uppercase" }}>{props.issue}</span>
+          </div>
+          <span style={{ textTransform: "uppercase" }}>{props.strap}</span>
         </div>
-      </div>
 
-      <div tw="flex flex-col flex-1 mt-5" style={{ minHeight: 0 }}>
-        {rows.map((row, rowIndex) => (
-          <div
-            key={`row-${rowIndex}`}
-            tw="flex flex-1"
-            style={{ borderTop: `3px solid ${INK}`, minHeight: 0 }}
+        <div tw="flex flex-col" style={{ flexShrink: 0 }}>
+          <span
+            style={ctx.type({
+              font: "title",
+              leading: 0.9,
+              size: 96,
+              uppercase: true,
+            })}
           >
-            {row.map((item, cellIndex) => {
-              const index = rowIndex * CELLS_PER_ROW + cellIndex;
-              return (
+            {`${props.items.length} ${props.headline}`}
+          </span>
+          <div tw="flex items-end" style={{ gap: 24 }}>
+            <span
+              style={{
+                ...ctx.type({
+                  font: "heavy",
+                  leading: 1,
+                  size: 104,
+                  tracking: -0.04,
+                }),
+                WebkitTextStroke: `3px ${INK}`,
+                color: props.highlight,
+                textShadow: `5px 5px 0 ${INK}`,
+              }}
+            >
+              {props.edition}
+            </span>
+            <span
+              tw="mb-3"
+              style={ctx.type({ font: "serif", italic: true, size: 42 })}
+            >
+              {props.aside}
+            </span>
+          </div>
+        </div>
+
+        <div tw="flex flex-col flex-1 mt-5" style={{ minHeight: 0 }}>
+          {rows.map((row) => (
+            <div
+              key={row.map((cell) => cell.key).join("|")}
+              tw="flex flex-1"
+              style={{ borderTop: `3px solid ${INK}`, minHeight: 0 }}
+            >
+              {row.map((cell, column) => (
                 <div
-                  key={item}
+                  key={cell.key}
                   tw="flex flex-col flex-1 pt-3 relative overflow-hidden"
                   style={{
-                    [isRtl ? "borderRight" : "borderLeft"]:
-                      cellIndex === 0 ? "none" : `2px solid ${INK}`,
-                    [isRtl ? "paddingRight" : "paddingLeft"]:
-                      cellIndex === 0 ? 0 : 18,
+                    borderInlineStart:
+                      column === 0 ? "none" : `2px solid ${INK}`,
+                    paddingInlineStart: column === 0 ? 0 : 18,
                   }}
                 >
                   {/* Anchored to the bottom corner: short canvases crop it
                       like a print bleed. Rendered first so the label paints
                       on top if they meet. */}
-                  <div tw="flex absolute" style={{ bottom: 14, [end]: 18 }}>
-                    <Specimen highlight={highlight} index={index} />
+                  <div
+                    tw="flex absolute"
+                    style={{ bottom: 14, insetInlineEnd: 18 }}
+                  >
+                    <Specimen
+                      font={fonts.heavy}
+                      highlight={props.highlight}
+                      index={cell.index}
+                    />
                   </div>
                   <div tw="flex items-baseline relative" style={{ gap: 12 }}>
                     <span tw="text-2xl" style={{ fontWeight: 700 }}>
-                      {String(index + 1).padStart(2, "0")}
+                      {String(cell.index + 1).padStart(2, "0")}
                     </span>
                     <span
                       tw="px-1"
                       style={{
                         backgroundColor: PAPER,
-                        fontFamily: HEAVY,
+                        fontFamily: fonts.heavy,
                         fontSize: 20,
                         textTransform: "uppercase",
                       }}
                     >
-                      {item}
+                      {cell.value}
                     </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+              ))}
+            </div>
+          ))}
+        </div>
 
-      <div
-        tw="flex items-center justify-between pt-5"
-        style={{ borderTop: `3px solid ${INK}`, flexShrink: 0 }}
-      >
-        <span style={{ fontFamily: SERIF, fontSize: 40, lineHeight: 1.1 }}>
-          {footer}
-        </span>
         <div
-          tw="flex items-center px-6 py-3 rounded-full"
-          style={{
-            backgroundColor: highlight,
-            border: `3px solid ${INK}`,
-            fontFamily: HEAVY,
-            fontSize: 20,
-            gap: 12,
-          }}
+          tw="flex items-center justify-between pt-5"
+          style={{ borderTop: `3px solid ${INK}`, flexShrink: 0 }}
         >
-          <span>{cta.toUpperCase()}</span>
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            style={{ transform: isRtl ? "scaleX(-1)" : "none" }}
+          <span style={ctx.type({ font: "serif", leading: 1.1, size: 40 })}>
+            {props.footer}
+          </span>
+          <div
+            tw="flex items-center px-6 py-3 rounded-full"
+            style={{
+              backgroundColor: props.highlight,
+              border: `3px solid ${INK}`,
+              fontFamily: fonts.heavy,
+              fontSize: 20,
+              gap: 12,
+              textTransform: "uppercase",
+            }}
           >
-            <path
-              d="M4 12h15M13 5l7 7-7 7"
-              stroke={INK}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+            <span>{props.cta}</span>
+            <Arrow color={INK} ctx={ctx} />
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-export default TrendPoster;
+    );
+  },
+});

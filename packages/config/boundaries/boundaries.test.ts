@@ -32,6 +32,10 @@ describe("this repo", () => {
   it("has no stale exceptions", () => {
     expect(report.unusedExceptions).toEqual([]);
   });
+
+  it("decides each rule in one place", () => {
+    expect(report.forbiddenPatterns).toEqual([]);
+  });
 });
 
 describe("the checker", () => {
@@ -62,6 +66,7 @@ describe("the checker", () => {
       name: "@stdout-design/web-ui",
     }),
     "packages/web-ui/src/app.ts": `import { renderComponent } from "@stdout-design/core";`,
+    "packages/web-ui/src/rtl.ts": `export const isRtl = (locale: string) => locale.startsWith("ar");`,
   };
   for (const [file, content] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -111,6 +116,12 @@ describe("the checker", () => {
   it("keeps templates off the engine", () => {
     expect(report.templates).toEqual([
       expect.stringContaining("templates/bad.tsx → @stdout-design/core:"),
+    ]);
+  });
+
+  it("flags a locale prefix test with its line", () => {
+    expect(report.forbiddenPatterns).toEqual([
+      expect.stringContaining("packages/web-ui/src/rtl.ts:1:"),
     ]);
   });
 

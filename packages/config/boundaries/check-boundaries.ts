@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   BOUNDARY_EXCEPTIONS,
   CORE_LAYER_DEPS,
+  FORBIDDEN_PATTERNS,
   CORE_LAYERS,
   IO_FREE_LAYERS,
   TEMPLATE_ALLOWED_IMPORTS,
@@ -23,6 +24,8 @@ export interface BoundaryReport {
   /** Workspaces on disk missing from `WORKSPACES`, or listed but gone. */
   undeclaredWorkspaces: string[];
   unusedExceptions: string[];
+  /** Lines matching a `FORBIDDEN_PATTERNS` entry. */
+  forbiddenPatterns: string[];
 }
 
 interface PackageJson {
@@ -273,6 +276,30 @@ const checkTemplates = (
  * tables in `rules.ts` don't allow. An empty report means every boundary
  * holds.
  */
+const checkForbiddenPatterns = (
+  context: CheckContext,
+  dirs: string[]
+): string[] => {
+  // Template projects can sit inside a workspace; read each file once.
+  // Tests are skipped: they may spell out the pattern they guard against.
+  const files = new Set(
+    dirs
+      .filter((dir) => existsSync(dir))
+      .flatMap((dir) => listSourceFiles(dir))
+      .filter((file) => !TEST_FILE.test(file))
+  );
+  return [...files].flatMap((file) =>
+    readFileSync(file, "utf-8")
+      .split("\n")
+      .flatMap((line, index) =>
+        FORBIDDEN_PATTERNS.filter(({ pattern }) => pattern.test(line)).map(
+          ({ reason }) =>
+            `${context.toRepoPath(file)}:${index + 1}: ${line.trim()}. ${reason}`
+        )
+      )
+  );
+};
+
 export const checkBoundaries = (repoRoot: string): BoundaryReport => {
   const toRepoPath = (file: string) => path.relative(repoRoot, file);
   const usedExceptions = new Set<BoundaryException>();
@@ -309,6 +336,10 @@ export const checkBoundaries = (repoRoot: string): BoundaryReport => {
 
   return {
     coreLayers,
+    forbiddenPatterns: checkForbiddenPatterns(context, [
+      ...workspaceDirs.values(),
+      ...templateDirs,
+    ]),
     templates,
     undeclaredWorkspaces: checkWorkspaceDeclarations(workspaceDirs),
     unusedExceptions,

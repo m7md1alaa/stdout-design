@@ -25,13 +25,12 @@ export default config;
   writeFileSync(path.resolve(dir, "studio.config.ts"), configContent);
 };
 
-// A config that already has every default preset, template and font
-// locale, so `update` has nothing to add.
+// A config that already has every default preset and template, so
+// `update` has nothing to add.
 const createCurrentConfig = (dir: string): void => {
-  const { defaultPreset, fonts, presets, templates } = getDefaults();
+  const { defaultPreset, presets, templates } = getDefaults();
   const config = {
     defaultPreset,
-    fonts,
     presets,
     scaffoldVersion: "0.2.9",
     templates,

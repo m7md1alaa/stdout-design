@@ -105,9 +105,6 @@ const printChanges = (summary: ChangeSummary, installedVersion: string) => {
   for (const id of summary.addedTemplates) {
     console.log(`  templates        +${id}`);
   }
-  for (const locale of summary.addedFontLocales) {
-    console.log(`  fonts            +${locale}`);
-  }
   console.log(
     "  assets           tsconfig.json, .gitignore, types.d.ts (overwrite)"
   );
@@ -177,7 +174,6 @@ export const update = async (
     plan.summary.addedPresets.length > 0 ||
     plan.summary.deprecatedPresets.length > 0 ||
     plan.summary.addedTemplates.length > 0 ||
-    plan.summary.addedFontLocales.length > 0 ||
     plan.summary.oldVersion !== plan.summary.newVersion;
 
   if (!hasChanges) {

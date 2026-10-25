@@ -113,3 +113,18 @@ export const BOUNDARY_EXCEPTIONS: readonly BoundaryException[] = [
     specifier: "../../apps/web-docs/src/components/og/docs-template",
   },
 ];
+
+export interface ForbiddenPattern {
+  pattern: RegExp;
+  /** What to write instead. */
+  reason: string;
+}
+
+/** Code that decides a rule the repo decides in one place. Checked in every source file. */
+export const FORBIDDEN_PATTERNS: readonly ForbiddenPattern[] = [
+  {
+    pattern: /\.startsWith\(\s*["'`](?:ar|he|fa|ur)["'`]\s*\)/u,
+    reason:
+      "A locale prefix test misses Persian, Urdu, and script subtags. Use classifyLocale (core), ctx.dir in a template, or the /config localeInfo in the studio (ADR-0019).",
+  },
+];
