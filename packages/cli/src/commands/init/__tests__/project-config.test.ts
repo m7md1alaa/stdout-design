@@ -61,11 +61,11 @@ describe("buildProjectConfig", () => {
 
 describe("startersSince", () => {
   test("returns every starter for a project with no scaffold version", () => {
-    expect(startersSince(undefined, "0.6.0")).toEqual(STARTER_IDS);
+    expect(startersSince(undefined, "0.7.0")).toEqual(STARTER_IDS);
   });
 
   test("returns the starters shipped after the project was created", () => {
-    expect(startersSince("0.5.0", "0.6.0")).toEqual([
+    expect(startersSince("0.6.0", "0.7.0")).toEqual([
       "launch-hero",
       "retro-poster",
       "trend-poster",
@@ -73,11 +73,11 @@ describe("startersSince", () => {
   });
 
   test("returns nothing for a project created by this version", () => {
-    expect(startersSince("0.6.0", "0.6.0")).toEqual([]);
+    expect(startersSince("0.7.0", "0.7.0")).toEqual([]);
   });
 
   test("skips starters newer than the running CLI", () => {
-    expect(startersSince("0.3.0", "0.5.0")).toEqual([]);
+    expect(startersSince("0.3.0", "0.6.0")).toEqual([]);
   });
 });
 

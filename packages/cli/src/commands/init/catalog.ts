@@ -42,7 +42,7 @@ export const STARTERS = [
     hint: "Landing page hero",
     id: "launch-hero",
     label: "Launch Hero",
-    since: "0.6.0",
+    since: "0.7.0",
   },
   {
     description:
@@ -68,7 +68,7 @@ export const STARTERS = [
     hint: "Retro print poster",
     id: "retro-poster",
     label: "Retro Poster",
-    since: "0.6.0",
+    since: "0.7.0",
   },
   {
     description: "Editorial six-item grid with drawn specimens in each cell.",
@@ -84,7 +84,7 @@ export const STARTERS = [
     hint: "Editorial listicle",
     id: "trend-poster",
     label: "Trend Poster",
-    since: "0.6.0",
+    since: "0.7.0",
   },
 ] as const satisfies readonly Starter[];
 

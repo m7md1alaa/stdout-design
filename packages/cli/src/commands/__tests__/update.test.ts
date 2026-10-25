@@ -161,14 +161,14 @@ describe("update after init", () => {
     const { logs, restore } = captureLogs();
     const dir = inTempDir();
     // English only, one starter: nothing for update to add.
-    createInitConfig(dir, "0.6.0", {
+    createInitConfig(dir, "0.7.0", {
       locales: ["en"],
       starters: ["launch-hero"],
     });
 
     try {
       const { update } = await import("../update.js");
-      await update(dir, { yes: true }, at("0.6.0"));
+      await update(dir, { yes: true }, at("0.7.0"));
       expect(logs.join(" ")).toContain("already up to date");
     } finally {
       restore();
@@ -179,7 +179,7 @@ describe("update after init", () => {
   test("adds the starters shipped since, with their files, copy and fonts", async () => {
     const { restore } = captureLogs();
     const dir = inTempDir();
-    createInitConfig(dir, "0.5.0", {
+    createInitConfig(dir, "0.6.0", {
       locales: ["en", "ar"],
       starters: ["bento-feature"],
     });
@@ -191,7 +191,7 @@ describe("update after init", () => {
 
     try {
       const { update } = await import("../update.js");
-      await update(dir, { yes: true }, at("0.6.0"));
+      await update(dir, { yes: true }, at("0.7.0"));
 
       const config = await readConfig(dir);
       expect(Object.keys(config.templates).toSorted()).toEqual([
@@ -227,7 +227,7 @@ describe("update after init", () => {
 
     try {
       const { update } = await import("../update.js");
-      await update(dir, { yes: true }, at("0.6.0"));
+      await update(dir, { yes: true }, at("0.7.0"));
 
       const config = await readConfig(dir);
       expect(config.locales).toEqual(["en"]);
