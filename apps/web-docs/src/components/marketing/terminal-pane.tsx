@@ -8,29 +8,32 @@ type LogLine = {
   isLatest?: boolean;
 };
 
+// Real commands and real output file names from the scaffolded starter,
+// so the hero never promises a file the CLI doesn't write.
 const SEQUENCE: LogLine[] = [
-  { text: "$ studio render bento-feature \\", type: "cmd" },
-  { text: "    --data ./data/posts.csv \\", type: "muted" },
-  { text: "    --preset all --out-dir ./out/", type: "muted" },
+  { text: "$ npx @stdout-design/cli init --yes", type: "cmd" },
+  { text: "✔ 4 templates, 2 locales, fonts wired", type: "success" },
+  { text: "", type: "muted" },
+  { text: "$ studio render launch-hero \\", type: "cmd" },
+  { text: "    --preset all --locale en,ar", type: "muted" },
   { text: "", type: "muted" },
   { text: "  Resolving template…", type: "info" },
-  { text: "  Loading data file (10 rows)…", type: "info" },
-  { text: "  Rendering asset 1/10 → launch-card.png", type: "info" },
-  { text: "  Rendering asset 2/10 → og-post-01.png", type: "info" },
-  { text: "  Rendering asset 3/10 → og-post-02.png", type: "info" },
-  { text: "  Rendering asset 4/10 → store@3x.png", type: "info" },
-  { text: "  Rendering asset 5/10 → x-card.png", type: "info" },
-  { text: "  Rendering asset 6/10 → og-post-03.png", type: "info" },
-  { text: "  Rendering asset 7/10 → og-post-04.png", type: "info" },
-  { text: "  Rendering asset 8/10 → og-post-05.png", type: "info" },
-  { text: "  Rendering asset 9/10 → store@2x.png", type: "info" },
-  { text: "  Rendering asset 10/10 → og-post-06.png", type: "info" },
+  { text: "  Fetching fonts: Archivo Black, Lalezar…", type: "info" },
+  {
+    text: "  Rendering 1/4 → launch-hero.en.instagram-square.png",
+    type: "info",
+  },
+  { text: "  Rendering 2/4 → launch-hero.en.x-card.png", type: "info" },
+  {
+    text: "  Rendering 3/4 → launch-hero.ar.instagram-square.png",
+    type: "info",
+  },
+  { text: "  Rendering 4/4 → launch-hero.ar.x-card.png", type: "info" },
   { text: "", type: "muted" },
-  { text: "✔ Rendered 10 assets in 1.2s", type: "success" },
+  { text: "✔ Rendered 4 assets, 2 of them right-to-left", type: "success" },
   { text: "", type: "muted" },
-  { text: "$ ls ./out/", type: "cmd" },
-  { text: "launch-card.png  og-post-01.png  og-post-02.png", type: "muted" },
-  { text: "og-post-03.png   store@3x.png    x-card.png", type: "muted" },
+  { text: "$ studio render trend-poster --locale ar", type: "cmd" },
+  { text: "✔ trend-poster.ar.instagram-square.png", type: "success" },
 ];
 
 const COLOR: Record<LogLine["type"], string> = {
