@@ -13,6 +13,7 @@ export const CORE_LAYERS = [
   "project",
   "assets",
   "cache",
+  "template",
   "orchestrate",
   "batch",
   "og",
@@ -34,13 +35,22 @@ export const CORE_LAYER_DEPS: Record<
     orchestrate: "any",
     project: "any",
     shared: "any",
+    template: "any",
   },
   cache: { project: "any", shared: "any" },
   engine: { shared: "any" },
   og: { engine: "any", shared: "any" },
-  orchestrate: { assets: "any", cache: "any", engine: "any", shared: "any" },
+  orchestrate: {
+    assets: "any",
+    cache: "any",
+    engine: "any",
+    shared: "any",
+    template: "any",
+  },
   project: { shared: "any" },
   shared: {},
+  /** The authoring surface (ADR-0019): pure, so templates can't reach the engine through it. */
+  template: { shared: "any" },
 };
 
 /** Layers that never touch disk, network, or the runtime: no `node:` or `bun` modules. */
@@ -80,6 +90,7 @@ export const WORKSPACE_DEPS: Record<Workspace, readonly Workspace[]> = {
 export const TEMPLATE_PROJECTS = ["packages/cli/template", "examples"] as const;
 
 export const TEMPLATE_ALLOWED_IMPORTS: readonly string[] = [
+  "@stdout-design/cli/template",
   "@stdout-design/cli/schema",
   "@stdout-design/core/schema",
   "react",

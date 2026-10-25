@@ -75,3 +75,10 @@ export type { BatchInput, BatchOutput } from "./batch/batch.js";
 
 export { classifyLocale, SCRIPTS } from "./shared/locale.js";
 export type { Direction, LocaleInfo, Script } from "./shared/locale.js";
+
+export {
+  defineTemplate,
+  isTemplateDefinition,
+  toTemplateDefinition,
+} from "./template/define-template.js";
+export type { TemplateDefinition } from "./template/define-template.js";

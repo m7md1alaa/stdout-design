@@ -7,11 +7,12 @@ import { resolveProjectPaths } from "../project/project-paths.js";
 import { parseStudioConfig } from "../shared/config-schema.js";
 import { AppError, ErrorCode } from "../shared/error-codes.js";
 import { logDebug, logWarn } from "../shared/logger.js";
-import type { StudioConfig, TemplateModule } from "../shared/types.js";
-import { isZodObject } from "../shared/validation.js";
+import type { StudioConfig } from "../shared/types.js";
+import { toTemplateDefinition } from "../template/define-template.js";
+import type { TemplateDefinition } from "../template/define-template.js";
 
 export interface LoadedTemplate {
-  module: TemplateModule;
+  template: TemplateDefinition;
   contentHash: string;
 }
 
@@ -41,27 +42,7 @@ const loadTemplateForBatch = async (
 
   const mod = await import(pathToFileURL(fullPath).href);
 
-  if (typeof (mod as Record<string, unknown>).default !== "function") {
-    throw new AppError(
-      ErrorCode.TEMPLATE_INVALID_EXPORT,
-      `Template "${templateId}" must have a default export that is a component function.`,
-      { templateId }
-    );
-  }
-
-  const { propsSchema } = mod as { propsSchema: unknown };
-  if (!isZodObject(propsSchema)) {
-    throw new AppError(
-      ErrorCode.TEMPLATE_INVALID_EXPORT,
-      `Template "${templateId}" must export a "propsSchema" that is a z.object({...}).`,
-      { templateId }
-    );
-  }
-
-  return {
-    contentHash,
-    module: mod as TemplateModule,
-  };
+  return { contentHash, template: toTemplateDefinition(mod, templateId) };
 };
 
 export const importTemplateForBatch = async (

@@ -6,9 +6,10 @@ import { pathToFileURL } from "node:url";
 import {
   parseStudioConfig,
   resolveProjectPaths,
+  toTemplateDefinition,
   zodToJsonSchemaShape,
 } from "@stdout-design/core";
-import type { StudioConfig, TemplateModule } from "@stdout-design/core";
+import type { StudioConfig, TemplateDefinition } from "@stdout-design/core";
 import react from "@vitejs/plugin-react";
 import { createServer } from "vite";
 import { ViteNodeRunner } from "vite-node/client";
@@ -16,12 +17,11 @@ import { ViteNodeServer } from "vite-node/server";
 import { installSourcemapsSupport } from "vite-node/source-map";
 
 import { TemplateConfigError } from "./template-config-error.js";
-import { validateTemplateModule } from "./template-helpers.js";
 
 const { resolve } = path;
 
 type TemplateLoadState =
-  | { status: "ok"; module: TemplateModule }
+  | { status: "ok"; template: TemplateDefinition }
   | { status: "error"; error: Error };
 
 export interface TemplateInfo {
@@ -190,12 +190,12 @@ export class TemplateLoader {
     return this.loadAll();
   }
 
-  getTemplateModule(id: string): TemplateModule | null {
+  getTemplate(id: string): TemplateDefinition | null {
     const entry = this.templates.get(id);
     if (!entry || !entry.state || entry.state.status === "error") {
       return null;
     }
-    return entry.state.module;
+    return entry.state.template;
   }
 
   getTemplateInfo(id: string): TemplateInfo | null {
@@ -248,8 +248,7 @@ export class TemplateLoader {
       this.invalidateModule(entry.modulePath);
       const mod = await this.importFresh(entry.modulePath);
 
-      const templateModule = validateTemplateModule(mod, id);
-      entry.state = { module: templateModule, status: "ok" };
+      entry.state = { status: "ok", template: toTemplateDefinition(mod, id) };
     } catch (error) {
       console.error(
         `[template-loader] Failed to load template "${id}":`,
@@ -311,7 +310,7 @@ export class TemplateLoader {
       contentHash: entry.contentHash,
       description: entry.description,
       id: entry.id,
-      propsSchema: zodToJsonSchemaShape(entry.state.module.propsSchema),
+      propsSchema: zodToJsonSchemaShape(entry.state.template.propsSchema),
       status: "ok",
     };
   }

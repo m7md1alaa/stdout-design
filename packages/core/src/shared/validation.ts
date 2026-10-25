@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { FIELD_META_KEY, getFieldMeta } from "./field-meta.js";
+
 /**
  * Single source of truth for the prop-schema type. Previously declared
  * identically in both `props.ts` and `validation.ts` -- consolidated here
@@ -416,5 +418,14 @@ export const zodToJsonSchemaShape = (
     return {};
   }
 
-  return z.toJSONSchema(schema);
+  // Fields built with `field.*` carry their kind and translatability, so
+  // the studio reads what a field is instead of guessing from its name.
+  return z.toJSONSchema(schema, {
+    override: (context) => {
+      const meta = getFieldMeta(context.zodSchema as unknown as z.ZodType);
+      if (meta) {
+        (context.jsonSchema as Record<string, unknown>)[FIELD_META_KEY] = meta;
+      }
+    },
+  });
 };

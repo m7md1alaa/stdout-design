@@ -67,9 +67,8 @@ describe("loaders", () => {
         "test-card"
       );
 
-      expect(result.module).toBeDefined();
-      expect(typeof result.module.default).toBe("function");
-      expect(result.module.propsSchema).toBeDefined();
+      expect(typeof result.template.render).toBe("function");
+      expect(result.template.propsSchema).toBeDefined();
       expect(result.contentHash).toBeDefined();
       expect(result.contentHash.length).toBe(16);
     });

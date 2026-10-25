@@ -14,7 +14,7 @@ export default defineConfig({
     ],
   },
   dts: true,
-  entry: ["./src/index.ts", "./src/schema.ts"],
+  entry: ["./src/index.ts", "./src/schema.ts", "./src/template.ts"],
   format: "esm",
   minify: {
     compress: true,
