@@ -1,14 +1,25 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { Font } from "../engine/takumi-types-shim.js";
-import { resolveAssetsForLocale } from "./assets-resolver.js";
-import { clearFontCache } from "./font-config.js";
 
 const stubFont: Font = { name: "test-font", weight: 400 } as Font;
+const notoArabic: Font = { name: "Noto Sans Arabic", weight: 400 } as Font;
+
+const mockGoogleFonts = mock<(...args: unknown[]) => Promise<Font[]>>(() =>
+  Promise.resolve([notoArabic])
+);
+
+mock.module("@takumi-rs/helpers", () => ({
+  googleFonts: mockGoogleFonts,
+}));
+
+const { resolveAssetsForLocale } = await import("./assets-resolver.js");
+const { clearFontCache } = await import("./font-config.js");
 
 describe("resolveAssetsForLocale", () => {
   beforeEach(() => {
     clearFontCache();
+    mockGoogleFonts.mockClear();
   });
 
   it("classifies empty locale with no lang or fonts", async () => {
@@ -117,6 +128,23 @@ describe("resolveAssetsForLocale", () => {
 
     expect(result.fonts).toEqual([]);
     expect(result.fontFamilies).toBeUndefined();
+    expect(mockGoogleFonts).not.toHaveBeenCalled();
+  });
+
+  it("falls back to Noto Sans Arabic when an Arabic locale's fonts fail", async () => {
+    const fetchFonts = mock((_localeId: string) => Promise.resolve(null));
+
+    const result = await resolveAssetsForLocale(
+      "ar-EG",
+      { title: "مرحبا" },
+      { fetchFonts }
+    );
+
+    expect(mockGoogleFonts).toHaveBeenCalledWith([
+      { name: "Noto Sans Arabic", weight: [400, 700] },
+    ]);
+    expect(result.fonts).toEqual([notoArabic]);
+    expect(result.fontFamilies).toEqual(["Noto Sans Arabic"]);
   });
 
   it("calls loadLocaleData callback and merges results into props", async () => {
