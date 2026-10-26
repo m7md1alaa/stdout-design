@@ -49,6 +49,7 @@
     "lint": "ultracite check"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
     "@stdout-design/core": "^0.7.0",
     "@vitejs/plugin-react": "^6.1.2",
     "chokidar": "^6.0.0",

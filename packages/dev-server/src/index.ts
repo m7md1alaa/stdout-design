@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { serve } from "@hono/node-server";
 import {
   clearFontCache,
   createFetchFontsFromConfig,
@@ -59,6 +61,19 @@ const MIME_TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
+const isInsideDir = (dir: string, filePath: string): boolean => {
+  const relative = path.relative(dir, filePath);
+  return !(relative.startsWith("..") || path.isAbsolute(relative));
+};
+
+const readFileOrNull = async (filePath: string): Promise<Uint8Array | null> => {
+  try {
+    return await readFile(filePath);
+  } catch {
+    return null;
+  }
+};
+
 const serveStaticDir = (app: Hono, dir: string, basePath = "/"): void => {
   app.get(`${basePath}*`, async (c) => {
     const url = new URL(c.req.url);
@@ -68,12 +83,14 @@ const serveStaticDir = (app: Hono, dir: string, basePath = "/"): void => {
       filePath = path.join(filePath, "index.html");
     }
 
-    const file = Bun.file(filePath);
-    const exists = await file.exists();
-    if (!exists) {
-      const indexFile = Bun.file(path.join(dir, "index.html"));
-      const indexExists = await indexFile.exists();
-      if (!indexExists) {
+    if (!isInsideDir(dir, filePath)) {
+      return c.notFound();
+    }
+
+    const file = await readFileOrNull(filePath);
+    if (!file) {
+      const indexFile = await readFileOrNull(path.join(dir, "index.html"));
+      if (!indexFile) {
         return c.notFound();
       }
       return new Response(indexFile, {
@@ -376,9 +393,14 @@ export const startStandaloneServer = async (
   const server = await createDevServer(options);
 
   try {
-    Bun.serve({
-      fetch: server.app.fetch,
-      port: server.port,
+    // node:http reports listen failures (EADDRINUSE) as an event, not a throw.
+    // oxlint-disable-next-line promise/avoid-new
+    await new Promise<void>((resolve, reject) => {
+      const httpServer = serve(
+        { fetch: server.app.fetch, port: server.port },
+        () => resolve()
+      );
+      httpServer.once("error", reject);
     });
   } catch (error) {
     await server.close();
