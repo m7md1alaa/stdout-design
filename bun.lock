@@ -64,13 +64,13 @@
     },
     "packages/cli": {
       "name": "@stdout-design/cli",
-      "version": "0.4.1",
+      "version": "0.6.0",
       "bin": {
         "studio": "dist/index.mjs",
       },
       "dependencies": {
         "@clack/prompts": "^1.8.1",
-        "@stdout-design/core": "^0.4.1",
+        "@stdout-design/core": "^0.6.0",
         "commander": "^15.0.0",
         "package-manager-detector": "^1.9.0",
       },
@@ -91,7 +91,7 @@
     },
     "packages/core": {
       "name": "@stdout-design/core",
-      "version": "0.4.1",
+      "version": "0.6.0",
       "dependencies": {
         "@takumi-rs/core": "^2.17.1",
         "@takumi-rs/helpers": "^2.17.1",
@@ -125,9 +125,10 @@
     },
     "packages/dev-server": {
       "name": "@stdout-design/dev-server",
-      "version": "0.4.1",
+      "version": "0.6.0",
       "dependencies": {
-        "@stdout-design/core": "^0.4.1",
+        "@hono/node-server": "^2.1.5",
+        "@stdout-design/core": "^0.6.0",
         "@vitejs/plugin-react": "^6.1.2",
         "chokidar": "^6.0.0",
         "hono": "^4.13.13",
@@ -147,7 +148,7 @@
     },
     "packages/web-ui": {
       "name": "@stdout-design/web-ui",
-      "version": "0.4.1",
+      "version": "0.6.0",
       "dependencies": {
         "@base-ui/react": "^1.9.0",
         "@fontsource-variable/geist": "^5.3.0",
