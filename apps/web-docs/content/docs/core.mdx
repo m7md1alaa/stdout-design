@@ -116,8 +116,7 @@ const cache = await openCache(process.cwd());
 
 const result = await orchestrateRender({
   cache,
-  component: StatCard,
-  propsSchema,
+  template: StatCard, // the template file's default export
   props: { title: "Hello" },
   templateId: "stat-card",
   templateContentHash: "abc123", // any stable string identifying this template version
@@ -170,7 +169,7 @@ You rarely construct `RenderCache` yourself `openCache` resolves the right cache
 
 ## Validating props
 
-The same validation the CLI and studio use for a template's `propsSchema`:
+The same validation the CLI and studio use. A template's schema is its `propsSchema`:
 
 ```ts
 import {
@@ -179,8 +178,10 @@ import {
   zodToJsonSchemaShape,
 } from "@stdout-design/core";
 
+import StatCard from "./templates/stat-card";
+
 try {
-  const props = validateProps(propsSchema, rawProps);
+  const props = validateProps(StatCard.propsSchema, rawProps);
 } catch (error) {
   if (error instanceof PropValidationError) {
     // error.issues: { field, message, suggestion?, ... }[]
@@ -189,10 +190,10 @@ try {
 }
 
 // JSON Schema for a prop panel, form builder, or agent tool schema
-const jsonSchema = zodToJsonSchemaShape(propsSchema);
+const jsonSchema = zodToJsonSchemaShape(StatCard.propsSchema);
 ```
 
-`defineSchema` is a no-op type helper you'll see in templates it exists purely for TypeScript inference at the definition site, not for anything at runtime.
+The JSON schema carries each field's kind and translatability under `x-field`, as the studio reads it. `defineSchema` is a no-op type helper for templates written before `defineTemplate`.
 
 ## Errors
 

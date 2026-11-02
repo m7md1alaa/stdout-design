@@ -1,6 +1,13 @@
+import type { z } from "zod";
+
 import type { Font } from "../engine/takumi-types-shim.js";
-import { fetchBuiltInFonts } from "./font-config.js";
-import { scriptOf } from "./locale-fonts.js";
+import { classifyLocale } from "../shared/locale.js";
+import type { Script } from "../shared/locale.js";
+import { logWarn } from "../shared/logger.js";
+import { applyTranslations } from "../shared/translations.js";
+import type { FontConfig } from "../shared/types.js";
+import { loadFontConfigs } from "./font-config.js";
+import { BUILT_IN_FONTS } from "./locale-fonts.js";
 
 export interface AssetsForLocale {
   fonts: Font[];
@@ -20,26 +27,60 @@ export interface AssetsResolverOptions {
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
   preResolvedFonts?: Font[];
   preResolvedFontFamilies?: string[];
+  /** Faces the template declares (`defineTemplate({ fonts })`), loaded on every locale. */
+  declaredFonts?: readonly FontConfig[];
+  /** The template's prop schema; with `field.*` meta, it decides which props a locale file may replace. */
+  propsSchema?: z.ZodType;
 }
 
-const mergeLocaleProps = (
-  props: Record<string, unknown>,
-  localeData?: Record<string, unknown>
-): Record<string, unknown> => {
-  if (!localeData) {
-    return { ...props };
+const combine = (
+  parts: (FontResolutionResult | null)[]
+): FontResolutionResult | null => {
+  const present = parts.filter((part) => part !== null);
+  if (present.length === 0) {
+    return null;
+  }
+  return {
+    fontFamilies: [...new Set(present.flatMap((part) => part.fontFamilies))],
+    fonts: present.flatMap((part) => part.fonts),
+  };
+};
+
+/**
+ * The fonts a render loads: the config's for this locale, then every face
+ * the template declares (a family the config already loads is the config's
+ * to define: a local file wins over Google), then the script's built-in
+ * face when the config has nothing for the locale and the template doesn't
+ * name it. Each set is fetched once per process (see `loadFontConfigs`).
+ */
+const resolveFonts = async (
+  localeId: string,
+  script: Script,
+  options: AssetsResolverOptions | undefined
+): Promise<FontResolutionResult | null> => {
+  const configured = options?.fetchFonts
+    ? await options.fetchFonts(localeId)
+    : null;
+
+  const configuredFamilies = new Set(configured?.fontFamilies);
+  const declared = (options?.declaredFonts ?? []).filter(
+    (c) => !configuredFamilies.has(c.family)
+  );
+  const declaredResolution = await loadFontConfigs(declared);
+  if (declared.length > 0 && !declaredResolution) {
+    logWarn(
+      `Template fonts failed to load (${declared.map((c) => c.family).join(", ")}); rendering with fallbacks.`
+    );
   }
 
-  const merged = { ...props };
-  for (const [key, value] of Object.entries(localeData)) {
-    if (Array.isArray(value) && Array.isArray(merged[key])) {
-      merged[key] = value;
-    } else if (typeof value === "string" && typeof merged[key] === "string") {
-      merged[key] = value;
-    }
-  }
+  const builtIn = configured
+    ? []
+    : BUILT_IN_FONTS[script].filter(
+        (c) => !declared.some((d) => d.family === c.family)
+      );
+  const fallback = await loadFontConfigs(builtIn);
 
-  return merged;
+  return combine([configured, declaredResolution, fallback]);
 };
 
 export const resolveAssetsForLocale = async (
@@ -56,26 +97,27 @@ export const resolveAssetsForLocale = async (
     }
   }
 
-  const mergedProps = mergeLocaleProps(props, localeData);
-  const lang = scriptOf(localeId) === "arabic" ? "ar" : undefined;
-
-  let fonts: Font[] = [];
-  let fontFamilies: string[] | undefined;
+  const mergedProps = applyTranslations(
+    options?.propsSchema,
+    props,
+    localeData
+  );
+  const { lang, script } = classifyLocale(localeId);
 
   if (options?.preResolvedFonts) {
-    fonts = options.preResolvedFonts;
-    fontFamilies = options.preResolvedFontFamilies;
-  } else {
-    // Without a `fonts` config, or when its fonts fail to load, a locale
-    // still gets its script's built-in fonts (none for Latin).
-    const configured = options?.fetchFonts
-      ? await options.fetchFonts(localeId)
-      : null;
-    const resolution = configured ?? (await fetchBuiltInFonts(localeId));
-    if (resolution) {
-      ({ fontFamilies, fonts } = resolution);
-    }
+    return {
+      fontFamilies: options.preResolvedFontFamilies,
+      fonts: options.preResolvedFonts,
+      lang,
+      props: mergedProps,
+    };
   }
 
-  return { fontFamilies, fonts, lang, props: mergedProps };
+  const resolution = await resolveFonts(localeId, script, options);
+  return {
+    fontFamilies: resolution?.fontFamilies,
+    fonts: resolution?.fonts ?? [],
+    lang,
+    props: mergedProps,
+  };
 };

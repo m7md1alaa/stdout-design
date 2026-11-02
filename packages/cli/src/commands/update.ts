@@ -107,9 +107,6 @@ const printChanges = (summary: ChangeSummary, installedVersion: string) => {
   for (const id of summary.addedTemplates) {
     console.log(`  templates        +${id}`);
   }
-  for (const font of summary.addedFonts) {
-    console.log(`  fonts            +${font}`);
-  }
   if (summary.recordedLocales.length > 0) {
     console.log(
       `  locales          ${summary.recordedLocales.join(", ")} (recorded)`

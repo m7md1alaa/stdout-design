@@ -14,11 +14,11 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 
 **Template directory** (`template/` in the CLI package): The source-of-truth files that get copied during scaffold. Not a separate publishable package. _Avoid_: starter (that is one template in it), boilerplate, example
 
-**Starter**: One template in the template directory that `studio init` offers, listed in the CLI's starter catalog (`init/catalog.ts`) with the fonts it uses and `since`, the CLI version that first shipped it. _Avoid_: sample, demo template
+**Starter**: One template in the template directory that `studio init` offers, listed in the CLI's starter catalog (`init/catalog.ts`) with `since`, the CLI version that first shipped it. _Avoid_: sample, demo template
 
-**Script**: The writing system a locale renders in, `arabic` or `latin`. Decided in one place, `scriptOf` in `@stdout-design/core` (`assets/locale-fonts.ts`), from the locale id. A locale's script picks its built-in fonts and whether it may use the `default` font entry. _Avoid_: language, direction, RTL (as the classification)
+**Script**: The writing system a locale renders in, `latin`, `arabic` or `hebrew`. Decided in one place, `classifyLocale` in `@stdout-design/core` (`shared/locale.ts`), from the locale id (ADR-0019). A locale's script picks its direction, its built-in fonts, and whether it may use the `default` font entry. _Avoid_: language, direction, RTL (as the classification)
 
-**Font set**: The ordered font entries a locale resolves to, after falling back through its own entry, `default` and its script's built-in fonts. The unit fonts are downloaded and cached by: locales with the same font set share one download. See ADR-0007. _Avoid_: font config (that is the whole `fonts` field)
+**Font set**: The ordered font entries a locale resolves to, from the config (its own entry, else `default`), the template's declared faces, or its script's built-in fonts. The unit fonts are downloaded and cached by: locales with the same font set share one download. See ADR-0007. _Avoid_: font config (that is the whole `fonts` field)
 
 **Scaffold version**: The CLI version that created a project. Stored in `studio.config.ts` as `scaffoldVersion`. Used by `studio update` to compare against the current CLI version. _Avoid_: version, created-version
 
@@ -41,3 +41,9 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 **Agent Skill**: A `SKILL.md` file (at `skills/studio/SKILL.md`) installed into an agent's scope by the `skills` CLI (vercel-labs/skills). Contains instructions for how the agent should use `studio`. _Avoid_: skill (ambiguous), instruction set, prompt, agent config
 
 **Skill installer**: The module in `@stdout-design/cli` (`src/lib/skill.ts`) that detects whether the agent skill is installed, prompts the user, and runs `skills add`. _Avoid_: skill manager, agent setup, skill helper
+
+**Core layer**: One of the folders directly under `packages/core/src` (`shared`, `engine`, `project`, `assets`, `cache`, `orchestrate`, `batch`, `og`), each allowed to import only the layers ADR-0008 lists below it. _Avoid_: module (too general), tier
+
+**Boundary rules**: The tables in `packages/config/boundaries/rules.ts` that say which core layers, workspaces, and templates may import which. `boundaries.test.ts` fails on any import they don't allow. Changing a boundary means editing these tables. _Avoid_: lint rules, architecture config
+
+**Render context** (`ctx`): What the pipeline tells a template about the render it is part of: text direction, canvas size, script typography, fonts. Built once by `orchestrateRender` and passed to `defineTemplate`'s `render(props, ctx)`, never mixed into props (ADR-0019). _Avoid_: locale prop, render options, environment

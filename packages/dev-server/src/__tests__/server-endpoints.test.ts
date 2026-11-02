@@ -168,6 +168,7 @@ describe("GET /config", () => {
 
     const body = (await res.json()) as {
       defaultPreset: string;
+      localeInfo: { id: string; dir: string; script: string }[];
       locales: string[];
       outDir: string;
       presets: {
@@ -181,6 +182,10 @@ describe("GET /config", () => {
     expect(body.defaultPreset).toBe("small");
     expect(body.locales).toContain("en");
     expect(body.locales).toContain("ar");
+    expect(body.localeInfo).toEqual([
+      { dir: "ltr", id: "en", script: "latin" },
+      { dir: "rtl", id: "ar", script: "arabic" },
+    ]);
     expect(body.presets).toBeInstanceOf(Array);
     expect(body.presets.length).toBe(2);
   });

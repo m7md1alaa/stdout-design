@@ -2,62 +2,59 @@ import { describe, expect, it } from "bun:test";
 
 import {
   BUILT_IN_FONTS,
-  fontEntriesFor,
+  configuredFontEntries,
   fontSetKey,
-  scriptOf,
 } from "./locale-fonts.js";
 
 const anton = { family: "Anton", source: "google" as const, weights: [400] };
 const lalezar = { family: "Lalezar", source: "google" as const };
 
-describe("scriptOf", () => {
-  it("classifies ar and its regional variants as Arabic", () => {
-    expect(scriptOf("ar")).toBe("arabic");
-    expect(scriptOf("ar-EG")).toBe("arabic");
-  });
-
-  it("classifies everything else as Latin", () => {
-    expect(scriptOf("en")).toBe("latin");
-    expect(scriptOf("default")).toBe("latin");
-    expect(scriptOf("AR")).toBe("latin");
-  });
-});
-
-describe("fontEntriesFor", () => {
+describe("configuredFontEntries", () => {
   it("uses the locale's own entry first", () => {
-    expect(fontEntriesFor({ default: [anton], en: [lalezar] }, "en")).toEqual([
-      lalezar,
-    ]);
+    expect(
+      configuredFontEntries({ default: [anton], en: [lalezar] }, "en")
+    ).toEqual([lalezar]);
   });
 
   it("falls back to default for Latin locales", () => {
-    expect(fontEntriesFor({ default: [anton] }, "fr")).toEqual([anton]);
+    expect(configuredFontEntries({ default: [anton] }, "fr")).toEqual([anton]);
   });
 
-  it("gives Arabic locales the built-in Arabic face, not the Latin default", () => {
-    expect(fontEntriesFor({ default: [anton] }, "ar-EG")).toEqual(
-      BUILT_IN_FONTS.arabic
-    );
+  it("skips the Latin default for non-Latin locales", () => {
+    expect(configuredFontEntries({ default: [anton] }, "ar-EG")).toEqual([]);
+    expect(configuredFontEntries({ default: [anton] }, "he")).toEqual([]);
   });
 
-  it("gives Arabic locales the built-in face when there is no config", () => {
-    expect(fontEntriesFor(undefined, "ar")).toEqual(BUILT_IN_FONTS.arabic);
+  it("returns nothing when there is no config", () => {
+    expect(configuredFontEntries(undefined, "ar")).toEqual([]);
   });
 
   it("returns nothing for a Latin locale with no config", () => {
-    expect(fontEntriesFor(undefined, "en")).toEqual([]);
+    expect(configuredFontEntries(undefined, "en")).toEqual([]);
   });
 
   it("ignores entries that are not arrays", () => {
-    expect(fontEntriesFor({ en: "Anton" as never }, "en")).toEqual([]);
+    expect(configuredFontEntries({ en: "Anton" as never }, "en")).toEqual([]);
+  });
+});
+
+describe("BUILT_IN_FONTS", () => {
+  it("has a face for every non-Latin script and none for Latin", () => {
+    expect(BUILT_IN_FONTS.arabic.map((f) => f.family)).toEqual([
+      "Noto Sans Arabic",
+    ]);
+    expect(BUILT_IN_FONTS.hebrew.map((f) => f.family)).toEqual([
+      "Noto Sans Hebrew",
+    ]);
+    expect(BUILT_IN_FONTS.latin).toEqual([]);
   });
 });
 
 describe("fontSetKey", () => {
   it("is the same for locales that resolve to the same fonts", () => {
     const fonts = { default: [anton] };
-    expect(fontSetKey(fontEntriesFor(fonts, "en"))).toBe(
-      fontSetKey(fontEntriesFor(fonts, "fr"))
+    expect(fontSetKey(configuredFontEntries(fonts, "en"))).toBe(
+      fontSetKey(configuredFontEntries(fonts, "fr"))
     );
   });
 

@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { serve } from "@hono/node-server";
 import {
+  classifyLocale,
   clearFontCache,
   createFetchFontsFromConfig,
   logWarn,
@@ -16,7 +17,6 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { streamSSE } from "hono/streaming";
-import type { ComponentType } from "react";
 
 import { errorHandler } from "./error-middleware.js";
 import { FileWatcher } from "./file-watcher.js";
@@ -181,6 +181,11 @@ export const createDevServer = async (options: DevServerOptions) => {
     const config = await templateLoader.getConfig();
     return c.json({
       defaultPreset: config.defaultPreset,
+      // Script and direction come from core, so the studio never guesses them.
+      localeInfo: (config.locales ?? []).map((id) => {
+        const { dir, script } = classifyLocale(id);
+        return { dir, id, script };
+      }),
       locales: config.locales,
       outDir: config.outDir,
       presets: config.presets,
@@ -225,8 +230,8 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
-    const templateModule = templateLoader.getTemplateModule(templateId);
-    if (!templateModule) {
+    const template = templateLoader.getTemplate(templateId);
+    if (!template) {
       return c.json(
         { error: `Template "${templateId}" module unavailable` },
         500
@@ -252,9 +257,6 @@ export const createDevServer = async (options: DevServerOptions) => {
     try {
       const result = await orchestrateRender({
         cache: renderCache,
-        component: templateModule.default as ComponentType<
-          Record<string, unknown>
-        >,
         fetchFonts,
         height: preset.height,
         images: config.images,
@@ -264,7 +266,7 @@ export const createDevServer = async (options: DevServerOptions) => {
             : undefined,
         locale,
         props: props as Record<string, unknown>,
-        propsSchema: templateModule.propsSchema,
+        template,
         templateContentHash: templateInfo.contentHash,
         templateId,
         width: preset.width,
@@ -319,8 +321,8 @@ export const createDevServer = async (options: DevServerOptions) => {
       );
     }
 
-    const templateModule = templateLoader.getTemplateModule(templateId);
-    if (!templateModule) {
+    const template = templateLoader.getTemplate(templateId);
+    if (!template) {
       return c.json(
         { error: `Template "${templateId}" module unavailable` },
         500
@@ -333,9 +335,6 @@ export const createDevServer = async (options: DevServerOptions) => {
     try {
       const result = await orchestrateMeasure({
         cache: renderCache,
-        component: templateModule.default as ComponentType<
-          Record<string, unknown>
-        >,
         fetchFonts,
         images: config.images,
         loadLocaleData:
@@ -344,7 +343,7 @@ export const createDevServer = async (options: DevServerOptions) => {
             : undefined,
         locale,
         props: props as Record<string, unknown>,
-        propsSchema: templateModule.propsSchema,
+        template,
         templateContentHash: templateInfo.contentHash,
         templateId,
       });

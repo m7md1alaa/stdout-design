@@ -76,15 +76,14 @@ describe("createFetchFontsFromConfig", () => {
       ]);
     });
 
-    it("gives Arabic locales the built-in Arabic face, not the default", async () => {
+    it("skips the Latin default for Arabic locales, leaving the built-in face to the resolver", async () => {
       mockGoogleFonts.mockClear();
       const fetchFonts = createFetchFontsFromConfig({ default: [anton] })!;
 
-      await fetchFonts("ar-EG");
+      const result = await fetchFonts("ar-EG");
 
-      expect(mockGoogleFonts).toHaveBeenCalledWith([
-        { name: "Noto Sans Arabic", weight: [400, 700] },
-      ]);
+      expect(result).toBeNull();
+      expect(mockGoogleFonts).not.toHaveBeenCalled();
     });
 
     it("downloads a font set once for every locale that shares it", async () => {
@@ -102,22 +101,24 @@ describe("createFetchFontsFromConfig", () => {
   });
 
   describe("fetcher: locale lookup edge cases", () => {
-    const noto = [{ name: "Noto Sans Arabic", weight: [400, 700] }];
-
     it.each([
       ["the config is empty", {}],
       ["the locale entry is null", { ar: null }],
       ["the locale entry is an empty array", { ar: [] }],
       ["the locale entry is a string", { ar: "not-an-array" }],
       ["the locale entry is a number", { ar: 42 }],
-    ])("loads the built-in Arabic face when %s", async (_case, fontsConfig) => {
-      mockGoogleFonts.mockClear();
-      const fetchFonts = createFetchFontsFromConfig(fontsConfig as never)!;
+    ])(
+      "returns null for an Arabic locale when %s",
+      async (_case, fontsConfig) => {
+        mockGoogleFonts.mockClear();
+        const fetchFonts = createFetchFontsFromConfig(fontsConfig as never)!;
 
-      await fetchFonts("ar");
+        const result = await fetchFonts("ar");
 
-      expect(mockGoogleFonts).toHaveBeenCalledWith(noto);
-    });
+        expect(result).toBeNull();
+        expect(mockGoogleFonts).not.toHaveBeenCalled();
+      }
+    );
 
     it("returns null for a Latin locale when the config is empty", async () => {
       const fetchFonts = createFetchFontsFromConfig({})!;

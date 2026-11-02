@@ -15,9 +15,9 @@ npm run render launch-hero --locale ar       # just the Arabic (RTL) version
 
 | Path | What it is |
 | --- | --- |
-| `templates/*.tsx` | One component per image. Its `propsSchema` is the form you see in the studio. |
-| `locales/*.json` | Per-locale copy, keyed by template id. Strings here override the schema defaults. |
-| `studio.config.ts` | Presets (canvas sizes), locales, registered templates, and fonts. |
+| `templates/*.tsx` | One `defineTemplate` per image. Its `schema` is the form you see in the studio. |
+| `locales/*.json` | Per-locale copy, keyed by template id. Text fields here replace the schema defaults; colors, numbers, and list lengths never change. |
+| `studio.config.ts` | Presets (canvas sizes), locales, registered templates, and optional font overrides. |
 
 ## The starters
 
@@ -30,8 +30,22 @@ Each one lays out at both 1080×1080 and 1200×675 and mirrors itself for Arabic
 
 ## Fonts
 
-The `fonts` block in `studio.config.ts` pulls Google Fonts on the first render and caches them. It lists only the faces your starters use. `default` applies to every locale without its own entry, except Arabic: a Latin face has no Arabic glyphs, so Arabic gets its own entry with the Latin and Arabic faces together. Without one, Arabic falls back to Noto Sans Arabic. A template names its fonts in `fontFamily`, Latin face first: `"Archivo Black, Lalezar, sans-serif"`. Any glyph the first face lacks falls through to the next.
+Each template declares its fonts, and the studio loads them from Google Fonts on the first render and caches them:
+
+```tsx
+fonts: {
+  display: { faces: ["Archivo Black", "Lalezar"] },
+  mono: { faces: [{ family: "Space Mono", weights: [400, 700] }], generic: "monospace" },
+},
+```
+
+Put the Latin face first and the Arabic one after it: a glyph the first face lacks falls through to the next. Use a role as `ctx.fonts.display`, or as `font: "display"` in `ctx.type()`. To swap a family for a local file, add a `fonts` block to `studio.config.ts`; a family the config loads replaces the template's.
 
 ## Writing RTL templates
 
-`dir="rtl"` mirrors flex rows and text alignment for you. It does not mirror absolute `left`/`right` offsets or physical margins, so the starters pick a side with `const start = isRtl ? "right" : "left"`. Wrap brand names and numbers like `+18%` in `<span dir="ltr">` to keep bidi from reordering them.
+`render` receives `ctx`, and the root element gets `dir` and `lang` for the locale, so:
+
+- Flex rows, text alignment, and logical CSS properties (`insetInlineStart`, `marginInlineEnd`, `borderInlineStart`, `paddingInlineStart`) mirror on their own. Use them instead of `left`/`right`.
+- `ctx.flip(-6)` mirrors what CSS can't: rotation angles and SVG offsets. `<Arrow ctx={ctx} />` points the right way.
+- `ctx.type({ size, leading, tracking, italic, uppercase })` adapts a Latin text style to the script: Arabic drops letter spacing and italics and gets taller lines.
+- Wrap brand names and numbers like `+18%` in `<span dir="ltr">` to keep bidi from reordering them.

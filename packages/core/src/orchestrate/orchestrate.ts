@@ -1,20 +1,27 @@
-import { createElement } from "react";
+import { createElement, isValidElement } from "react";
+import type { ComponentType, ReactElement } from "react";
+import { z } from "zod";
 
 import type { FontResolutionResult } from "../assets/assets-resolver.js";
 import { resolveAssetsForLocale } from "../assets/assets-resolver.js";
-import type {
-  ImagePolicy,
-  ImageSourceEntry,
-} from "../assets/image-resolver.js";
+import type { ImageSourceEntry } from "../assets/image-resolver.js";
 import { resolveImages } from "../assets/image-resolver.js";
 import { RenderCache } from "../cache/render-cache.js";
 import { compileTemplate } from "../engine/render.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import { measureTemplate, renderToPixels } from "../engine/renderer.js";
 import type { Font } from "../engine/takumi-types-shim.js";
+import { classifyLocale } from "../shared/locale.js";
+import type { LocaleInfo } from "../shared/locale.js";
 import { logWarn } from "../shared/logger.js";
+import type { ImagePolicy } from "../shared/types.js";
 import type { PropSchema } from "../shared/validation.js";
 import { validateProps } from "../shared/validation.js";
+import { legacyTemplateDefinition } from "../template/define-template.js";
+import type { TemplateDefinition } from "../template/define-template.js";
+import { declaredFontConfigs } from "../template/fonts.js";
+import { createRenderContext, toCanvas } from "../template/render-context.js";
+import type { Canvas } from "../template/render-context.js";
 import type {
   OrchestrateMeasureInput,
   OrchestrateMeasureResult,
@@ -41,14 +48,68 @@ interface PrepResult {
   resolvedLang: string | undefined;
 }
 
+/** Canvas a measure-only render lays out against: the common link-preview size. */
+const MEASURE_CANVAS = toCanvas(1200, 630);
+
+/**
+ * Gives the template's root the render's direction and language, unless
+ * the template set its own. A root that isn't a host element is wrapped.
+ */
+const withLocaleRoot = (
+  element: ReactElement,
+  locale: LocaleInfo
+): ReactElement => {
+  if (isValidElement(element) && typeof element.type === "string") {
+    // A host element's children live in its props, so re-creating it with
+    // two more props is a faithful copy.
+    const props = element.props as Record<string, unknown>;
+    return createElement(element.type, {
+      ...props,
+      dir: props.dir ?? locale.dir,
+      key: element.key,
+      lang: props.lang ?? locale.lang,
+    });
+  }
+  return createElement(
+    "div",
+    {
+      dir: locale.dir,
+      lang: locale.lang,
+      style: { display: "flex", height: "100%", width: "100%" },
+    },
+    element
+  );
+};
+
+const resolveDefinition = (input: {
+  template: TemplateDefinition | undefined;
+  component: ComponentType<Record<string, unknown>> | undefined;
+  propsSchema: PropSchema | undefined;
+  templateId: string;
+}): TemplateDefinition | undefined => {
+  if (input.template) {
+    return input.template;
+  }
+  if (!input.component) {
+    return undefined;
+  }
+  return legacyTemplateDefinition(
+    input.component,
+    input.propsSchema ?? z.looseObject({}),
+    input.templateId
+  );
+};
+
 const prepPipeline = async (input: {
   compiledTemplate: CompiledTemplate | undefined;
-  component: unknown;
+  template: TemplateDefinition | undefined;
+  component: ComponentType<Record<string, unknown>> | undefined;
   templateContentHash: string;
   templateId: string;
   props: Record<string, unknown>;
   propsSchema: PropSchema | undefined;
   locale: string;
+  canvas: Canvas;
   loadLocaleData:
     | ((locale: string) => Promise<Record<string, unknown>>)
     | undefined;
@@ -62,12 +123,11 @@ const prepPipeline = async (input: {
 }): Promise<PrepResult> => {
   const {
     compiledTemplate: preCompiled,
-    component,
     templateContentHash,
     templateId,
     props,
-    propsSchema,
     locale,
+    canvas,
     loadLocaleData,
     preResolvedFonts,
     preResolvedFontFamilies,
@@ -76,27 +136,48 @@ const prepPipeline = async (input: {
     cache,
   } = input;
 
-  const validated = propsSchema
-    ? validateProps(propsSchema, props)
+  const definition = resolveDefinition(input);
+  const validated = definition
+    ? validateProps(definition.propsSchema, props)
     : { ...props };
 
   const {
     fonts: resolvedFonts,
     fontFamilies: resolvedFontFamilies,
     lang: resolvedLang,
-    props: merged,
+    props: translated,
   } = await resolveAssetsForLocale(
     locale,
     validated as Record<string, unknown>,
     {
+      declaredFonts: definition ? declaredFontConfigs(definition.fonts) : [],
       fetchFonts,
       loadLocaleData,
       preResolvedFontFamilies,
       preResolvedFonts,
+      propsSchema: definition?.propsSchema,
     }
   );
 
-  const propsJSON = JSON.stringify(merged);
+  // A translation is content like any other: it meets the same limits.
+  const merged =
+    definition && !definition.legacy
+      ? (validateProps(definition.propsSchema, translated) as Record<
+          string,
+          unknown
+        >)
+      : translated;
+
+  const localeInfo = classifyLocale(locale);
+  // Everything the output depends on besides the template: the props, the
+  // render context, and the loaded fonts. Both cache keys hash this, so a
+  // locale, canvas, or font change never serves another render's output.
+  const propsJSON = JSON.stringify({
+    canvas: [canvas.width, canvas.height],
+    fonts: resolvedFontFamilies ?? [],
+    locale: localeInfo.id,
+    props: merged,
+  });
   const compileKey = RenderCache.createCompileCacheKey({
     propsJSON,
     templateContentHash,
@@ -105,8 +186,8 @@ const prepPipeline = async (input: {
 
   let compiled = preCompiled;
   if (!compiled) {
-    if (!component) {
-      throw new Error("Must provide either compiledTemplate or component");
+    if (!definition) {
+      throw new Error("Must provide either compiledTemplate or a template");
     }
     const cachedCompile = cache.getCompiled(
       compileKey
@@ -114,10 +195,15 @@ const prepPipeline = async (input: {
     if (cachedCompile) {
       compiled = cachedCompile;
     } else {
-      const element = createElement(
-        component as React.ComponentType<Record<string, unknown>>,
-        merged
-      );
+      const ctx = createRenderContext({
+        canvas,
+        fonts: definition.fonts,
+        locale: localeInfo,
+      });
+      const rendered = definition.render(merged, ctx);
+      const element = definition.legacy
+        ? rendered
+        : withLocaleRoot(rendered, localeInfo);
       compiled = await compileTemplate(element);
       cache.setCompiledWithContentHash(
         compileKey,
@@ -156,6 +242,7 @@ export const orchestrateRender = async (
   const {
     compiledTemplate,
     component,
+    template,
     templateContentHash,
     templateId,
     props,
@@ -177,6 +264,7 @@ export const orchestrateRender = async (
 
   const prep = await prepPipeline({
     cache,
+    canvas: toCanvas(width, height),
     compiledTemplate,
     component,
     fetchFonts,
@@ -187,6 +275,7 @@ export const orchestrateRender = async (
     preResolvedFonts,
     props,
     propsSchema,
+    template,
     templateContentHash,
     templateId,
   });
@@ -253,6 +342,7 @@ export const orchestrateMeasure = async (
   const {
     compiledTemplate,
     component,
+    template,
     templateContentHash,
     templateId,
     props,
@@ -263,12 +353,16 @@ export const orchestrateMeasure = async (
     images,
     cache,
     signal,
+    canvasHint,
   } = input;
 
   const resolvedLocale = localeId ?? "default";
 
   const prep = await prepPipeline({
     cache,
+    canvas: canvasHint
+      ? toCanvas(canvasHint.width, canvasHint.height)
+      : MEASURE_CANVAS,
     compiledTemplate,
     component,
     fetchFonts,
@@ -279,6 +373,7 @@ export const orchestrateMeasure = async (
     preResolvedFonts: undefined,
     props,
     propsSchema,
+    template,
     templateContentHash,
     templateId,
   });

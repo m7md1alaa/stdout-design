@@ -88,6 +88,9 @@
     "packages/config": {
       "name": "@stdout-design/config",
       "version": "0.0.0",
+      "devDependencies": {
+        "oxc-parser": "^0.155.0",
+      },
     },
     "packages/core": {
       "name": "@stdout-design/core",

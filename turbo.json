@@ -23,6 +23,9 @@
       "inputs": ["src/**", "tsdown.config.ts", "tsconfig.json"],
       "outputs": ["dist/**"]
     },
+    "@stdout-design/cli#test": {
+      "dependsOn": ["^build", "build"]
+    },
     "@stdout-design/cli#dev": {
       "cache": false,
       "persistent": true

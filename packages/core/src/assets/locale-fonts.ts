@@ -1,40 +1,36 @@
+import { classifyLocale } from "../shared/locale.js";
+import type { Script } from "../shared/locale.js";
 import type { FontConfig } from "../shared/types.js";
 
 /**
- * The writing systems the renderer distinguishes. Adding one means adding
- * its built-in fonts below; the compiler enforces it.
+ * What a script renders with when neither the config nor the template names
+ * a face for it. Latin needs none: the renderer's built-in face covers it.
+ * Adding a script means adding its entry here; the compiler enforces it.
  */
-export type Script = "arabic" | "latin";
-
-/** The one place a locale id is mapped to its script. */
-export const scriptOf = (localeId: string): Script =>
-  localeId.startsWith("ar") ? "arabic" : "latin";
-
-/** What a locale renders with when the config gives it nothing. */
 export const BUILT_IN_FONTS: Record<Script, FontConfig[]> = {
   arabic: [
     { family: "Noto Sans Arabic", source: "google", weights: [400, 700] },
+  ],
+  hebrew: [
+    { family: "Noto Sans Hebrew", source: "google", weights: [400, 700] },
   ],
   latin: [],
 };
 
 /**
- * The fonts a locale renders with: its own config entry, else `default`,
- * else the built-in fonts for its script. Arabic locales skip `default`: a
- * Latin display face has no Arabic glyphs, so they keep the built-in Arabic
- * face unless the config declares fonts for them. `default` is also the id
- * of a render with no locale.
+ * The config's fonts for a locale: its own entry, else `default`. Non-Latin
+ * locales skip `default`: a Latin display face has no Arabic or Hebrew
+ * glyphs, so they keep the built-in face unless the config declares fonts
+ * for them. `default` is also the id of a render with no locale.
  */
-export const fontEntriesFor = (
+export const configuredFontEntries = (
   fonts: Record<string, FontConfig[]> | undefined,
   localeId: string
 ): FontConfig[] => {
-  const script = scriptOf(localeId);
+  const isLatin = classifyLocale(localeId).script === "latin";
   const configured =
-    fonts?.[localeId] ?? (script === "latin" ? fonts?.default : undefined);
-  return Array.isArray(configured) && configured.length > 0
-    ? configured
-    : BUILT_IN_FONTS[script];
+    fonts?.[localeId] ?? (isLatin ? fonts?.default : undefined);
+  return Array.isArray(configured) ? configured : [];
 };
 
 /**
@@ -42,7 +38,10 @@ export const fontEntriesFor = (
  * entries share one download; order is kept because it is the fallback
  * order. Local paths resolve against `configDir`, so it is part of the key.
  */
-export const fontSetKey = (entries: FontConfig[], configDir = ""): string =>
+export const fontSetKey = (
+  entries: readonly FontConfig[],
+  configDir = ""
+): string =>
   JSON.stringify([
     configDir,
     entries.map((e) => [

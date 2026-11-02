@@ -118,7 +118,7 @@ npx @stdout-design/cli init
   </Folder>
 </Files>
 
-- `studio.config.ts` the template registry, presets, and Google Fonts.
+- `studio.config.ts` the template registry, presets, and locales. Templates declare their own fonts.
 - `types.d.ts` adds the `tw=` attribute type for React.
 - `templates/` your TSX components.
 - `locales/` translation files, keyed by template id.
@@ -174,7 +174,7 @@ This starts the dev server on `http://localhost:3030` with a live preview, an au
   <Folder name=".studio-cache" />
 </Files>
 
-- `studio.config.ts` template registry, presets, locales, fonts.
+- `studio.config.ts` template registry, presets, locales, and optional font overrides.
 - `templates/` one `.tsx` file per template. See [Writing Templates](/docs/templates).
 - `data/` CSV or JSON files for data-driven batch rendering. See [Batch Rendering](/docs/batch-rendering).
 - `locales/` per-locale translation JSON. See [Internationalization](/docs/internationalization).

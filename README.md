@@ -68,7 +68,7 @@ studio render <template> [props...] [options]
 
 | Option | Description |
 | --- | --- |
-| `key=value` / `--key value` | Template props, validated against the template's `propsSchema` |
+| `key=value` / `--key value` | Template props, validated against the template's schema |
 | `--data file.csv` | Batch render: one image per CSV/JSON row |
 | `--preset ids` | Comma-separated preset IDs, or `all` (default: `defaultPreset`) |
 | `--locale en,ar` | Render once per locale, using `locales/<code>.json` |
@@ -86,31 +86,24 @@ Starts a dev server on `localhost:3030` (`--port` to change, `--open` to open a 
 
 ## Writing templates
 
-A template is a TSX component plus a Zod `propsSchema`, styled with Tailwind classes on the `tw` prop:
+A template is `defineTemplate({ schema, render })`: a field schema for its content and a render function returning TSX, styled with Tailwind classes on the `tw` prop:
 
 ```tsx
 // templates/milestone-card.tsx
-import { defineSchema } from "@stdout-design/cli/schema";
-import { z } from "zod";
+import { defineTemplate, field } from "@stdout-design/cli/template";
 
-export const propsSchema = defineSchema(
-  z.object({
-    title: z.string().default("Milestone"),
-    stat: z.string().default("10k users"),
-  })
-);
-
-export default function MilestoneCard({
-  title,
-  stat,
-}: z.infer<typeof propsSchema>) {
-  return (
+export default defineTemplate({
+  schema: {
+    title: field.text("Milestone"),
+    stat: field.text("10k users"),
+  },
+  render: (props) => (
     <div tw="flex flex-col w-full h-full justify-center bg-black p-16 text-white">
-      <h1 tw="text-6xl font-bold">{title}</h1>
-      <p tw="mt-4 text-3xl">{stat}</p>
+      <h1 tw="text-6xl font-bold">{props.title}</h1>
+      <p tw="mt-4 text-3xl">{props.stat}</p>
     </div>
-  );
-}
+  ),
+});
 ```
 
 Register it in `studio.config.ts` under `templates` (`"milestone-card": { componentPath: "./templates/milestone-card" }`), then `studio render milestone-card stat="50k users"`.

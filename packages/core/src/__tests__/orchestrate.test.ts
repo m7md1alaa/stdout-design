@@ -61,6 +61,8 @@ __resetRendererForTesting();
 
 const { orchestrateRender } = await import("../orchestrate/orchestrate.js");
 const { orchestrateMeasure } = await import("../orchestrate/orchestrate.js");
+const { defineTemplate } = await import("../template/define-template.js");
+const { field } = await import("../template/field.js");
 
 const compiled = {
   node: { type: "container" },
@@ -162,7 +164,7 @@ describe("orchestrateRender", () => {
     cache.close();
   });
 
-  it("throws when neither compiledTemplate nor component is provided", async () => {
+  it("throws when neither compiledTemplate nor a template is provided", async () => {
     tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
     const { RenderCache } = await import("../cache/render-cache.js");
     const cache = new RenderCache({ cacheDir: tmpDir });
@@ -177,7 +179,7 @@ describe("orchestrateRender", () => {
         templateId: "test",
         width: 100,
       } as unknown as Parameters<typeof orchestrateRender>[0])
-    ).rejects.toThrow("Must provide either compiledTemplate or component");
+    ).rejects.toThrow("Must provide either compiledTemplate or a template");
 
     cache.close();
   });
@@ -403,6 +405,133 @@ describe("orchestrateRender", () => {
   });
 });
 
+const lastCompiledElement = async () => {
+  const { fromJsx } = await import("takumi-js/helpers/jsx");
+  const { calls } = (fromJsx as unknown as { mock: { calls: unknown[][] } })
+    .mock;
+  return calls.at(-1)?.[0] as { props: Record<string, unknown> };
+};
+
+describe("orchestrateRender with a defineTemplate template", () => {
+  let tmpDir = "";
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { force: true, recursive: true });
+      tmpDir = "";
+    }
+  });
+
+  it("hands render the context and sets dir and lang on the root", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+    const cache = new RenderCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    const seen: unknown[] = [];
+    const template = defineTemplate({
+      render: (props, ctx) => {
+        seen.push(props, ctx.dir, ctx.canvas);
+        return createElement("div", null, props.title);
+      },
+      schema: { title: field.text("Hello") },
+    });
+
+    await orchestrateRender({
+      cache,
+      height: 1920,
+      locale: "ar",
+      props: {},
+      template,
+      templateContentHash: "hash-define",
+      templateId: "define",
+      width: 1080,
+    });
+
+    expect(seen).toEqual([
+      { title: "Hello" },
+      "rtl",
+      { aspect: "portrait", height: 1920, width: 1080 },
+    ]);
+    const root = await lastCompiledElement();
+    expect(root.props.dir).toBe("rtl");
+    expect(root.props.lang).toBe("ar");
+
+    cache.close();
+  });
+
+  it("translates only translatable text and holds translations to the schema", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+    const cache = new RenderCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    const seen: unknown[] = [];
+    const template = defineTemplate({
+      render: (props) => {
+        seen.push(props);
+        return createElement("div");
+      },
+      schema: {
+        accent: field.color("#ff6a3d"),
+        title: field.text("Hello", { max: 10 }),
+      },
+    });
+    const base = {
+      cache,
+      height: 100,
+      locale: "ar",
+      props: {},
+      template,
+      templateId: "translate",
+      width: 100,
+    };
+
+    await orchestrateRender({
+      ...base,
+      loadLocaleData: () =>
+        Promise.resolve({ accent: "#000000", title: "مرحبا" }),
+      templateContentHash: "hash-translate",
+    });
+    expect(seen).toEqual([{ accent: "#ff6a3d", title: "مرحبا" }]);
+
+    await expect(
+      orchestrateRender({
+        ...base,
+        loadLocaleData: () =>
+          Promise.resolve({ title: "عنوان أطول بكثير من الحد" }),
+        templateContentHash: "hash-translate-long",
+      })
+    ).rejects.toThrow("title");
+
+    cache.close();
+  });
+
+  it("leaves a legacy template's root alone", async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-orch-"));
+    const { RenderCache } = await import("../cache/render-cache.js");
+    const cache = new RenderCache({ cacheDir: tmpDir });
+    await cache.init();
+
+    await orchestrateRender({
+      cache,
+      component: makeComponent,
+      height: 100,
+      locale: "ar",
+      props: { name: "legacy" },
+      templateContentHash: "hash-legacy-root",
+      templateId: "legacy",
+      width: 100,
+    });
+
+    const root = await lastCompiledElement();
+    expect(root.props.dir).toBeUndefined();
+    expect(root.props.locale).toBe("ar");
+
+    cache.close();
+  });
+});
+
 describe("orchestrateMeasure", () => {
   let tmpDir = "";
 
@@ -459,7 +588,7 @@ describe("orchestrateMeasure", () => {
     cache.close();
   });
 
-  it("throws when neither compiledTemplate nor component is provided", async () => {
+  it("throws when neither compiledTemplate nor a template is provided", async () => {
     tmpDir = mkdtempSync(path.join(tmpdir(), "stdout-meas-"));
     const { RenderCache } = await import("../cache/render-cache.js");
     const cache = new RenderCache({ cacheDir: tmpDir });
@@ -472,7 +601,7 @@ describe("orchestrateMeasure", () => {
         templateContentHash: "hash-err",
         templateId: "test",
       } as unknown as Parameters<typeof orchestrateMeasure>[0])
-    ).rejects.toThrow("Must provide either compiledTemplate or component");
+    ).rejects.toThrow("Must provide either compiledTemplate or a template");
 
     cache.close();
   });

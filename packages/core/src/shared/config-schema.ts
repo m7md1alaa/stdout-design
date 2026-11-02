@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import type { ImagePolicy } from "../assets/image-resolver.js";
-import type { StudioConfig } from "./types.js";
+import type { ImagePolicy, StudioConfig } from "./types.js";
 
 const fontConfigSchema = z.object({
   family: z.string().min(1),

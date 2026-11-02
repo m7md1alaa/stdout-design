@@ -1,70 +1,103 @@
 ---
 title: Writing Templates
-description: The template contract  a plain TSX component with a Zod prop schema.
+description: "The template contract: defineTemplate with a field schema, declared fonts, and a render function."
 ---
 
 A template is a plain React component rendered to an image by Takumi no headless browser, no custom DSL. If you can write a React component, you can write a template.
 
 ## The template contract
 
-A template file must export:
+A template file default-exports `defineTemplate({ schema, fonts, render })`:
 
-1. A **default function component** this is what gets rendered.
-2. A **`propsSchema`** a Zod object describing the component's props. It drives CLI validation, the studio's prop panel, and batch data merging.
-
-A `templateId` export is optional (used for naming); the template's registered ID in `studio.config.ts` is what actually identifies it.
+- **`schema`** describes the content: one `field.*` builder per prop. It drives CLI validation, the studio's prop panel, and which props a locale file may translate.
+- **`fonts`** names the faces the template uses, by role. The pipeline loads every one of them.
+- **`render(props, ctx)`** returns the image as JSX. `props` are validated and filled with defaults; `ctx` says what the render is (locale, direction, canvas size) and adapts styles to it.
 
 ```tsx
 // templates/stat-card.tsx
-import { defineSchema } from "@stdout-design/core/schema";
-import { z } from "zod";
+import { defineTemplate, field } from "@stdout-design/cli/template";
 
-export const templateId = "stat-card" as const;
-
-export const propsSchema = defineSchema(
-  z.object({
-    title: z.string().default("Weekly Active Users"),
-    stat: z.string().default("124.5K"),
-    label: z.string().default("vs last 7 days"),
-    accentColor: z.string().default("#8b5cf6").describe("Primary brand color"),
-    theme: z
-      .enum(["light", "dark"])
-      .default("dark")
-      .describe("Color theme mode"),
-  })
-);
-
-export type Props = z.infer<typeof propsSchema>;
-
-export default function StatCard({
-  title,
-  stat,
-  label,
-  accentColor,
-  theme,
-}: Props) {
-  const isDark = theme === "dark";
-  const bg = isDark ? "#0f172a" : "#ffffff";
-  const text = isDark ? "#f8fafc" : "#0f172a";
-
-  return (
-    <div
-      tw="flex flex-col w-full h-full p-10 justify-between"
-      style={{ backgroundColor: bg, color: text }}
-    >
-      <p tw="text-2xl font-medium m-0">{title}</p>
-      <p tw="text-8xl font-extrabold tracking-tighter leading-none m-0">
-        {stat}
-      </p>
-      <p tw="text-2xl font-medium m-0" style={{ color: accentColor }}>
-        {label}
-      </p>
-    </div>
-  );
-}
+export default defineTemplate({
+  fonts: {
+    display: { faces: [{ family: "Inter", weights: [500, 800] }] },
+  },
+  schema: {
+    title: field.text("Weekly Active Users"),
+    stat: field.text("124.5K", { translatable: false }),
+    label: field.text("vs last 7 days"),
+    accentColor: field.color("#8b5cf6", { description: "Primary brand color" }),
+    theme: field.select(["light", "dark"], "dark", {
+      description: "Color theme mode",
+    }),
+  },
+  render: (props, ctx) => {
+    const isDark = props.theme === "dark";
+    return (
+      <div
+        tw="flex flex-col w-full h-full p-10 justify-between"
+        style={{
+          backgroundColor: isDark ? "#0f172a" : "#ffffff",
+          color: isDark ? "#f8fafc" : "#0f172a",
+          fontFamily: ctx.fonts.display,
+        }}
+      >
+        <p tw="text-2xl font-medium m-0">{props.title}</p>
+        <p
+          tw="m-0"
+          style={ctx.type({
+            leading: 1,
+            size: 128,
+            tracking: -0.04,
+            weight: 800,
+          })}
+        >
+          {props.stat}
+        </p>
+        <p tw="text-2xl font-medium m-0" style={{ color: props.accentColor }}>
+          {props.label}
+        </p>
+      </div>
+    );
+  },
+});
 ```
 
-`defineSchema` is an identity helper it only exists for TypeScript inference ergonomics. The `propsSchema` is a plain `z.object`.
+The schema never declares `locale` or `ctx`: the pipeline owns both, and a schema that names one fails to type-check.
+
+### Field builders
+
+Each builder takes the default first and its limits as options, and records what the field is, so the studio picks the right editor without guessing from the prop's name.
+
+| Builder | Studio control | Translatable |
+| --- | --- | --- |
+| `field.text(default, { min, max, multiline, translatable })` | Text input, or a textarea with `multiline` | yes, unless `translatable: false` |
+| `field.color(default)` | Color picker (hex only) | no |
+| `field.number(default, { min, max, integer })` | Number input, or a slider with `min` and `max` | no |
+| `field.boolean(default)` | Toggle switch | no |
+| `field.select(options, default)` | Dropdown | no |
+| `field.list(item, { default, length, min, max })` | Tag editor; one group of fields per item for a list of objects | per item field |
+| `field.object({ ... })` | Nested fields, flattened into `dotted.path` | per field |
+
+Item counts belong in the schema: `field.list(field.text("Item"), { default: [...], length: 6 })` refuses a seventh item at validation time instead of the layout breaking. Every builder takes a `description`, shown as the field's label in the studio and in CLI validation errors.
+
+### The render context
+
+| `ctx.` | What it is |
+| --- | --- |
+| `locale` | `{ id, script, dir, lang }` for this render |
+| `dir` | `"ltr"` or `"rtl"`. The root element already carries it. |
+| `canvas` | `{ width, height, aspect }`, with `aspect` one of `square`, `landscape`, `portrait` |
+| `fonts` | The CSS `font-family` value for each declared role |
+| `flip(value)` | Negates a horizontal value (a rotation, an SVG offset) for right-to-left renders |
+| `type(spec)` | A text style written for Latin, adapted to the script: see [Internationalization](/docs/internationalization#typography) |
+
+### Authoring kit
+
+`@stdout-design/cli/template` also exports the small pieces poster templates keep rewriting: `keyed(items)` (unique React keys, even for repeated labels), `words(text)`, `starburst(spikes, outer, inner)` (polygon points), `halftone({ color, spacing })` (a dot-screen background), `<Arrow ctx={ctx} />` (points forward in either direction), and `<Sparkle />`.
+
+### Templates written before `defineTemplate`
+
+A file that default-exports a component and exports a `propsSchema` (a `z.object`) still renders, and still receives `locale` as a prop, until 1.0. The pipeline doesn't set `dir` on its root, since such templates set it themselves.
 
 ## Registering a template
 
@@ -100,27 +133,10 @@ export default config;
 
 If a template fails to load, other templates keep working errors surface per-template in the studio and on the CLI.
 
-## Supported prop types
+## Validation
 
-Because the schema is plain Zod, you get the whole validation toolbox. The studio prop panel maps types to editors automatically:
-
-| Zod type | Studio control | CLI flag value |
-| --- | --- | --- |
-| `z.string()` | Text input (textarea if `describe` is long) | string |
-| `z.string()` + `z.url()` | Text input | string |
-| `z.string().default("#…")` (name contains "color") | Color picker | `#hex` string |
-| `z.enum([...])` | Dropdown | one of the options |
-| `z.number()` | Number input (or slider when `min`/`max` set) | number |
-| `z.boolean()` | Toggle switch | `true` / `false` |
-| `z.array(z.number())` | Chip list editor | comma-separated or JSON |
-| `z.array(z.string())` / `z.url()` | Tag editor | comma-separated or JSON |
-| `z.object({...})` | Nested fields, flattened into `dotted.path` | JSON (or per-key) |
-
-Other rules that matter:
-
-- **Defaults.** Give every prop a `.default(...)` so templates render with zero required arguments. The studio seeds these defaults automatically; the CLI merges them before rendering.
-- **Descriptions.** `.describe("…")` becomes the field label/tooltip in the studio. It also surfaces in CLI validation errors.
-- **Validation.** Invalid props fail the render with a structured `PropValidationError` useful for agents to self-correct (see [AI Agents](/docs/agents)).
+- **Defaults.** Every builder takes a default, so templates render with zero required arguments. The studio seeds the defaults; the CLI merges them before rendering.
+- **Errors.** Invalid props, including a locale file's text that breaks a field's `max`, fail the render with a structured `PropValidationError`, which agents can use to self-correct (see [AI Agents](/docs/agents)).
 
 ## Styling
 
@@ -139,29 +155,29 @@ Supported styling features include flexbox, grid, absolute positioning, `z-index
 
 ## Working with data
 
-Templates are full React components, so you can map over arrays, compute styles, and render conditionally:
+`render` is a plain function returning JSX, so you can map over arrays, compute styles, and render conditionally:
 
 ```tsx
 {
-  sparkline.map((val, i) => {
-    const heightPct = (val / Math.max(...sparkline)) * 100;
-    return (
-      <div
-        key={i}
-        tw="w-12 rounded-t-md"
-        style={{ height: `${heightPct}%`, backgroundColor: accentColor }}
-      />
-    );
-  });
+  keyed(props.sparkline).map(({ key, value }) => (
+    <div
+      key={key}
+      tw="w-12 rounded-t-md"
+      style={{
+        backgroundColor: props.accentColor,
+        height: `${(value / Math.max(...props.sparkline)) * 100}%`,
+      }}
+    />
+  ));
 }
 ```
 
 ## Images
 
-Reference remote images with a regular `<img>` element (also works for `backgroundImage`/`maskImage` URLs in `style`). A `src` prop typed as `z.url()` renders an image field in the studio:
+Reference remote images with a regular `<img>` element (also works for `backgroundImage`/`maskImage` URLs in `style`). The `src` is usually a `field.text` prop:
 
 ```tsx
-<img src={avatarUrl} alt="" tw="w-12 h-12 rounded-full" />
+<img src={props.avatarUrl} alt="" tw="w-12 h-12 rounded-full" />
 ```
 
 Images are fetched at render time, so they must be reachable from wherever you render (locally, or in CI).
@@ -182,17 +198,7 @@ See [Configuration → `images`](/docs/configuration#images) for every option (`
 
 ## Locale & RTL
 
-Templates receive the current `locale` as a prop. A common pattern is flipping `dir` for right-to-left locales:
-
-```tsx
-export default function BentoFeature({ headline, description, locale }: Props) {
-  const isRtl = locale?.startsWith("ar");
-
-  return (
-    <div dir={isRtl ? "rtl" : "ltr"} ...>
-```
-
-Locale translation data is merged into props automatically see [Internationalization](/docs/internationalization).
+The root element gets `dir` and `lang` for the render's locale, so flex rows, text alignment, and logical CSS properties (`insetInlineStart`, `marginInlineEnd`, `borderInlineStart`) mirror on their own. Use `ctx.flip()` for rotations and SVG offsets, and `ctx.type()` for display text. Locale files translate text fields automatically: see [Internationalization](/docs/internationalization).
 
 <Cards>
   <Card title="CLI Reference" href="/docs/cli" />

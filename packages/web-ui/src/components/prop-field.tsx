@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ColorPickerPopover, parseColor } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -400,18 +401,115 @@ const StringArrayField = ({
   );
 };
 
-const ArrayField = ({
+type Item = Record<string, unknown>;
+
+interface ListSchema {
+  items?: { type?: string; properties?: Record<string, Item> };
+  minItems?: number;
+  maxItems?: number;
+}
+
+const defaultItem = (properties: [string, Item][]): Item =>
+  Object.fromEntries(properties.map(([key, prop]) => [key, prop.default]));
+
+/** A list of objects (`field.list(z.object(...))`): one group of fields per item. */
+const ObjectListField = ({
+  name,
   label,
   value,
   schema,
   onChange,
 }: {
+  name: string;
+  label: string;
+  value: unknown;
+  schema: ListSchema;
+  onChange: (value: unknown) => void;
+}) => {
+  const items = Array.isArray(value) ? (value as Item[]) : [];
+  const properties = Object.entries(schema.items?.properties ?? {});
+  const { minItems = 0, maxItems = Number.POSITIVE_INFINITY } = schema;
+  const canAdd = items.length < maxItems;
+  const canRemove = items.length > minItems;
+
+  const setField = (index: number, key: string, next: unknown) =>
+    onChange(
+      items.map((item, i) => (i === index ? { ...item, [key]: next } : item))
+    );
+
+  return (
+    <fieldset className="mb-3 border-none p-0">
+      <legend className="text-content-secondary mb-1.5 text-xs font-medium">
+        {label}
+      </legend>
+      {items.map((item, index) => (
+        <div
+          className="border-border mb-2 rounded-md border p-2 pb-0"
+          // Items carry no id; the position is the identity the schema gives them.
+          // oxlint-disable-next-line react/no-array-index-key
+          key={index}
+        >
+          {properties.map(([key, propSchema]) => (
+            // oxlint-disable-next-line no-use-before-define -- an item's fields are prop fields
+            <PropField
+              key={key}
+              name={`${name}.${index}.${key}`}
+              onChange={(next) => setField(index, key, next)}
+              schema={propSchema}
+              value={item[key]}
+            />
+          ))}
+          {canRemove && (
+            <Button
+              className="mb-2"
+              onClick={() => onChange(items.filter((_, i) => i !== index))}
+              size="xs"
+              variant="ghost"
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      ))}
+      {canAdd && (
+        <Button
+          onClick={() => onChange([...items, defaultItem(properties)])}
+          size="xs"
+          variant="outline"
+        >
+          Add item
+        </Button>
+      )}
+    </fieldset>
+  );
+};
+
+const ArrayField = ({
+  name,
+  label,
+  value,
+  schema,
+  onChange,
+}: {
+  name: string;
   label: string;
   value: unknown;
   schema: Record<string, unknown>;
   onChange: (value: unknown) => void;
 }) => {
   const itemsType = (schema.items as { type?: string } | undefined)?.type;
+
+  if (itemsType === "object") {
+    return (
+      <ObjectListField
+        label={label}
+        name={name}
+        onChange={onChange}
+        schema={schema as ListSchema}
+        value={value}
+      />
+    );
+  }
 
   if (itemsType === "number") {
     return (
@@ -495,6 +593,7 @@ export const PropField = ({
       return (
         <ArrayField
           label={label}
+          name={name}
           onChange={onChange}
           schema={schema}
           value={currentValue}

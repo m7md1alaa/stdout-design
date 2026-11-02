@@ -102,7 +102,7 @@ Render a template single, or batch with `--data`.
 studio render <template> [props...] [options]
 ```
 
-`<template>` is the template ID from `studio.config.ts`. Props are passed as `key=value` or `--key value`, and are checked against the template's `propsSchema`: an unknown prop is an error, with a suggestion for likely typos.
+`<template>` is the template ID from `studio.config.ts`. Props are passed as `key=value` or `--key value`, and are checked against the template's schema: an unknown prop is an error, with a suggestion for likely typos.
 
 ```bash
 studio render bento-feature headline="Hello" description="10k users"

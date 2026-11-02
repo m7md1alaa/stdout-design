@@ -44,13 +44,24 @@ describe("detectPackageManager", () => {
     rmSync(tmp, { force: true, recursive: true });
   });
 
-  test("defaults to npm when no lock files in cwd", async () => {
+  test("falls back to the launching package manager, then npm, with no lock files", async () => {
     const tmp = mkdtempSync(path.join(tmpdir(), "detect-pm-test-"));
+    const userAgent = process.env.npm_config_user_agent;
 
     const { detectPackageManager } = await import("../../init.js");
-    expect(await detectPackageManager(tmp)).toBe("npm");
-
-    rmSync(tmp, { force: true, recursive: true });
+    try {
+      process.env.npm_config_user_agent = "pnpm/10.0.0 node/v22.0.0";
+      expect(await detectPackageManager(tmp)).toBe("pnpm");
+      delete process.env.npm_config_user_agent;
+      expect(await detectPackageManager(tmp)).toBe("npm");
+    } finally {
+      if (userAgent === undefined) {
+        delete process.env.npm_config_user_agent;
+      } else {
+        process.env.npm_config_user_agent = userAgent;
+      }
+      rmSync(tmp, { force: true, recursive: true });
+    }
   });
 
   test("detects from cwd lockfile even when parent has different lockfile", async () => {

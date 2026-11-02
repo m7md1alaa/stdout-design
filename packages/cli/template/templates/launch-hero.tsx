@@ -1,61 +1,18 @@
-import { defineSchema } from "@stdout-design/cli/schema";
-import { z } from "zod";
-
-export const templateId = "launch-hero" as const;
-
-export const propsSchema = defineSchema(
-  z.object({
-    accentColor: z
-      .string()
-      .default("#2b3bff")
-      .describe("Page background color"),
-    badge: z
-      .string()
-      .default("Drop 07")
-      .describe("Text on the starburst sticker"),
-    brand: z.string().default("OFFBEAT®").describe("Wordmark in the nav bar"),
-    categories: z
-      .array(z.string())
-      .default(["Tees", "Hoodies", "Caps"])
-      .describe("Three category card labels"),
-    cta: z.string().default("Shop now").describe("Primary button label"),
-    headline: z
-      .string()
-      .min(1)
-      .default("Wear It Loud")
-      .describe("Hero headline — each word gets its own line"),
-    links: z
-      .array(z.string())
-      .default(["Drops", "Archive", "Club"])
-      .describe("Nav bar links"),
-    locale: z
-      .string()
-      .optional()
-      .describe("Current locale code for RTL support"),
-    note: z
-      .string()
-      .default("Ships worldwide")
-      .describe("Small note at the end of the stats strip"),
-    stats: z
-      .array(z.string())
-      .default(["12 drops a year", "0 restocks", "100% cotton"])
-      .describe("Stats strip — the first word is the big number"),
-    subheadline: z
-      .string()
-      .default("Small-batch streetwear, printed in a city that never whispers.")
-      .describe("Supporting line under the headline"),
-  })
-);
-
-export type Props = z.infer<typeof propsSchema>;
+import {
+  Arrow,
+  defineTemplate,
+  field,
+  halftone,
+  keyed,
+  Sparkle,
+  starburst,
+  words,
+} from "@stdout-design/cli/template";
 
 const INK = "#0e0e12";
 const CREAM = "#fff6e5";
 const PINK = "#ff4fa3";
 const LIME = "#c8f560";
-// Latin face first; Arabic glyphs fall through to the Arabic face.
-const DISPLAY = "Archivo Black, Lalezar, sans-serif";
-const MONO = "Space Mono, IBM Plex Sans Arabic, monospace";
 const CARD_STYLES = [
   { art: "bolt", color: CREAM, tilt: -5 },
   { art: "spiral", color: PINK, tilt: 4 },
@@ -63,39 +20,6 @@ const CARD_STYLES = [
 ] as const;
 
 type Art = (typeof CARD_STYLES)[number]["art"];
-
-const starburst = (spikes: number, outer: number, inner: number): string =>
-  Array.from({ length: spikes * 2 }, (_, index) => {
-    const radius = index % 2 === 0 ? outer : inner;
-    const angle = (Math.PI * index) / spikes - Math.PI / 2;
-    return `${50 + radius * Math.cos(angle)},${50 + radius * Math.sin(angle)}`;
-  }).join(" ");
-
-// Arrows and sparkles are drawn, not typed: display faces rarely ship
-// those glyphs, and a missing glyph renders as tofu.
-const Arrow = ({ color, flip }: { color: string; flip: boolean }) => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    style={{ transform: flip ? "scaleX(-1)" : "none" }}
-  >
-    <path
-      d="M4 12h15M13 5l7 7-7 7"
-      stroke={color}
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const Sparkle = ({ color }: { color: string }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24">
-    <path d="M12 0 15 9 24 12 15 15 12 24 9 15 0 12 9 9Z" fill={color} />
-  </svg>
-);
 
 const CardArt = ({ art }: { art: Art }) => {
   if (art === "bolt") {
@@ -145,42 +69,84 @@ const CardArt = ({ art }: { art: Art }) => {
   );
 };
 
-const LaunchHero = ({
-  accentColor,
-  badge,
-  brand,
-  categories,
-  cta,
-  headline,
-  links,
-  locale,
-  note,
-  stats,
-  subheadline,
-}: Props) => {
-  const isRtl = locale?.startsWith("ar") ?? false;
-  // Flex rows mirror themselves under dir="rtl"; absolute offsets don't.
-  const start = isRtl ? "right" : "left";
-  const end = isRtl ? "left" : "right";
-  const marginStart = isRtl ? "marginRight" : "marginLeft";
-  const words = headline.split(/\s+/u).filter(Boolean);
-
-  return (
+// oxlint-disable-next-line sort-keys -- schema reads before the render that uses it
+export default defineTemplate({
+  // Latin face first; Arabic glyphs fall through to the Arabic face.
+  fonts: {
+    display: { faces: ["Archivo Black", "Lalezar"] },
+    mono: {
+      faces: [
+        { family: "Space Mono", weights: [400, 700] },
+        { family: "IBM Plex Sans Arabic", weights: [400, 700] },
+      ],
+      generic: "monospace",
+    },
+  },
+  schema: {
+    background: field.color("#2b3bff", { description: "Page background" }),
+    badge: field.text("Drop 07", {
+      description: "Text on the starburst sticker",
+    }),
+    brand: field.text("OFFBEAT®", {
+      description: "Wordmark in the nav bar",
+      translatable: false,
+    }),
+    categories: field.list(field.text("Category"), {
+      default: ["Tees", "Hoodies", "Caps"],
+      description: "One label per collage card",
+      length: CARD_STYLES.length,
+    }),
+    cta: field.text("Shop now", { description: "Primary button label" }),
+    headline: field.text("Wear It Loud", {
+      description: "Hero headline; each word gets its own line",
+      min: 1,
+    }),
+    links: field.list(field.text("Link"), {
+      default: ["Drops", "Archive", "Club"],
+      description: "Nav bar links",
+      max: 4,
+    }),
+    note: field.text("Ships worldwide", {
+      description: "Small note at the end of the stats strip",
+    }),
+    stats: field.list(
+      field.object({
+        label: field.text("label"),
+        value: field.text("0", { translatable: false }),
+      }),
+      {
+        default: [
+          { label: "drops a year", value: "12" },
+          { label: "restocks", value: "0" },
+          { label: "cotton", value: "100%" },
+        ],
+        description: "Stats strip: a big value and its label",
+        max: 3,
+        min: 1,
+      }
+    ),
+    subheadline: field.text(
+      "Small-batch streetwear, printed in a city that never whispers.",
+      { description: "Supporting line under the headline", multiline: true }
+    ),
+  },
+  render: (props, ctx) => (
     <div
-      lang={isRtl ? "ar" : undefined}
-      dir={isRtl ? "rtl" : "ltr"}
       tw="flex flex-col w-full h-full overflow-hidden relative"
-      style={{ backgroundColor: accentColor, color: CREAM, fontFamily: MONO }}
+      style={{
+        backgroundColor: props.background,
+        color: CREAM,
+        fontFamily: ctx.fonts.mono,
+      }}
     >
       {/* Halftone corner */}
       <div
         tw="absolute"
         style={{
-          backgroundImage: `radial-gradient(${INK} 30%, transparent 32%)`,
-          backgroundSize: "18px 18px",
+          ...halftone({ color: INK, spacing: 18 }),
           bottom: -60,
-          [end]: -60,
           height: 460,
+          insetInlineEnd: -60,
           opacity: 0.22,
           width: 560,
         }}
@@ -192,12 +158,12 @@ const LaunchHero = ({
         style={{ borderBottom: `3px solid ${CREAM}` }}
       >
         {/* Pinned LTR so bidi doesn't move the ® to the front in Arabic. */}
-        <span dir="ltr" style={{ fontFamily: DISPLAY, fontSize: 38 }}>
-          {brand}
+        <span dir="ltr" style={{ fontFamily: ctx.fonts.display, fontSize: 38 }}>
+          {props.brand}
         </span>
         <div tw="flex items-center text-xl" style={{ gap: 32 }}>
-          {links.map((link) => (
-            <span key={link}>{link}</span>
+          {keyed(props.links).map((link) => (
+            <span key={link.key}>{link.value}</span>
           ))}
           <div
             tw="flex items-center px-6 py-3 rounded-full text-xl"
@@ -208,8 +174,8 @@ const LaunchHero = ({
               gap: 12,
             }}
           >
-            <span>{cta}</span>
-            <Arrow color={INK} flip={isRtl} />
+            <span>{props.cta}</span>
+            <Arrow color={INK} ctx={ctx} />
           </div>
         </div>
       </div>
@@ -217,39 +183,44 @@ const LaunchHero = ({
       {/* Hero */}
       <div tw="flex flex-1 px-12 py-8 relative" style={{ minHeight: 0 }}>
         <div tw="flex flex-col justify-center flex-1">
-          {words.map((word, index) => (
+          {keyed(words(props.headline)).map((word) => (
             <span
-              key={`${word}-${index}`}
+              key={word.key}
               style={{
+                ...ctx.type({
+                  font: "display",
+                  leading: 0.95,
+                  // Lalezar runs tall: the default Arabic leading would
+                  // push the subheadline off a 675px canvas.
+                  scripts: { arabic: { leading: 1, size: 100 } },
+                  size: 132,
+                  tracking: -0.03,
+                  uppercase: true,
+                }),
                 WebkitTextStroke: `3px ${INK}`,
-                color: index % 2 === 1 ? PINK : CREAM,
-                fontFamily: DISPLAY,
-                fontSize: isRtl ? 112 : 132,
-                letterSpacing: isRtl ? 0 : "-0.03em",
-                lineHeight: isRtl ? 1.02 : 0.95,
-                [marginStart]: index * 36,
+                color: word.index % 2 === 1 ? PINK : CREAM,
+                marginInlineStart: word.index * 36,
                 textShadow: `7px 7px 0 ${INK}`,
-                textTransform: "uppercase",
               }}
             >
-              {word}
+              {word.value}
             </span>
           ))}
           <div
             tw="flex text-2xl mt-7"
             style={{ lineHeight: 1.4, maxWidth: 600 }}
           >
-            {subheadline}
+            {props.subheadline}
           </div>
         </div>
 
         {/* Collage */}
         <div tw="flex w-[36%] relative">
-          {categories.slice(0, CARD_STYLES.length).map((category, index) => {
-            const style = CARD_STYLES[index] ?? CARD_STYLES[0];
+          {keyed(props.categories).map((category) => {
+            const style = CARD_STYLES[category.index] ?? CARD_STYLES[0];
             return (
               <div
-                key={category}
+                key={category.key}
                 tw="flex flex-col justify-between absolute rounded-3xl p-6"
                 style={{
                   backgroundColor: style.color,
@@ -257,23 +228,23 @@ const LaunchHero = ({
                   boxShadow: `9px 9px 0 ${INK}`,
                   color: INK,
                   height: "38%",
-                  [start]: index % 2 === 0 ? 10 : 90,
-                  top: `${2 + index * 30}%`,
-                  transform: `rotate(${isRtl ? -style.tilt : style.tilt}deg)`,
+                  insetInlineStart: category.index % 2 === 0 ? 10 : 90,
+                  top: `${2 + category.index * 30}%`,
+                  transform: `rotate(${ctx.flip(style.tilt)}deg)`,
                   width: 270,
                 }}
               >
                 <div tw="flex items-start justify-between" style={{ gap: 12 }}>
                   <span
                     style={{
-                      fontFamily: DISPLAY,
+                      fontFamily: ctx.fonts.display,
                       fontSize: 44,
                       lineHeight: 1.1,
                     }}
                   >
-                    {category}
+                    {category.value}
                   </span>
-                  <span tw="text-lg">{`0${index + 1}`}</span>
+                  <span tw="text-lg">{`0${category.index + 1}`}</span>
                 </div>
                 <div tw="flex justify-end">
                   <CardArt art={style.art} />
@@ -286,9 +257,9 @@ const LaunchHero = ({
           tw="flex absolute items-center justify-center"
           style={{
             height: 170,
-            [start]: "50%",
+            insetInlineStart: "50%",
             top: 18,
-            transform: `rotate(${isRtl ? -12 : 12}deg)`,
+            transform: `rotate(${ctx.flip(12)}deg)`,
             width: 170,
           }}
         >
@@ -311,13 +282,13 @@ const LaunchHero = ({
               tw="text-center"
               style={{
                 color: INK,
-                fontFamily: DISPLAY,
+                fontFamily: ctx.fonts.display,
                 fontSize: 28,
                 lineHeight: 1.05,
                 maxWidth: 110,
               }}
             >
-              {badge}
+              {props.badge}
             </span>
           </div>
         </div>
@@ -328,35 +299,37 @@ const LaunchHero = ({
         tw="flex items-center px-12 py-5"
         style={{ backgroundColor: INK, gap: 48 }}
       >
-        {stats.map((stat) => {
-          const [value = "", ...label] = stat.split(" ");
-          return (
-            <div key={stat} tw="flex items-end" style={{ gap: 12 }}>
+        {keyed(props.stats, (stat) => stat.value).map(
+          ({ key, value: stat }) => (
+            <div key={key} tw="flex items-end" style={{ gap: 12 }}>
               <span
-                style={{ fontFamily: DISPLAY, fontSize: 40, lineHeight: 1.1 }}
+                style={{
+                  fontFamily: ctx.fonts.display,
+                  fontSize: 40,
+                  lineHeight: 1.1,
+                }}
               >
-                {value}
+                {stat.value}
               </span>
               <span tw="text-lg mb-1" style={{ opacity: 0.7 }}>
-                {label.join(" ")}
+                {stat.label}
               </span>
             </div>
-          );
-        })}
+          )
+        )}
         <div
           tw="flex items-center text-lg"
           style={{
             color: LIME,
             gap: 8,
-            [marginStart]: "auto",
+            marginInlineStart: "auto",
+            textTransform: "uppercase",
           }}
         >
-          <Sparkle color={LIME} />
-          <span>{note.toUpperCase()}</span>
+          <Sparkle color={LIME} size={18} />
+          <span>{props.note}</span>
         </div>
       </div>
     </div>
-  );
-};
-
-export default LaunchHero;
+  ),
+});
