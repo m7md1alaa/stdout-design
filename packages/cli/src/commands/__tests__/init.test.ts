@@ -261,7 +261,7 @@ describe("init", () => {
   test("with --yes scaffolds all defaults without prompting", async () => {
     const dir = inTempDir();
 
-    await init(dir, { yes: true });
+    await init(dir, { install: false, yes: true });
 
     expect(existsSync(path.join(dir, "studio.config.ts"))).toBe(true);
     expect(existsSync(path.join(dir, "templates", "bento-feature.tsx"))).toBe(
@@ -276,7 +276,7 @@ describe("init", () => {
   test("with --yes does not prompt even when no tty", async () => {
     const dir = inTempDir();
 
-    await init(dir, { yes: true });
+    await init(dir, { install: false, yes: true });
 
     expect(existsSync(path.join(dir, "studio.config.ts"))).toBe(true);
 
@@ -288,7 +288,7 @@ describe("init", () => {
     const projectDir = "my-project";
     const fullPath = path.join(parentDir, projectDir);
 
-    await init(fullPath, { yes: true });
+    await init(fullPath, { install: false, yes: true });
 
     expect(existsSync(path.join(fullPath, "studio.config.ts"))).toBe(true);
     const pkg = JSON.parse(
@@ -304,7 +304,7 @@ describe("init", () => {
     const configPath = path.join(dir, "studio.config.ts");
     writeFileSync(configPath, "// existing config");
 
-    await init(dir, { yes: true });
+    await init(dir, { install: false, yes: true });
 
     const content = readFileSync(configPath, "utf-8");
     expect(content).toBe("// existing config");
