@@ -1,5 +1,21 @@
 # @stdout-design/core
 
+## 0.9.0
+
+### Minor Changes
+
+- 51f287e: Locale layers (ADR-0021): with a locale picked, the studio shows each field with that locale's text and edits to translatable text apply to that locale only.
+
+  - core: `resolveLocaleLayers` resolves a locale's props from the base values, the locale file, and per-locale overrides; `flattenTranslations` and `translationsFromPaths` convert a locale file to and from text by prop path (`TranslationPaths`). `orchestrateRender` and `orchestrateMeasure` take `localeOverrides`.
+  - dev-server: `/render` and `/measure` accept `localeOverrides`; `GET /translations/:templateId/:locale` returns a locale file's strings for a template by path. Locale ids that aren't plain ids no longer read files.
+  - web-ui: translatable fields show the picked locale's text and carry a locale tag; the reset dot brings back the locale file's string; list reorders keep per-locale text with its item. Validation errors now land on the field they name.
+
+- 51f287e: The studio is redesigned (ADR-0020): a toolbar on top, a canvas that fits the window and zooms, and an inspector on the right.
+
+  - The preview keeps the last frame while the next one renders. Fields get plain labels, sliders and typed values, editable and reorderable lists, collapsed object-list rows, a reset dot on changed values, and errors on the field they belong to.
+  - `defineTemplate` takes an optional `inspector` list that names the groups and the order of fields in each; `field.*` takes an optional `label`. dev-server sends both to the studio. The four starters declare their layout.
+  - The studio colors and chrome are neutral, with Geist and Geist Mono. The 2,789-line color picker is replaced by a hex field with a small picker, and `framer-motion` is gone from `@stdout-design/web-ui`.
+
 ## 0.8.0
 
 ### Minor Changes
