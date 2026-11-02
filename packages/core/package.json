@@ -33,6 +33,10 @@
       "import": "./dist/schema.mjs",
       "types": "./dist/schema.d.mts"
     },
+    "./template": {
+      "import": "./dist/template.mjs",
+      "types": "./dist/template.d.mts"
+    },
     "./og": {
       "import": "./dist/og/index.mjs",
       "types": "./dist/og/index.d.mts"

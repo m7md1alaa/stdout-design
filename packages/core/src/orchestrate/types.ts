@@ -1,11 +1,12 @@
 import type { ComponentType } from "react";
 
 import type { FontResolutionResult } from "../assets/assets-resolver.js";
-import type { ImagePolicy } from "../assets/image-resolver.js";
 import type { RenderCache } from "../cache/render-cache.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import type { Font, RenderOptions } from "../engine/takumi-types-shim.js";
+import type { ImagePolicy } from "../shared/types.js";
 import type { PropSchema } from "../shared/validation.js";
+import type { TemplateDefinition } from "../template/define-template.js";
 
 type OutputFormat = "webp" | "png" | "jpeg" | "ico" | "raw";
 
@@ -33,6 +34,9 @@ export interface RenderOneOutput {
 }
 
 export interface OrchestrateRenderInput {
+  /** The template to render, from `toTemplateDefinition` or `defineTemplate`. */
+  template?: TemplateDefinition;
+  /** Legacy: a component plus `propsSchema`. Prefer `template`. */
   component?: ComponentType<Record<string, unknown>>;
   compiledTemplate?: CompiledTemplate;
   templateContentHash: string;
@@ -68,6 +72,9 @@ export interface OrchestrateRenderResult {
 }
 
 export interface OrchestrateMeasureInput {
+  /** See `OrchestrateRenderInput.template`. */
+  template?: TemplateDefinition;
+  /** Legacy: a component plus `propsSchema`. Prefer `template`. */
   component?: ComponentType<Record<string, unknown>>;
   compiledTemplate?: CompiledTemplate;
   templateContentHash: string;
@@ -79,6 +86,8 @@ export interface OrchestrateMeasureInput {
   fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
   /** See `OrchestrateRenderInput.images`. */
   images?: ImagePolicy;
+  /** Canvas the template's `ctx.canvas` reports while measuring. @default 1200×630 */
+  canvasHint?: { width: number; height: number };
   cache: RenderCache;
   signal?: AbortSignal;
 }

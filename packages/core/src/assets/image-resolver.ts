@@ -1,9 +1,9 @@
 import { prepareImages } from "@takumi-rs/helpers";
 import { extractEmojis } from "@takumi-rs/helpers/emoji";
-import type { EmojiType } from "@takumi-rs/helpers/emoji";
 import type { Node } from "takumi-js";
 
 import { logDebug, logWarn } from "../shared/logger.js";
+import type { ImagePolicy } from "../shared/types.js";
 import { BoundedImageFetchCache } from "./bounded-image-fetch-cache.js";
 import type { ImageFetchCacheLike } from "./bounded-image-fetch-cache.js";
 
@@ -57,24 +57,6 @@ const ALLOW_URL_BLOCKED_PREFIX = "URL blocked by allowUrl policy: ";
 
 /** Deny every URL. The safe default until a project opts in via `studio.config.ts`'s `images.allowUrl`. */
 const denyAll = (): boolean => false;
-
-export interface ImagePolicy {
-  /** Return true to permit fetching a URL. Unset denies every URL -- see the module doc comment. */
-  allowUrl?: (url: string) => boolean;
-  /** Reject a fetched body past this size, by content-length or streamed. @default 32 MiB (the library default) */
-  maxBytes?: number;
-  /** Abort a fetch after this many milliseconds. @default 5000 (the library default) */
-  timeout?: number;
-  /** Custom fetch implementation. @default globalThis.fetch */
-  fetch?: typeof globalThis.fetch;
-  /**
-   * Emoji provider. `"from-font"` skips network extraction entirely and
-   * relies on a registered COLR font to supply emoji glyphs directly.
-   * Unset also skips extraction (emoji render as whatever glyph the
-   * fallback font stack provides, typically monochrome or missing).
-   */
-  emoji?: EmojiType | "from-font";
-}
 
 export interface ImageSourceEntry {
   src: string;

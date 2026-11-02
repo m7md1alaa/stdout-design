@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended by ADR-0019: the layer order below is enforced by `packages/config/boundaries/boundaries.test.ts`, which reads its graph from `packages/config/boundaries/rules.ts`. Output naming moved from `batch/` to `shared/naming.ts` so `orchestrate/` no longer depends on `batch/`.
 
 ## Context
 

@@ -1,59 +1,15 @@
-import { defineSchema } from "@stdout-design/cli/schema";
-import { z } from "zod";
-
-export const templateId = "retro-poster" as const;
-
-export const propsSchema = defineSchema(
-  z.object({
-    body: z
-      .string()
-      .default(
-        "Ninety minutes, two sides, zero skips. Hand-picked tracks, hand-written labels, and a pencil for when the tape gets tangled."
-      )
-      .describe("Short paragraph beside the target mark"),
-    headline: z
-      .string()
-      .min(1)
-      .default("Mixtape Club")
-      .describe("Stacked headline in the bottom corner — one word per line"),
-    label: z
-      .string()
-      .default("Summer mix '89")
-      .describe("Handwritten title on the cassette label"),
-    locale: z
-      .string()
-      .optional()
-      .describe("Current locale code for RTL support"),
-    paper: z.string().default("#efe6d2").describe("Poster paper color"),
-    stamp: z
-      .string()
-      .default("Limited edition")
-      .describe("Rubber-stamp headline"),
-    stampNote: z
-      .string()
-      .default("No. 0042 / 5000")
-      .describe("Small line inside the stamp"),
-    tagline: z
-      .string()
-      .default("Analog since forever")
-      .describe("Small line under the headline"),
-    title: z
-      .string()
-      .default("Press Play")
-      .describe("Oversized title across the top"),
-  })
-);
-
-export type Props = z.infer<typeof propsSchema>;
+import {
+  defineTemplate,
+  field,
+  halftone,
+  keyed,
+  words,
+} from "@stdout-design/cli/template";
+import type { RenderContext } from "@stdout-design/cli/template";
 
 const INK = "#1d1a17";
 const SHELL = "#2e2b35";
 const RUST = "#d9532c";
-// Latin face first; Arabic glyphs fall through to the Arabic face.
-const TITLE = "Anton, Lalezar, sans-serif";
-const DISPLAY = "Archivo Black, Lalezar, sans-serif";
-const SCRIPT = "Instrument Serif, Amiri, serif";
-const MONO = "Space Mono, IBM Plex Sans Arabic, monospace";
 const STRIPES = ["#7a2e3a", RUST, "#f0a830", "#2f8f83"];
 const BARCODE = [
   3, 1, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1,
@@ -83,13 +39,15 @@ const Reel = ({ cx }: { cx: number }) => (
   </g>
 );
 
-const Cassette = ({ label, isRtl }: { label: string; isRtl: boolean }) => (
+// The cassette art is a picture, not a layout: it never mirrors, so the
+// labels printed on it keep physical left and right offsets.
+const Cassette = ({ label, ctx }: { label: string; ctx: RenderContext }) => (
   <div
     tw="flex relative"
     style={{
       flexShrink: 0,
       height: CASSETTE_HEIGHT,
-      transform: `rotate(${isRtl ? 6 : -6}deg)`,
+      transform: `rotate(${ctx.flip(-6)}deg)`,
       width: CASSETTE_WIDTH,
     }}
   >
@@ -153,7 +111,7 @@ const Cassette = ({ label, isRtl }: { label: string; isRtl: boolean }) => (
       tw="absolute"
       style={{
         color: "#fff6e5",
-        fontFamily: DISPLAY,
+        fontFamily: ctx.fonts.display,
         fontSize: 18,
         left: 46,
         top: 29,
@@ -165,7 +123,7 @@ const Cassette = ({ label, isRtl }: { label: string; isRtl: boolean }) => (
       tw="absolute"
       style={{
         color: "#fff6e5",
-        fontFamily: MONO,
+        fontFamily: ctx.fonts.mono,
         fontSize: 14,
         right: 58,
         top: 32,
@@ -179,11 +137,8 @@ const Cassette = ({ label, isRtl }: { label: string; isRtl: boolean }) => (
     >
       <span
         style={{
+          ...ctx.type({ font: "script", italic: true, leading: 1.1, size: 36 }),
           color: INK,
-          fontFamily: SCRIPT,
-          fontSize: 36,
-          fontStyle: isRtl ? "normal" : "italic",
-          lineHeight: 1.1,
         }}
       >
         {label}
@@ -217,49 +172,76 @@ const Barcode = () => {
   );
 };
 
-const RetroPoster = ({
-  body,
-  headline,
-  label,
-  locale,
-  paper,
-  stamp,
-  stampNote,
-  tagline,
-  title,
-}: Props) => {
-  const isRtl = locale?.startsWith("ar") ?? false;
-  // Flex rows mirror themselves under dir="rtl"; absolute offsets don't.
-  const start = isRtl ? "right" : "left";
-  const words = headline.split(/\s+/u).filter(Boolean);
-
-  return (
+// oxlint-disable-next-line sort-keys -- schema reads before the render that uses it
+export default defineTemplate({
+  // Latin face first; Arabic glyphs fall through to the Arabic face.
+  fonts: {
+    display: { faces: ["Archivo Black", "Lalezar"] },
+    mono: {
+      faces: [
+        { family: "Space Mono", weights: [400, 700] },
+        { family: "IBM Plex Sans Arabic", weights: [400, 700] },
+      ],
+      generic: "monospace",
+    },
+    script: { faces: ["Instrument Serif", "Amiri"], generic: "serif" },
+    title: { faces: ["Anton", "Lalezar"] },
+  },
+  schema: {
+    body: field.text(
+      "Ninety minutes, two sides, zero skips. Hand-picked tracks, hand-written labels, and a pencil for when the tape gets tangled.",
+      { description: "Short paragraph beside the target mark", multiline: true }
+    ),
+    headline: field.text("Mixtape Club", {
+      description: "Stacked headline in the bottom corner, one word per line",
+      min: 1,
+    }),
+    label: field.text("Summer mix '89", {
+      description: "Handwritten title on the cassette label",
+    }),
+    paper: field.color("#efe6d2", { description: "Poster paper color" }),
+    stamp: field.text("Limited edition", {
+      description: "Rubber-stamp headline",
+    }),
+    stampNote: field.text("No. 0042 / 5000", {
+      description: "Small line inside the stamp",
+    }),
+    tagline: field.text("Analog since forever", {
+      description: "Small line under the headline",
+    }),
+    title: field.text("Press Play", {
+      description: "Oversized title across the top",
+    }),
+  },
+  render: (props, ctx) => (
     <div
-      lang={isRtl ? "ar" : undefined}
-      dir={isRtl ? "rtl" : "ltr"}
       tw="flex flex-col w-full h-full px-12 pt-10 relative overflow-hidden"
-      style={{ backgroundColor: paper, color: INK, fontFamily: MONO }}
+      style={{
+        backgroundColor: props.paper,
+        color: INK,
+        fontFamily: ctx.fonts.mono,
+      }}
     >
       {/* Paper grain */}
       <div
         tw="absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(rgba(29,26,23,0.07) 1px, transparent 1.5px)",
-          backgroundSize: "7px 7px",
-        }}
+        style={halftone({
+          color: "rgba(29,26,23,0.07)",
+          dot: 0.15,
+          spacing: 7,
+        })}
       />
 
       <span
         tw="relative"
-        style={{
-          fontFamily: TITLE,
-          fontSize: isRtl ? 104 : 124,
-          lineHeight: isRtl ? 1.1 : 0.9,
-          textTransform: "uppercase",
-        }}
+        style={ctx.type({
+          font: "title",
+          leading: 0.9,
+          size: 124,
+          uppercase: true,
+        })}
       >
-        {title}
+        {props.title}
       </span>
       <div
         tw="flex relative my-5"
@@ -272,7 +254,11 @@ const RetroPoster = ({
         {/* Tape stripes run out of the cassette and off the page */}
         <div
           tw="flex absolute"
-          style={{ bottom: 0, [start]: 120, top: CASSETTE_HEIGHT - 50 }}
+          style={{
+            bottom: 0,
+            insetInlineStart: 120,
+            top: CASSETTE_HEIGHT - 50,
+          }}
         >
           {STRIPES.map((color) => (
             <div
@@ -284,7 +270,7 @@ const RetroPoster = ({
         </div>
 
         <div tw="flex pt-2">
-          <Cassette label={label} isRtl={isRtl} />
+          <Cassette ctx={ctx} label={props.label} />
         </div>
 
         <div tw="flex flex-col flex-1 justify-between items-end pb-8 relative">
@@ -301,13 +287,13 @@ const RetroPoster = ({
             <div
               tw="flex text-base"
               style={{
-                [isRtl ? "borderRight" : "borderLeft"]: `3px solid ${INK}`,
-                [isRtl ? "paddingRight" : "paddingLeft"]: 20,
+                borderInlineStart: `3px solid ${INK}`,
                 lineHeight: 1.55,
+                paddingInlineStart: 20,
                 width: 330,
               }}
             >
-              {body}
+              {props.body}
             </div>
           </div>
 
@@ -316,56 +302,51 @@ const RetroPoster = ({
             style={{
               border: `4px solid ${RUST}`,
               color: RUST,
+              insetInlineStart: 20,
               opacity: 0.92,
-              [start]: 20,
               top: "40%",
-              transform: `rotate(${isRtl ? 8 : -8}deg)`,
+              transform: `rotate(${ctx.flip(-8)}deg)`,
             }}
           >
             <span
-              style={{
-                fontFamily: DISPLAY,
-                fontSize: 30,
-                lineHeight: 1.1,
-                textTransform: "uppercase",
-              }}
+              style={ctx.type({
+                font: "display",
+                leading: 1.1,
+                size: 30,
+                uppercase: true,
+              })}
             >
-              {stamp}
+              {props.stamp}
             </span>
-            <span
-              tw="text-base mt-1"
-              style={{ letterSpacing: isRtl ? 0 : "0.2em" }}
-            >
-              {stampNote}
+            <span tw="text-base mt-1" style={ctx.type({ tracking: 0.2 })}>
+              {props.stampNote}
             </span>
           </div>
 
           <div tw="flex flex-col items-end">
-            {words.map((word, index) => (
+            {keyed(words(props.headline)).map((word) => (
               <span
-                key={`${word}-${index}`}
-                style={{
-                  fontFamily: DISPLAY,
-                  fontSize: isRtl ? 84 : 92,
-                  letterSpacing: isRtl ? 0 : "-0.04em",
-                  lineHeight: isRtl ? 1.15 : 0.9,
-                  textTransform: "uppercase",
-                }}
+                key={word.key}
+                style={ctx.type({
+                  font: "display",
+                  leading: 0.9,
+                  size: 92,
+                  tracking: -0.04,
+                  uppercase: true,
+                })}
               >
-                {word}
+                {word.value}
               </span>
             ))}
             <div tw="flex items-center mt-4" style={{ gap: 20 }}>
               <Barcode />
               <span tw="text-2xl" style={{ fontWeight: 700 }}>
-                {tagline}
+                {props.tagline}
               </span>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-};
-
-export default RetroPoster;
+  ),
+});

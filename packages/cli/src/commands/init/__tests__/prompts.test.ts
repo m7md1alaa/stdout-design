@@ -12,6 +12,34 @@ const inTempDir = (): string => {
   return dir;
 };
 
+// collectPrompts skips its questions in CI, so each test sets the CI
+// variables it needs and restores them, whatever the runner sets.
+const CI_VARS = ["CI", "CIRCLECI", "GITHUB_ACTIONS", "GITLAB_CI"] as const;
+
+const withCiEnv = async <T>(
+  value: string | undefined,
+  run: () => Promise<T>
+): Promise<T> => {
+  const saved = CI_VARS.map((name) => [name, process.env[name]] as const);
+  for (const name of CI_VARS) {
+    Reflect.deleteProperty(process.env, name);
+  }
+  if (value !== undefined) {
+    process.env.CI = value;
+  }
+  try {
+    return await run();
+  } finally {
+    for (const [name, old] of saved) {
+      if (old === undefined) {
+        Reflect.deleteProperty(process.env, name);
+      } else {
+        process.env[name] = old;
+      }
+    }
+  }
+};
+
 describe("collectPrompts", () => {
   test("returns defaults in --yes mode with projectDir", async () => {
     const dir = inTempDir();
@@ -30,18 +58,14 @@ describe("collectPrompts", () => {
   });
 
   test("returns defaults in CI mode without projectDir", async () => {
-    const oldCI = process.env.CI;
-    process.env.CI = "true";
     const fakeClack = {} as never;
 
-    const result = await collectPrompts(fakeClack);
+    const result = await withCiEnv("true", () => collectPrompts(fakeClack));
 
     expect(result.projectName).toBe("studio-project");
     expect(result.templates).toEqual(STARTER_IDS);
     expect(result.locales).toEqual(["en", "ar"]);
     expect(result.shouldInstall).toBe(true);
-
-    process.env.CI = oldCI;
   });
 
   test("interactive mode calls clack prompts and returns their values", async () => {
@@ -70,7 +94,7 @@ describe("collectPrompts", () => {
       },
     };
 
-    const result = await collectPrompts(fakeClack);
+    const result = await withCiEnv(undefined, () => collectPrompts(fakeClack));
 
     expect(result.projectName).toBe("my-app");
     expect(result.templates).toEqual(["bento-feature"]);

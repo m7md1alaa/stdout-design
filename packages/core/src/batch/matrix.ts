@@ -36,7 +36,7 @@ export const expandMatrix = (input: MatrixInput): MatrixCell[] => {
         cells.push({
           locale: localeId,
           preset: { height: preset.height, id: preset.id, width: preset.width },
-          props: { ...rowProps, locale: localeId },
+          props: rowProps,
           rowIndex,
           rowKey,
         });

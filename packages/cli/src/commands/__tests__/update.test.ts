@@ -176,7 +176,7 @@ describe("update after init", () => {
     }
   });
 
-  test("adds the starters shipped since, with their files, copy and fonts", async () => {
+  test("adds the starters shipped since, with their files and copy", async () => {
     const { restore } = captureLogs();
     const dir = inTempDir();
     createInitConfig(dir, "0.6.0", {
@@ -200,12 +200,10 @@ describe("update after init", () => {
         "retro-poster",
         "trend-poster",
       ]);
-      expect(
-        config.fonts.ar.map((f: { family: string }) => f.family)
-      ).toContain("Lalezar");
+      expect(config.fonts).toBeUndefined();
       expect(
         readFileSync(path.resolve(dir, "templates/launch-hero.tsx"), "utf-8")
-      ).toContain("defineSchema");
+      ).toContain("defineTemplate");
       expect(
         readFileSync(path.resolve(dir, "templates/bento-feature.tsx"), "utf-8")
       ).toBe("// mine");
@@ -231,7 +229,7 @@ describe("update after init", () => {
 
       const config = await readConfig(dir);
       expect(config.locales).toEqual(["en"]);
-      expect(Object.keys(config.fonts)).toEqual(["default"]);
+      expect(config.fonts).toBeUndefined();
     } finally {
       restore();
       rmSync(dir, { force: true, recursive: true });

@@ -6,7 +6,17 @@
     "headline": "Wear It Loud",
     "links": ["Drops", "Archive", "Club"],
     "note": "Ships worldwide",
-    "stats": ["12 drops a year", "0 restocks", "100% cotton"],
+    "stats": [
+      {
+        "label": "drops a year"
+      },
+      {
+        "label": "restocks"
+      },
+      {
+        "label": "cotton"
+      }
+    ],
     "subheadline": "Small-batch streetwear, printed in a city that never whispers."
   },
   "bento-feature": {
@@ -18,7 +28,17 @@
     "metricLabel": "Saved this month",
     "metricValue": "$1,240",
     "ratingLabel": "App Store rating",
-    "receipt": ["Coffee 4.50", "Groceries 62.10", "Metro 2.75"],
+    "receipt": [
+      {
+        "item": "Coffee"
+      },
+      {
+        "item": "Groceries"
+      },
+      {
+        "item": "Metro"
+      }
+    ],
     "receiptNote": "Sorted automatically"
   },
   "retro-poster": {

@@ -53,7 +53,7 @@ const { expandMatrix } = await import("../batch/matrix.js");
 const { renderOne } = await import("../orchestrate/render-one.js");
 
 describe("expandMatrix locale propagation", () => {
-  it("creates a cell for each locale id and sets locale on cell and props", () => {
+  it("creates a cell for each locale id and sets locale on the cell, not in props", () => {
     const cells = expandMatrix({
       locales: ["en", "ar"],
       presets: [{ height: 100, id: "test", width: 100 }],
@@ -64,11 +64,11 @@ describe("expandMatrix locale propagation", () => {
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[0]!.locale).toBe("en");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[0]!.props.locale).toBe("en");
+    expect(cells[0]!.props.locale).toBeUndefined();
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[1]!.locale).toBe("ar");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[1]!.props.locale).toBe("ar");
+    expect(cells[1]!.props.locale).toBeUndefined();
   });
 
   it("preserves original row props without locale data merge", () => {
@@ -81,7 +81,7 @@ describe("expandMatrix locale propagation", () => {
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[0]!.props.name).toBe("hello");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[0]!.props.locale).toBe("ar");
+    expect(cells[0]!.props.locale).toBeUndefined();
   });
 
   it("includes locale id in every cell across multiple locales", () => {
@@ -95,15 +95,15 @@ describe("expandMatrix locale propagation", () => {
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[0]!.locale).toBe("fr");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[0]!.props.locale).toBe("fr");
+    expect(cells[0]!.props.locale).toBeUndefined();
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[1]!.locale).toBe("de");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[1]!.props.locale).toBe("de");
+    expect(cells[1]!.props.locale).toBeUndefined();
     // eslint-disable-next-line typescript/no-non-null-assertion
     expect(cells[2]!.locale).toBe("ja");
     // eslint-disable-next-line typescript/no-non-null-assertion
-    expect(cells[2]!.props.locale).toBe("ja");
+    expect(cells[2]!.props.locale).toBeUndefined();
   });
 });
 

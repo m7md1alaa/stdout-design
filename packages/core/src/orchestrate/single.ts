@@ -2,9 +2,9 @@ import { writeFile } from "node:fs/promises";
 
 import type { ComponentType } from "react";
 
-import type { ImagePolicy } from "../assets/image-resolver.js";
-import { generateOutputFilename } from "../batch/naming.js";
 import type { RenderCache } from "../cache/render-cache.js";
+import { generateOutputFilename } from "../shared/naming.js";
+import type { ImagePolicy } from "../shared/types.js";
 import type { PropSchema } from "../shared/validation.js";
 import { orchestrateRender } from "./orchestrate.js";
 import { ensureDir } from "./utils.js";

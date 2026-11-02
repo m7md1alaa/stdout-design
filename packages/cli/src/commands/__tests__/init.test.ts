@@ -59,8 +59,8 @@ describe("scaffold", () => {
       path.join(dir, "templates", "bento-feature.tsx"),
       "utf-8"
     );
-    expect(content).toContain("defineSchema");
-    expect(content).toContain("const BentoFeature");
+    expect(content).toContain("defineTemplate");
+    expect(content).toContain("export default defineTemplate");
 
     rmSync(dir, { force: true, recursive: true });
   });

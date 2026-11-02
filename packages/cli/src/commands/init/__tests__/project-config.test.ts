@@ -6,9 +6,6 @@ import { STARTERS, STARTER_IDS } from "../catalog.js";
 import { buildProjectConfig, startersSince } from "../project-config.js";
 import { compareVersions } from "../version.js";
 
-const families = (entries: { family: string }[] | undefined) =>
-  entries?.map((e) => e.family);
-
 describe("buildProjectConfig", () => {
   test("registers only the chosen starters and records the locales", () => {
     const config = buildProjectConfig("0.6.0", {
@@ -24,33 +21,16 @@ describe("buildProjectConfig", () => {
     expect(config.scaffoldVersion).toBe("0.6.0");
   });
 
-  test("loads only the fonts the chosen starters use", () => {
-    const config = buildProjectConfig("0.6.0", {
-      locales: ["en"],
-      starters: ["launch-hero"],
-    });
-
-    expect(Object.keys(config.fonts ?? {})).toEqual(["default"]);
-    expect(families(config.fonts?.default)).toEqual([
-      "Archivo Black",
-      "Space Mono",
-    ]);
-  });
-
-  test("gives Arabic locales the Latin faces plus the Arabic ones", () => {
+  test("writes no fonts block: templates declare their own", () => {
     const config = buildProjectConfig("0.6.0", {
       locales: ["en", "ar"],
       starters: ["bento-feature"],
     });
 
-    expect(families(config.fonts?.ar)).toEqual([
-      "Bricolage Grotesque",
-      "Space Mono",
-      "IBM Plex Sans Arabic",
-    ]);
+    expect(config.fonts).toBeUndefined();
   });
 
-  test("leaves fonts and locales out when there is nothing to configure", () => {
+  test("leaves locales out when there is nothing to configure", () => {
     const config = buildProjectConfig("0.6.0", { locales: [], starters: [] });
 
     expect(config.fonts).toBeUndefined();

@@ -1,80 +1,10 @@
-import { defineSchema } from "@stdout-design/cli/schema";
-import { z } from "zod";
-
-export const templateId = "bento-feature" as const;
-
-export const propsSchema = defineSchema(
-  z.object({
-    accentColor: z
-      .string()
-      .default("#ff5a36")
-      .describe("The primary accent color used for the solid tiles"),
-    background: z
-      .string()
-      .default("#191714")
-      .describe("Background color behind the tiles"),
-    brand: z.string().default("tally").describe("Wordmark in the logo tile"),
-    chartLabel: z
-      .string()
-      .default("Spending by week")
-      .describe("Caption of the bar chart tile"),
-    description: z
-      .string()
-      .default("Every card, every bill, sorted the second it lands.")
-      .describe("Supporting description text"),
-    gaugeLabel: z
-      .string()
-      .default("Budget used")
-      .describe("Caption of the gauge tile"),
-    gaugePercent: z
-      .number()
-      .min(0)
-      .max(100)
-      .default(72)
-      .describe("How full the gauge is, 0–100"),
-    headline: z
-      .string()
-      .min(1)
-      .default("Know where every dollar goes")
-      .describe("Main headline for the feature card"),
-    locale: z
-      .string()
-      .optional()
-      .describe("Current locale code for RTL support"),
-    metricDelta: z
-      .string()
-      .default("+18%")
-      .describe("Change shown next to the metric"),
-    metricLabel: z
-      .string()
-      .default("Saved this month")
-      .describe("Caption of the big metric"),
-    metricValue: z.string().default("$1,240").describe("The big metric"),
-    rating: z.string().default("4.9").describe("Rating in the reviews tile"),
-    ratingLabel: z
-      .string()
-      .default("App Store rating")
-      .describe("Caption of the rating"),
-    receipt: z
-      .array(z.string())
-      .default(["Coffee 4.50", "Groceries 62.10", "Metro 2.75"])
-      .describe("Receipt lines — the last word is the amount"),
-    receiptNote: z
-      .string()
-      .default("Sorted automatically")
-      .describe("Pill under the receipt"),
-  })
-);
-
-export type Props = z.infer<typeof propsSchema>;
+import { defineTemplate, field, keyed } from "@stdout-design/cli/template";
+import type { ReactNode } from "react";
 
 const CREAM = "#f4ede1";
 const INK = "#1f1b16";
 const BUTTER = "#ffd166";
 const SAGE = "#9fd8b3";
-// Latin face first; Arabic glyphs fall through to the Arabic face.
-const FONT = "Bricolage Grotesque, IBM Plex Sans Arabic, sans-serif";
-const MONO = "Space Mono, IBM Plex Sans Arabic, monospace";
 const GAP = 20;
 const WEEKS = [
   [40, 22, 18],
@@ -96,7 +26,7 @@ const Tile = ({
   color = CREAM,
   grow,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   color?: string;
   grow: number;
 }) => (
@@ -113,7 +43,7 @@ const Tile = ({
   </div>
 );
 
-const Column = ({ children }: { children: React.ReactNode }) => (
+const Column = ({ children }: { children: ReactNode }) => (
   <div tw="flex flex-col flex-1" style={{ flexBasis: 0, gap: GAP }}>
     {children}
   </div>
@@ -147,42 +77,102 @@ const Coin = ({ color }: { color: string }) => (
   </svg>
 );
 
-const BentoFeature = ({
-  accentColor,
-  background,
-  brand,
-  chartLabel,
-  description,
-  gaugeLabel,
-  gaugePercent,
-  headline,
-  locale,
-  metricDelta,
-  metricLabel,
-  metricValue,
-  rating,
-  ratingLabel,
-  receipt,
-  receiptNote,
-}: Props) => {
-  const isRtl = locale?.startsWith("ar") ?? false;
-  const tracking = (em: number) => (isRtl ? 0 : `${em}em`);
-
-  return (
+// oxlint-disable-next-line sort-keys -- schema reads before the render that uses it
+export default defineTemplate({
+  // Latin face first; Arabic glyphs fall through to the Arabic face.
+  fonts: {
+    mono: {
+      faces: [
+        { family: "Space Mono", weights: [400, 700] },
+        { family: "IBM Plex Sans Arabic", weights: [400, 700] },
+      ],
+      generic: "monospace",
+    },
+    sans: {
+      faces: [
+        { family: "Bricolage Grotesque", weights: [400, 700] },
+        { family: "IBM Plex Sans Arabic", weights: [400, 700] },
+      ],
+    },
+  },
+  schema: {
+    accentColor: field.color("#ff5a36", {
+      description: "Accent for the solid tiles, chart, and gauge",
+    }),
+    background: field.color("#191714", {
+      description: "Background behind the tiles",
+    }),
+    brand: field.text("tally", {
+      description: "Wordmark in the logo tile",
+      translatable: false,
+    }),
+    chartLabel: field.text("Spending by week", {
+      description: "Caption of the bar chart tile",
+    }),
+    description: field.text(
+      "Every card, every bill, sorted the second it lands.",
+      { description: "Supporting description text", multiline: true }
+    ),
+    gaugeLabel: field.text("Budget used", {
+      description: "Caption of the gauge tile",
+    }),
+    gaugePercent: field.number(72, {
+      description: "How full the gauge is, 0 to 100",
+      max: 100,
+      min: 0,
+    }),
+    headline: field.text("Know where every dollar goes", {
+      description: "Main headline for the feature card",
+      min: 1,
+    }),
+    metricDelta: field.text("+18%", {
+      description: "Change shown next to the metric",
+    }),
+    metricLabel: field.text("Saved this month", {
+      description: "Caption of the big metric",
+    }),
+    metricValue: field.text("$1,240", { description: "The big metric" }),
+    rating: field.text("4.9", {
+      description: "Rating in the reviews tile",
+      translatable: false,
+    }),
+    ratingLabel: field.text("App Store rating", {
+      description: "Caption of the rating",
+    }),
+    receipt: field.list(
+      field.object({
+        amount: field.text("0.00", { translatable: false }),
+        item: field.text("Item"),
+      }),
+      {
+        default: [
+          { amount: "4.50", item: "Coffee" },
+          { amount: "62.10", item: "Groceries" },
+          { amount: "2.75", item: "Metro" },
+        ],
+        description: "Receipt lines",
+        max: 4,
+        min: 1,
+      }
+    ),
+    receiptNote: field.text("Sorted automatically", {
+      description: "Pill under the receipt",
+    }),
+  },
+  render: (props, ctx) => (
     <div
-      lang={isRtl ? "ar" : undefined}
-      dir={isRtl ? "rtl" : "ltr"}
       tw="flex w-full h-full p-10"
       style={{
-        backgroundColor: background,
+        backgroundColor: props.background,
         color: INK,
-        fontFamily: FONT,
+        fontFamily: ctx.fonts.sans,
         gap: GAP,
       }}
     >
       <Column>
-        <Tile color={accentColor} grow={0.75}>
+        <Tile color={props.accentColor} grow={0.75}>
           <div tw="flex flex-1 items-center" style={{ gap: 10 }}>
+            {/* A wordmark keeps its Latin letter spacing in every locale. */}
             <span
               dir="ltr"
               style={{
@@ -193,7 +183,7 @@ const BentoFeature = ({
                 lineHeight: 1,
               }}
             >
-              {brand}
+              {props.brand}
             </span>
             <div tw="flex" style={{ gap: 6 }}>
               <div
@@ -208,53 +198,57 @@ const BentoFeature = ({
           </div>
         </Tile>
         <Tile grow={1}>
-          <span tw="text-2xl">{metricLabel}</span>
+          <span tw="text-2xl">{props.metricLabel}</span>
           <div tw="flex items-end mt-auto" style={{ gap: 12 }}>
             <span
               style={{
-                fontSize: 76,
-                fontWeight: 700,
-                letterSpacing: tracking(-0.04),
-                lineHeight: 1,
+                ...ctx.type({
+                  leading: 1,
+                  size: 76,
+                  tracking: -0.04,
+                  weight: 700,
+                }),
                 whiteSpace: "nowrap",
               }}
             >
-              {metricValue}
+              {props.metricValue}
             </span>
             <span
               dir="ltr"
               tw="px-3 py-1 rounded-full text-xl mb-2"
               style={{ backgroundColor: SAGE, fontWeight: 700 }}
             >
-              {metricDelta}
+              {props.metricDelta}
             </span>
           </div>
         </Tile>
         <Tile color={BUTTER} grow={1.2}>
-          <span tw="text-xl">{chartLabel}</span>
+          <span tw="text-xl">{props.chartLabel}</span>
           <div
             tw="flex flex-1 items-end mt-4"
             style={{ gap: 12, minHeight: 0 }}
           >
-            {WEEKS.map((week, index) => (
-              <div
-                key={`week-${index}`}
-                tw="flex flex-col flex-1 justify-end"
-                style={{ height: "100%" }}
-              >
-                {week.map((share, part) => (
-                  <div
-                    key={`part-${part}`}
-                    tw="flex w-full"
-                    style={{
-                      backgroundColor: [INK, accentColor, CREAM][part],
-                      borderRadius: part === 0 ? "10px 10px 0 0" : 0,
-                      height: `${share}%`,
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
+            {keyed(WEEKS, (week) => week.join("-")).map(
+              ({ key, value: week }) => (
+                <div
+                  key={key}
+                  tw="flex flex-col flex-1 justify-end"
+                  style={{ height: "100%" }}
+                >
+                  {week.map((share, part) => (
+                    <div
+                      key={`part-${part}`}
+                      tw="flex w-full"
+                      style={{
+                        backgroundColor: [INK, props.accentColor, CREAM][part],
+                        borderRadius: part === 0 ? "10px 10px 0 0" : 0,
+                        height: `${share}%`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )
+            )}
           </div>
         </Tile>
       </Column>
@@ -263,7 +257,7 @@ const BentoFeature = ({
         <Tile grow={0.85}>
           <div tw="flex items-end" style={{ gap: 10 }}>
             <span style={{ fontSize: 72, fontWeight: 700, lineHeight: 1 }}>
-              {rating}
+              {props.rating}
             </span>
             <svg
               width="40"
@@ -273,12 +267,12 @@ const BentoFeature = ({
             >
               <path
                 d="M12 1 15.1 8.3 23 9 17 14.2 18.8 22 12 17.9 5.2 22 7 14.2 1 9 8.9 8.3Z"
-                fill={accentColor}
+                fill={props.accentColor}
               />
             </svg>
           </div>
           <span tw="text-lg mt-1" style={{ color: "#6f675b" }}>
-            {ratingLabel}
+            {props.ratingLabel}
           </span>
           <div tw="flex mt-auto">
             {AVATARS.map((avatar, index) => (
@@ -289,7 +283,7 @@ const BentoFeature = ({
                   backgroundColor: avatar.bg,
                   border: `4px solid ${CREAM}`,
                   fontWeight: 700,
-                  [isRtl ? "marginRight" : "marginLeft"]: index === 0 ? 0 : -16,
+                  marginInlineStart: index === 0 ? 0 : -16,
                 }}
               >
                 {avatar.initials}
@@ -299,23 +293,23 @@ const BentoFeature = ({
         </Tile>
         <Tile grow={2}>
           <span
-            style={{
-              fontSize: 50,
-              fontWeight: 700,
-              letterSpacing: tracking(-0.03),
-              lineHeight: isRtl ? 1.3 : 1.05,
-            }}
+            style={ctx.type({
+              leading: 1.05,
+              size: 50,
+              tracking: -0.03,
+              weight: 700,
+            })}
           >
-            {headline}
+            {props.headline}
           </span>
           <span tw="text-xl mt-4" style={{ color: "#6f675b", lineHeight: 1.4 }}>
-            {description}
+            {props.description}
           </span>
           <div
             tw="flex flex-1 items-end justify-center"
             style={{ minHeight: 0 }}
           >
-            <Coin color={accentColor} />
+            <Coin color={props.accentColor} />
           </div>
         </Tile>
       </Column>
@@ -327,28 +321,27 @@ const BentoFeature = ({
             style={{
               backgroundColor: "#fffdf8",
               boxShadow: "0 14px 30px rgba(31,27,22,0.18)",
-              fontFamily: MONO,
+              fontFamily: ctx.fonts.mono,
               gap: 10,
-              transform: `rotate(${isRtl ? 3 : -3}deg)`,
+              transform: `rotate(${ctx.flip(-3)}deg)`,
             }}
           >
-            <span tw="text-sm" style={{ letterSpacing: isRtl ? 0 : "0.2em" }}>
-              {brand.toUpperCase()}
+            <span
+              tw="text-sm"
+              style={ctx.type({ tracking: 0.2, uppercase: true })}
+            >
+              {props.brand}
             </span>
-            {receipt.map((line) => {
-              const words = line.split(" ");
-              const amount = words.pop() ?? "";
-              return (
-                <div
-                  key={line}
-                  tw="flex justify-between text-lg"
-                  style={{ gap: 12 }}
-                >
-                  <span>{words.join(" ")}</span>
-                  <span style={{ fontWeight: 700 }}>{amount}</span>
-                </div>
-              );
-            })}
+            {keyed(props.receipt, (line) => line.item).map(({ key, value }) => (
+              <div
+                key={key}
+                tw="flex justify-between text-lg"
+                style={{ gap: 12 }}
+              >
+                <span>{value.item}</span>
+                <span style={{ fontWeight: 700 }}>{value.amount}</span>
+              </div>
+            ))}
             <div
               tw="flex"
               style={{ borderTop: `2px dashed ${INK}`, marginTop: 4 }}
@@ -367,12 +360,12 @@ const BentoFeature = ({
                 strokeLinejoin="round"
               />
             </svg>
-            <span>{receiptNote}</span>
+            <span>{props.receiptNote}</span>
           </div>
         </Tile>
         <Tile color={INK} grow={1}>
           <span tw="text-xl" style={{ color: CREAM }}>
-            {gaugeLabel}
+            {props.gaugeLabel}
           </span>
           <div
             tw="flex flex-1 items-end justify-center"
@@ -395,11 +388,16 @@ const BentoFeature = ({
                 <path
                   d="M10 50 A40 40 0 0 1 90 50"
                   fill="none"
-                  stroke={accentColor}
+                  stroke={props.accentColor}
                   strokeWidth="14"
                   strokeLinecap="round"
-                  strokeDasharray={`${(GAUGE_LENGTH * gaugePercent) / 100} ${GAUGE_LENGTH}`}
-                  transform={isRtl ? "translate(100 0) scale(-1 1)" : undefined}
+                  strokeDasharray={`${(GAUGE_LENGTH * props.gaugePercent) / 100} ${GAUGE_LENGTH}`}
+                  // The gauge fills from the start side.
+                  transform={
+                    ctx.dir === "rtl"
+                      ? "translate(100 0) scale(-1 1)"
+                      : undefined
+                  }
                 />
               </svg>
               <div tw="flex absolute inset-0 items-end justify-center">
@@ -411,7 +409,7 @@ const BentoFeature = ({
                     lineHeight: 1,
                   }}
                 >
-                  {`${gaugePercent}%`}
+                  {`${props.gaugePercent}%`}
                 </span>
               </div>
             </div>
@@ -419,7 +417,5 @@ const BentoFeature = ({
         </Tile>
       </Column>
     </div>
-  );
-};
-
-export default BentoFeature;
+  ),
+});

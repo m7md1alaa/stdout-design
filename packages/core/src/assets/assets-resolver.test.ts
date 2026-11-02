@@ -30,8 +30,8 @@ describe("resolveAssetsForLocale", () => {
     expect(result.props.title).toBe("Hi");
   });
 
-  it("treats uppercase locale codes as non-Arabic", async () => {
-    const result = await resolveAssetsForLocale("ARA", { title: "Hi" });
+  it("gives Latin locales no lang and no fallback font, in any case", async () => {
+    const result = await resolveAssetsForLocale("EN-GB", { title: "Hi" });
 
     expect(result.lang).toBeUndefined();
     expect(result.fonts).toEqual([]);

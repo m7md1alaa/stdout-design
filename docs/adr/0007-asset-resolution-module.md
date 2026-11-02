@@ -59,10 +59,10 @@ The poster starters gave locales their own font entries, and `default` for Latin
 
 ### Decision
 
-- **One rule.** `packages/core/src/assets/locale-fonts.ts` decides a locale's fonts: `scriptOf` maps a locale id to its script, and `fontEntriesFor` picks the locale's own entry, else `default` (Latin only), else the script's built-in fonts. It replaces the classification rule above.
+- **One rule.** `packages/core/src/assets/locale-fonts.ts` decides a locale's config fonts: `configuredFontEntries` picks the locale's own entry, else `default` (Latin only), and `BUILT_IN_FONTS` names each script's fallback. The script comes from `classifyLocale` (ADR-0019), which replaces the classification rule above. The resolver adds the template's declared faces and, when the config has nothing, the built-in ones.
 - **Cached by font set, not locale id.** This replaces "memoized **per locale id**" above. The cache lives in `font-config.ts`, keyed by `fontSetKey` (the entries in order, plus the config directory local paths resolve against). Locales that share fonts download once. Failures are not cached, so the next render retries.
-- **A custom `fetchFonts` is not cached by the resolver.** One passed to `resolveAssetsForLocale` or the orchestrator is called for every render; the caller owns its caching. Fetchers made by `createFetchFontsFromConfig` and the built-in fetcher go through the cache.
-- **Fetch failure falls back to the script's built-in fonts.** This settles the open question above. When the fetcher returns `null` (its fonts failed to load, or a custom fetcher has none), the resolver uses the built-in fonts for the locale's script: Noto Sans Arabic for Arabic, none for Latin, which leaves the renderer's default font. Nothing is faked with a zero-byte descriptor.
+- **A custom `fetchFonts` is not cached by the resolver.** One passed to `resolveAssetsForLocale` or the orchestrator is called for every render; the caller owns its caching. Fetchers made by `createFetchFontsFromConfig`, template-declared faces, and built-in fonts all load through `loadFontConfigs`, which caches.
+- **Fetch failure falls back to the script's built-in fonts.** This settles the open question above. When the fetcher returns `null` (its fonts failed to load, or a custom fetcher has none), the resolver uses the built-in fonts for the locale's script: Noto Sans Arabic for Arabic, Noto Sans Hebrew for Hebrew, none for Latin, which leaves the renderer's default font. Nothing is faked with a zero-byte descriptor.
 
 ### Consequences
 

@@ -31,13 +31,13 @@ export const render = async (
 
   const resolved = resolveTemplate(config, templateId);
 
-  const { module } = await importTemplateForBatch(
+  const { template } = await importTemplateForBatch(
     rootDir,
     resolved.componentPath,
     templateId
   );
 
-  const schema = zodToJsonSchemaShape(module.propsSchema) as {
+  const schema = zodToJsonSchemaShape(template.propsSchema) as {
     properties: Record<
       string,
       {

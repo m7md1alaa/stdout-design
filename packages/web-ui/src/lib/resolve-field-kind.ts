@@ -1,8 +1,9 @@
 /**
- * Classifies which prop-field renderer a schema entry needs. Pure and
- * decoupled from rendering so the classification — including the two
- * heuristics most likely to misfire (color detection by name substring, the
- * long-text threshold) — is testable without mounting a component.
+ * Classifies which prop-field renderer a schema entry needs. A field built
+ * with core's `field.*` says what it is under `x-field`; only schemas
+ * written without it fall back to the heuristics (color by name, multiline
+ * by description length). Pure, so it is testable without mounting a
+ * component.
  */
 export type FieldKind =
   | { kind: "color" }
@@ -11,6 +12,52 @@ export type FieldKind =
   | { kind: "boolean" }
   | { kind: "array" }
   | { kind: "text"; multiline: boolean };
+
+/** Mirrors core's `FieldMeta`; the studio reads it from the JSON schema. */
+interface FieldMeta {
+  kind: string;
+  multiline?: boolean;
+}
+
+const FIELD_META_KEY = "x-field";
+
+const readFieldMeta = (
+  schema: Record<string, unknown>
+): FieldMeta | undefined => {
+  const meta = schema[FIELD_META_KEY];
+  return typeof meta === "object" && meta !== null && "kind" in meta
+    ? (meta as FieldMeta)
+    : undefined;
+};
+
+const enumOptions = (schema: Record<string, unknown>): string[] =>
+  Array.isArray(schema.enum) ? schema.enum.map(String) : [];
+
+const fromFieldMeta = (
+  meta: FieldMeta,
+  schema: Record<string, unknown>
+): FieldKind | undefined => {
+  switch (meta.kind) {
+    case "text": {
+      return { kind: "text", multiline: meta.multiline ?? false };
+    }
+    case "color":
+    case "number":
+    case "boolean": {
+      return { kind: meta.kind };
+    }
+    case "select": {
+      return { kind: "enum", options: enumOptions(schema) };
+    }
+    case "list": {
+      return { kind: "array" };
+    }
+    default: {
+      // A kind from a newer core: classify by shape.
+      return undefined;
+    }
+  }
+};
 
 const isColorField = (
   name: string,
@@ -26,7 +73,7 @@ const isColorField = (
 
 const LONG_TEXT_THRESHOLD = 60;
 
-export const resolveFieldKind = (
+const fromShape = (
   name: string,
   schema: Record<string, unknown>
 ): FieldKind => {
@@ -34,14 +81,14 @@ export const resolveFieldKind = (
     return { kind: "color" };
   }
 
-  const type = schema.type as string;
-  const enumValues = schema.enum as string[] | undefined;
+  const { type } = schema;
+  const options = enumOptions(schema);
 
-  if (type === "string" && enumValues && enumValues.length > 0) {
-    return { kind: "enum", options: enumValues };
+  if (type === "string" && options.length > 0) {
+    return { kind: "enum", options };
   }
 
-  if (type === "number") {
+  if (type === "number" || type === "integer") {
     return { kind: "number" };
   }
 
@@ -55,4 +102,12 @@ export const resolveFieldKind = (
 
   const description = (schema.description as string) ?? "";
   return { kind: "text", multiline: description.length > LONG_TEXT_THRESHOLD };
+};
+
+export const resolveFieldKind = (
+  name: string,
+  schema: Record<string, unknown>
+): FieldKind => {
+  const meta = readFieldMeta(schema);
+  return (meta && fromFieldMeta(meta, schema)) ?? fromShape(name, schema);
 };

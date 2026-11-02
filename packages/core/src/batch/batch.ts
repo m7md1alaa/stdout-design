@@ -1,11 +1,10 @@
 import path from "node:path";
 
-import type { ComponentType } from "react";
-
 import { createFetchFontsFromConfig } from "../assets/font-config.js";
 import { openCache } from "../cache/open-cache.js";
 import { orchestrateRender } from "../orchestrate/orchestrate.js";
 import { ensureDir, tryWriteFile } from "../orchestrate/utils.js";
+import { generateOutputFilename } from "../shared/naming.js";
 import {
   importTemplateForBatch,
   loadConfig,
@@ -14,7 +13,6 @@ import {
 } from "./loaders.js";
 import { writeManifest } from "./manifest.js";
 import { expandMatrix } from "./matrix.js";
-import { generateOutputFilename } from "./naming.js";
 import type { Manifest } from "./types.js";
 
 export interface BatchInput {
@@ -61,13 +59,11 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
     throw new Error(`Template not found: ${templateId}`);
   }
 
-  const { contentHash, module } = await importTemplateForBatch(
+  const { contentHash, template } = await importTemplateForBatch(
     rootDir,
     entry.componentPath,
     templateId
   );
-  // eslint-disable-next-line typescript/no-explicit-any
-  const Component = module.default as unknown as ComponentType<any>;
 
   const presetIds = filterPresets ?? config.presets.map((p) => p.id);
   const presets = presetIds.map((id) => {
@@ -128,7 +124,6 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
 
         const result = await orchestrateRender({
           cache,
-          component: Component as ComponentType<Record<string, unknown>>,
           fetchFonts,
           format: "png",
           height: cell.preset.height,
@@ -136,7 +131,7 @@ export const runBatch = async (input: BatchInput): Promise<BatchOutput> => {
           loadLocaleData,
           locale: cell.locale,
           props: cell.props,
-          propsSchema: module.propsSchema,
+          template,
           templateContentHash: contentHash,
           templateId,
           width: cell.preset.width,

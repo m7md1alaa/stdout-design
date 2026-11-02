@@ -1,5 +1,13 @@
 {
   "name": "@stdout-design/config",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "oxc-parser": "^0.155.0"
+  }
 }

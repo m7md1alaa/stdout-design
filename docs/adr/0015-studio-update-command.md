@@ -45,7 +45,7 @@ Default: show a summary and prompt confirmation (`Apply these changes? [Y/n]`). 
 packages/cli/src/
 ├── commands/
 │   ├── init/
-│   │   ├── catalog.ts          # the starter catalog: fonts and `since` per starter
+│   │   ├── catalog.ts          # the starter catalog: `since` per starter
 │   │   ├── project-config.ts   # buildProjectConfig() — a project's config from its choices
 │   │   ├── serialize-config.ts # serializeConfig() — prints studio.config.ts (shared)
 │   │   ├── scaffold.ts         # scaffold(), copyStaticAssets, starter files (shared)
@@ -88,7 +88,7 @@ The poster starters (four templates, Arabic copy, Google Fonts per starter) expo
 - **One builder.** `buildProjectConfig(version, { starters, locales })` (`init/project-config.ts`) is the only place that decides a project's config. `init` writes its result; `update` builds it for the project's own choices and merges it in with the rules above.
 - **Choices are recorded, not guessed.** `init` writes `locales` into `studio.config.ts`. A project without it gets them from `locales/*.json`, and `update` writes them back.
 - **Starters carry the version that shipped them.** Each catalog entry (`init/catalog.ts`) has `since`. `update` offers only starters shipped after the project's `scaffoldVersion` and no later than the running CLI, so a starter the user left out at `init` is never re-added.
-- **Fonts follow starters.** Each starter lists the families it uses; the config gets only those, for the recorded locales. `update` adds missing families to an entry and never removes or reorders the user's.
+- **Fonts follow starters.** Each starter lists the families it uses; the config gets only those, for the recorded locales. `update` adds missing families to an entry and never removes or reorders the user's. _Superseded by ADR-0019:_ templates declare their own fonts, so neither command writes or merges a `fonts` block; one the user wrote is kept as is.
 - **Template files are now in scope**, replacing the "out of scope for v1" row: a starter `update` registers gets its `.tsx` and its strings in each recorded locale file. Existing files and entries are never overwritten. Files are written before the config, so a failed copy leaves the config unchanged.
 - **One serializer.** Both commands print the config with `serializeConfig` (`init/serialize-config.ts`).
 
