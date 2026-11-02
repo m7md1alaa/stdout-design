@@ -1,5 +1,11 @@
 # @stdout-design/cli
 
+## 0.7.1
+
+### Patch Changes
+
+- @stdout-design/core@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes
