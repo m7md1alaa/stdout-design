@@ -96,7 +96,10 @@ export default defineTemplate({
       description: "One label per collage card",
       length: CARD_STYLES.length,
     }),
-    cta: field.text("Shop now", { description: "Primary button label" }),
+    cta: field.text("Shop now", {
+      description: "Primary button label",
+      label: "Call to action",
+    }),
     headline: field.text("Wear It Loud", {
       description: "Hero headline; each word gets its own line",
       min: 1,
@@ -130,6 +133,12 @@ export default defineTemplate({
       { description: "Supporting line under the headline", multiline: true }
     ),
   },
+  inspector: [
+    ["Content", ["headline", "subheadline", "badge", "brand"]],
+    ["Call to action", ["cta", "note"]],
+    ["Lists", ["stats", "categories", "links"]],
+    ["Colors", ["background"]],
+  ],
   render: (props, ctx) => (
     <div
       tw="flex flex-col w-full h-full overflow-hidden relative"

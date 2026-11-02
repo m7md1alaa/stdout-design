@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { resolveFieldKind } from "./resolve-field-kind";
+import { readFieldLabel, resolveFieldKind } from "./resolve-field-kind";
 
 describe("resolveFieldKind with x-field", () => {
   it("trusts the recorded kind over the prop's name and value", () => {
@@ -67,5 +67,18 @@ describe("resolveFieldKind without x-field", () => {
     expect(
       resolveFieldKind("body", { description: "x".repeat(61), type: "string" })
     ).toEqual({ kind: "text", multiline: true });
+  });
+});
+
+describe("readFieldLabel", () => {
+  it("reads the label a template set", () => {
+    expect(
+      readFieldLabel({ "x-field": { kind: "text", label: "Big title" } })
+    ).toBe("Big title");
+  });
+
+  it("is undefined without one", () => {
+    expect(readFieldLabel({ "x-field": { kind: "text" } })).toBeUndefined();
+    expect(readFieldLabel({ type: "string" })).toBeUndefined();
   });
 });

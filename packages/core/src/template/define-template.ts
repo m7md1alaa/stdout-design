@@ -18,9 +18,49 @@ const RESERVED_KEYS = ["locale", "ctx"] as const;
 
 type ReservedKey = (typeof RESERVED_KEYS)[number];
 
-export interface TemplateSpec<S extends z.ZodRawShape, R extends string> {
+/** One named group of the studio's inspector and the schema keys in it, in order. */
+export type InspectorGroup<K extends string = string> = readonly [
+  title: string,
+  keys: readonly K[],
+];
+
+/** How the studio lays out a template's fields: groups, then keys inside each. */
+export type InspectorLayout<K extends string = string> =
+  readonly InspectorGroup<K>[];
+
+type FlatKeys<G> = G extends readonly [
+  readonly [string, infer Ks extends readonly string[]],
+  ...infer Rest,
+]
+  ? [...Ks, ...FlatKeys<Rest>]
+  : [];
+
+type HasDuplicate<T extends readonly string[]> = T extends readonly [
+  infer Head extends string,
+  ...infer Tail extends readonly string[],
+]
+  ? Head extends Tail[number]
+    ? true
+    : HasDuplicate<Tail>
+  : false;
+
+/** Resolves to `never` for the `inspector` property when a key appears twice, so the call fails to type-check. */
+type UniqueKeys<G> =
+  HasDuplicate<FlatKeys<G>> extends true ? { inspector: never } : unknown;
+
+export interface TemplateSpec<
+  S extends z.ZodRawShape,
+  R extends string,
+  G extends InspectorLayout<keyof S & string> = [],
+> {
   /** User content only, built from `field.*`. Render facts arrive as `ctx`. */
   schema: S & Readonly<Partial<Record<ReservedKey, never>>>;
+  /**
+   * The studio's field layout: named groups of schema keys, in order. A key
+   * the list omits goes to a trailing "Other" group; naming an unknown key,
+   * or a key twice, is a type error. Without it the studio groups by kind.
+   */
+  inspector?: G;
   /** Font roles; `ctx.fonts[role]` is the CSS stack and the pipeline loads every face. */
   fonts?: FontRoles<R>;
   render: (
@@ -37,6 +77,8 @@ export interface TemplateDefinition {
   readonly [TEMPLATE_BRAND]: true;
   readonly propsSchema: PropSchema;
   readonly fonts: FontRoles;
+  /** Field layout for the studio's inspector; absent means group by kind. */
+  readonly inspector?: InspectorLayout;
   /**
    * Built from a component plus `propsSchema` export. Legacy templates
    * mirror themselves from the `locale` prop, so the pipeline sets no `dir`
@@ -50,11 +92,36 @@ export interface TemplateDefinition {
   ) => ReactElement;
 }
 
+const assertInspector = (
+  inspector: InspectorLayout,
+  schemaKeys: readonly string[]
+): void => {
+  const seen = new Set<string>();
+  for (const [title, keys] of inspector) {
+    for (const key of keys) {
+      if (!schemaKeys.includes(key)) {
+        throw new AppError(
+          ErrorCode.TEMPLATE_INVALID_EXPORT,
+          `Template inspector group "${title}" names "${key}", which is not in the schema.`
+        );
+      }
+      if (seen.has(key)) {
+        throw new AppError(
+          ErrorCode.TEMPLATE_INVALID_EXPORT,
+          `Template inspector names "${key}" more than once.`
+        );
+      }
+      seen.add(key);
+    }
+  }
+};
+
 export const defineTemplate = <
   S extends z.ZodRawShape,
   R extends string = never,
+  const G extends InspectorLayout<keyof S & string> = [],
 >(
-  spec: TemplateSpec<S, R>
+  spec: TemplateSpec<S, R, G> & UniqueKeys<G>
 ): TemplateDefinition => {
   const reserved = RESERVED_KEYS.filter((key) => key in spec.schema);
   if (reserved.length > 0) {
@@ -63,9 +130,13 @@ export const defineTemplate = <
       `Template schema declares ${reserved.join(", ")}, which the pipeline provides as ctx. Remove ${reserved.length > 1 ? "them" : "it"} and read ctx instead.`
     );
   }
+  if (spec.inspector) {
+    assertInspector(spec.inspector, Object.keys(spec.schema));
+  }
   return {
     [TEMPLATE_BRAND]: true,
     fonts: spec.fonts ?? {},
+    inspector: spec.inspector,
     legacy: false,
     // The schema validates props before `render` runs, so the widened
     // signatures below hold at runtime.

@@ -12,4 +12,5 @@ export const API_ROUTES = {
   measure: `${API_BASE}/measure`,
   presets: `${API_BASE}/presets`,
   templates: `${API_BASE}/templates`,
+  translations: `${API_BASE}/translations`,
 } as const;

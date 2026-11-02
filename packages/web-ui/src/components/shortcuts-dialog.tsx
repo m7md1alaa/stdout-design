@@ -36,7 +36,7 @@ const BindingChip = ({
 }) => (
   <button
     className={cn(
-      "border-border bg-surface-tertiary text-content-secondary hover:text-content cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[11px] transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.97]",
+      "border-border bg-muted text-foreground/80 hover:text-foreground cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[11px] transition-[color,border-color,transform] duration-150 ease-out active:scale-[0.97]",
       isRecording && "border-primary/40 text-primary hover:text-primary"
     )}
     onClick={onToggle}
@@ -55,7 +55,7 @@ const ResetButton = ({
 }) => (
   <Button
     aria-label={`Reset ${label} to default`}
-    className="text-content-tertiary hover:text-content hover:bg-transparent"
+    className="text-muted-foreground hover:text-foreground hover:bg-transparent"
     onClick={onReset}
     size="icon-xs"
     variant="ghost"
@@ -73,9 +73,9 @@ const RowShell = ({
 }) => (
   <li className="flex items-center justify-between gap-3 px-4 py-2.5">
     <div className="min-w-0">
-      <p className="text-content truncate text-sm">{command.label}</p>
+      <p className="text-foreground truncate text-sm">{command.label}</p>
       {command.description ? (
-        <p className="text-content-tertiary truncate text-xs">
+        <p className="text-muted-foreground truncate text-xs">
           {command.description}
         </p>
       ) : null}

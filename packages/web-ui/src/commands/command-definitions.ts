@@ -9,6 +9,10 @@ export interface AppCommandCallbacks {
   canExport: () => boolean;
   canResetProps: () => boolean;
   canCopyShareLink: () => boolean;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  zoomFit: () => void;
+  zoomActual: () => void;
 }
 
 const focusFirst = (selector: string) => {
@@ -74,6 +78,38 @@ export const buildAppCommands = (
     label: "Reset props to defaults",
     run: callbacks.resetProps,
     scope: "global",
+  },
+  {
+    defaultBinding: "Mod+=",
+    id: "zoom-in",
+    kind: "hotkey",
+    label: "Zoom in",
+    run: callbacks.zoomIn,
+    scope: "canvas",
+  },
+  {
+    defaultBinding: "Mod+-",
+    id: "zoom-out",
+    kind: "hotkey",
+    label: "Zoom out",
+    run: callbacks.zoomOut,
+    scope: "canvas",
+  },
+  {
+    defaultBinding: "Mod+0",
+    id: "zoom-fit",
+    kind: "hotkey",
+    label: "Zoom to fit",
+    run: callbacks.zoomFit,
+    scope: "canvas",
+  },
+  {
+    defaultBinding: "Mod+1",
+    id: "zoom-actual",
+    kind: "hotkey",
+    label: "Zoom to 100%",
+    run: callbacks.zoomActual,
+    scope: "canvas",
   },
   {
     defaultBinding: ["G", "T"],

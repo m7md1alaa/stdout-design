@@ -31,6 +31,8 @@ export interface TemplateInfo {
   status: "ok" | "error";
   /** JSON-Schema-shaped representation of the zod props schema. Empty object if errored. */
   propsSchema: Record<string, unknown>;
+  /** The template's declared inspector layout; absent when the studio should group by kind. */
+  inspector?: [string, string[]][];
   /** Present only when status is "error". */
   errorMessage?: string;
 }
@@ -310,6 +312,10 @@ export class TemplateLoader {
       contentHash: entry.contentHash,
       description: entry.description,
       id: entry.id,
+      inspector: entry.state.template.inspector?.map(([title, keys]) => [
+        title,
+        [...keys],
+      ]),
       propsSchema: zodToJsonSchemaShape(entry.state.template.propsSchema),
       status: "ok",
     };

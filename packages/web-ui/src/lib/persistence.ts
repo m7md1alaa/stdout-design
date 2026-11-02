@@ -1,16 +1,25 @@
+import type { TranslationPaths } from "./locale-layer";
 import { logWarn } from "./logger";
 
 const STORAGE_KEY = "stdout-design:web-ui:state:v1";
 const SHARE_PARAM = "share";
+
+/** Per-locale edits: template id → locale id → text by prop path (ADR-0021). */
+export type LocaleOverrideStore = Record<
+  string,
+  Record<string, TranslationPaths>
+>;
 
 export interface PersistedAppState {
   selectedTemplate: string | null;
   selectedPreset: string | null;
   selectedLocale: string | null;
   propStore: Record<string, Record<string, unknown>>;
+  localeOverrides: LocaleOverrideStore;
 }
 
 const EMPTY_STATE: PersistedAppState = {
+  localeOverrides: {},
   propStore: {},
   selectedLocale: null,
   selectedPreset: null,
@@ -27,7 +36,9 @@ const isPersistedAppState = (value: unknown): value is PersistedAppState => {
     (v.selectedPreset === null || typeof v.selectedPreset === "string") &&
     (v.selectedLocale === null || typeof v.selectedLocale === "string") &&
     typeof v.propStore === "object" &&
-    v.propStore !== null
+    v.propStore !== null &&
+    (v.localeOverrides === undefined ||
+      (typeof v.localeOverrides === "object" && v.localeOverrides !== null))
   );
 };
 
@@ -38,7 +49,11 @@ export const loadPersistedState = (): PersistedAppState => {
       return EMPTY_STATE;
     }
     const parsed = JSON.parse(raw) as unknown;
-    return isPersistedAppState(parsed) ? parsed : EMPTY_STATE;
+    if (!isPersistedAppState(parsed)) {
+      return EMPTY_STATE;
+    }
+    // Saved before locale overrides existed.
+    return { ...parsed, localeOverrides: parsed.localeOverrides ?? {} };
   } catch (error) {
     logWarn("Failed to read persisted studio state", { error: String(error) });
     return EMPTY_STATE;
@@ -58,6 +73,8 @@ export interface SharePayload {
   presetId: string | null;
   localeId: string | null;
   props: Record<string, unknown>;
+  /** The template's per-locale edits, by locale. Absent in links made before them. */
+  localeOverrides?: Record<string, TranslationPaths>;
 }
 
 // UTF-8 <-> base64url. `btoa`/`atob` work on byte strings, so the text goes
@@ -104,7 +121,9 @@ const isSharePayload = (value: unknown): value is SharePayload => {
     (v.presetId === null || typeof v.presetId === "string") &&
     (v.localeId === null || typeof v.localeId === "string") &&
     typeof v.props === "object" &&
-    v.props !== null
+    v.props !== null &&
+    (v.localeOverrides === undefined ||
+      (typeof v.localeOverrides === "object" && v.localeOverrides !== null))
   );
 };
 

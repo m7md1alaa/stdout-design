@@ -254,3 +254,71 @@ describe("createRenderContext", () => {
     });
   });
 });
+
+const renderEmpty = () => createElement("div");
+
+describe("inspector and field labels", () => {
+  const schema = {
+    accent: field.color("#fff", { label: "Accent colour" }),
+    headline: field.text("Hi"),
+    size: field.number(1),
+  };
+  it("keeps the declared layout on the definition", () => {
+    const template = defineTemplate({
+      inspector: [
+        ["Content", ["headline"]],
+        ["Style", ["accent", "size"]],
+      ],
+      render: renderEmpty,
+      schema,
+    });
+    expect(template.inspector).toEqual([
+      ["Content", ["headline"]],
+      ["Style", ["accent", "size"]],
+    ]);
+  });
+
+  it("leaves inspector undefined when the template declares none", () => {
+    expect(
+      defineTemplate({ render: renderEmpty, schema }).inspector
+    ).toBeUndefined();
+  });
+
+  it("rejects an unknown or repeated key at type level and at run time", () => {
+    expect(() =>
+      defineTemplate({
+        // @ts-expect-error "missing" is not a schema key
+        inspector: [["Content", ["missing"]]],
+        render: renderEmpty,
+        schema,
+      })
+    ).toThrow(/not in the schema/u);
+
+    expect(() =>
+      defineTemplate({
+        // @ts-expect-error "headline" is named twice
+        inspector: [
+          ["Content", ["headline"]],
+          ["More", ["headline"]],
+        ],
+        render: renderEmpty,
+        schema,
+      })
+    ).toThrow(/more than once/u);
+  });
+
+  it("sends a field's label through x-field", () => {
+    const shape = zodToJsonSchemaShape(
+      defineTemplate({ render: renderEmpty, schema }).propsSchema
+    );
+    const properties = shape.properties as Record<
+      string,
+      Record<string, unknown>
+    >;
+    expect(properties.accent?.["x-field"]).toMatchObject({
+      kind: "color",
+      label: "Accent colour",
+    });
+    expect(properties.headline?.["x-field"]).not.toHaveProperty("label", "x");
+  });
+});

@@ -1,11 +1,9 @@
-import { X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
+import type * as React from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ColorPickerPopover, parseColor } from "@/components/ui/color-picker";
+import { ColorInput } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Segmented } from "@/components/ui/segmented";
 import {
   Select,
   SelectItem,
@@ -15,15 +13,51 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { resolveFieldKind } from "@/lib/resolve-field-kind";
-import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { fieldHint, labelFromKey } from "@/lib/field-label";
+import type { ListOp } from "@/lib/list-ops";
+import { resolveNumberStep, scrubValue } from "@/lib/number-field";
+import { readFieldLabel, resolveFieldKind } from "@/lib/resolve-field-kind";
+
+import { FieldRow } from "./field-row";
+import { ObjectListField, PrimitiveListField } from "./list-fields";
+import { NumberInput } from "./number-input";
+
+/**
+ * How fields write back, by path, so a list item's field (`stats.1.label`)
+ * goes through the same door as a top-level one and the studio can decide
+ * whether an edit is the base value or one locale's override.
+ */
+export interface FieldEditor {
+  change: (path: string, value: unknown) => void;
+  /** Adds, removes or reorders the items of the list at `path`. */
+  listOp: (path: string, op: ListOp) => void;
+  /** The locale the value at `path` is edited for, when it is per-locale. */
+  localeFor: (path: string) => string | undefined;
+}
 
 interface PropFieldProps {
-  name: string;
+  /** Dotted path of the field; the last segment is its key. */
+  path: string;
   schema: Record<string, unknown>;
   value: unknown;
+  /** Errors keyed by path; a field reads its own and its children's. */
+  errors?: Record<string, string>;
+  /** Whether the value differs from the default; shows the reset dot. */
+  modified?: boolean;
+  onReset?: () => void;
+  editor: FieldEditor;
+}
+
+/** What every field renderer needs besides its value. */
+interface FieldChrome {
+  id: string;
+  label: string;
+  hint?: string;
   error?: string;
-  onChange: (value: unknown) => void;
+  modified?: boolean;
+  onReset?: () => void;
+  locale?: string;
 }
 
 const resolveValue = (
@@ -36,34 +70,9 @@ const resolveValue = (
   return schema.default;
 };
 
-const FieldLabel = ({ name, label }: { name: string; label: string }) => (
-  <Label
-    className="text-content-secondary mb-1.5 block text-xs font-medium"
-    htmlFor={`prop-${name}`}
-  >
-    {label}
-  </Label>
-);
-
-const FieldWrapper = ({
-  name,
-  label,
-  error,
-  children,
-}: {
-  name: string;
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="mb-3">
-    <FieldLabel label={label} name={name} />
-    {children}
-    {error ? (
-      <p className="text-danger mt-1 text-[11px] leading-tight">{error}</p>
-    ) : null}
-  </div>
-);
+/** A select with at most this many options, each this short, is drawn as a segmented control. */
+const SEGMENTED_MAX_OPTIONS = 4;
+const SEGMENTED_MAX_LENGTH = 10;
 
 /** Our Slider wrapper types onValueChange as `number | readonly number[]`
  * regardless of what's passed in (it's not generic over its own props) —
@@ -72,472 +81,260 @@ const asSingleValue = (value: number | readonly number[]): number =>
   Array.isArray(value) ? value[0] : (value as number);
 
 const ColorField = ({
-  name,
+  id,
   label,
   value,
   onChange,
-}: {
-  name: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) => {
-  const safeValue = parseColor(value) ? value : "#000000";
-
-  // Draft-based, commit-on-blur/Enter — mirrors the picker's own channel
-  // inputs so typing a partial hex ("#ff") doesn't push an invalid value up
-  // to the schema on every keystroke.
-  const [draft, setDraft] = useState(value);
-  const interactingRef = useRef(false);
-
-  useEffect(() => {
-    if (!interactingRef.current) {
-      setDraft(value);
-    }
-  }, [value]);
-
-  const commit = useCallback(
-    (next: string) => {
-      if (parseColor(next)) {
-        onChange(next);
-      } else {
-        setDraft(value);
-      }
-    },
-    [onChange, value]
-  );
-
-  return (
-    <div className="mb-3">
-      <FieldLabel label={label} name={name} />
-      <div className="flex items-center gap-2">
-        <ColorPickerPopover
-          onValueChange={(next) => onChange(next)}
-          triggerClassName="h-8 w-8 shrink-0 justify-center p-0"
-          triggerShowValue={false}
-          value={safeValue}
-        />
-        <Input
-          aria-label={`${label} hex value`}
-          className="flex-1 font-mono"
-          id={`prop-${name}`}
-          onBlur={() => {
-            interactingRef.current = false;
-            commit(draft);
-          }}
-          onChange={(e) => setDraft(e.target.value)}
-          onFocus={() => {
-            interactingRef.current = true;
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.blur();
-            } else if (e.key === "Escape") {
-              setDraft(value);
-              e.currentTarget.blur();
-            }
-          }}
-          type="text"
-          value={draft}
-        />
-      </div>
-    </div>
-  );
-};
+  ...chrome
+}: FieldChrome & { value: string; onChange: (value: string) => void }) => (
+  <FieldRow controlId={id} label={label} layout="inline" {...chrome}>
+    <ColorInput id={id} label={label} onChange={onChange} value={value} />
+  </FieldRow>
+);
 
 const EnumField = ({
-  name,
+  id,
   label,
   value,
   options,
   onChange,
-}: {
-  name: string;
-  label: string;
+  ...chrome
+}: FieldChrome & {
   value: string;
   options: string[];
   onChange: (value: string) => void;
-}) => (
-  <div className="mb-3">
-    <FieldLabel label={label} name={name} />
-    <Select onValueChange={(next) => onChange(next as string)} value={value}>
-      <SelectTrigger className="w-full" id={`prop-${name}`}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectPopup>
-        {options.map((opt) => (
-          <SelectItem key={opt} value={opt}>
-            {opt}
-          </SelectItem>
-        ))}
-      </SelectPopup>
-    </Select>
-  </div>
-);
+}) => {
+  const segmented =
+    options.length <= SEGMENTED_MAX_OPTIONS &&
+    options.every((option) => option.length <= SEGMENTED_MAX_LENGTH);
+
+  return (
+    <FieldRow controlId={id} label={label} layout="inline" {...chrome}>
+      {segmented ? (
+        <Segmented
+          id={id}
+          label={label}
+          onValueChange={onChange}
+          options={options}
+          value={value}
+        />
+      ) : (
+        <Select
+          onValueChange={(next) => onChange(next as string)}
+          value={value}
+        >
+          <SelectTrigger className="w-full" id={id} size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectPopup>
+            {options.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
+              </SelectItem>
+            ))}
+          </SelectPopup>
+        </Select>
+      )}
+    </FieldRow>
+  );
+};
+
+/** Drag the label sideways to change the value, like design tools do. */
+const useScrub = (
+  value: number,
+  schema: Record<string, unknown>,
+  onChange: (value: number) => void
+): React.ComponentProps<"label"> => {
+  const startRef = useRef<{ x: number; value: number } | null>(null);
+  const step = resolveNumberStep(schema);
+
+  return {
+    className: "cursor-ew-resize touch-none select-none",
+    // A cancelled drag (the OS took the pointer) must end the scrub too, or
+    // plain hovering would keep changing the value.
+    onLostPointerCapture: () => {
+      startRef.current = null;
+    },
+    onPointerDown: (event) => {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      startRef.current = { value, x: event.clientX };
+    },
+    onPointerMove: (event) => {
+      const start = startRef.current;
+      if (!start) {
+        return;
+      }
+      const next = scrubValue(
+        start.value,
+        event.clientX - start.x,
+        step,
+        schema
+      );
+      if (next !== value) {
+        onChange(next);
+      }
+    },
+    onPointerUp: () => {
+      startRef.current = null;
+    },
+  };
+};
 
 const NumberField = ({
-  name,
+  id,
   label,
   value,
   schema,
-  error,
   onChange,
-}: {
-  name: string;
-  label: string;
+  ...chrome
+}: FieldChrome & {
   value: unknown;
   schema: Record<string, unknown>;
-  error?: string;
   onChange: (value: number) => void;
 }) => {
   const min = schema.minimum as number | undefined;
   const max = schema.maximum as number | undefined;
   const hasRange = min !== undefined && max !== undefined;
   const numValue = (value as number | undefined) ?? min ?? 0;
+  const scrub = useScrub(numValue, schema, onChange);
 
-  if (hasRange) {
-    return (
-      <FieldWrapper error={error} label={label} name={name}>
-        <div className="flex items-center gap-3">
+  return (
+    <FieldRow
+      controlId={id}
+      label={label}
+      labelProps={scrub}
+      layout="inline"
+      {...chrome}
+    >
+      <div className="flex items-center gap-2">
+        {hasRange ? (
           <Slider
             aria-label={label}
-            className="flex-1"
+            className="min-w-0 flex-1"
             max={max}
             min={min}
             onValueChange={(next) => onChange(asSingleValue(next))}
-            step={1}
+            step={resolveNumberStep(schema)}
             value={numValue}
           />
-          <span className="text-content-tertiary min-w-[32px] text-right font-mono text-xs">
-            {String(numValue)}
-          </span>
-        </div>
-      </FieldWrapper>
-    );
-  }
-
-  return (
-    <FieldWrapper error={error} label={label} name={name}>
-      <Input
-        id={`prop-${name}`}
-        max={max}
-        min={min}
-        onChange={(e) => onChange(Number(e.target.value))}
-        type="number"
-        value={numValue}
-      />
-    </FieldWrapper>
+        ) : null}
+        <NumberInput
+          className={hasRange ? "w-16 shrink-0 font-mono" : "w-full font-mono"}
+          id={id}
+          label={`${label} value`}
+          onChange={onChange}
+          schema={schema}
+          size="sm"
+          value={numValue}
+        />
+      </div>
+    </FieldRow>
   );
 };
 
 const BooleanField = ({
-  name,
+  id,
   label,
   value,
   onChange,
-}: {
-  name: string;
-  label: string;
-  value: boolean;
-  onChange: (value: boolean) => void;
-}) => (
-  <div className="mb-3 flex items-center justify-between">
-    <Label
-      className="text-content-secondary text-xs font-medium"
-      htmlFor={`prop-${name}`}
-    >
-      {label}
-    </Label>
-    <Switch checked={value} id={`prop-${name}`} onCheckedChange={onChange} />
-  </div>
+  ...chrome
+}: FieldChrome & { value: boolean; onChange: (value: boolean) => void }) => (
+  <FieldRow controlId={id} label={label} layout="inline" {...chrome}>
+    <Switch checked={value} id={id} onCheckedChange={onChange} />
+  </FieldRow>
 );
-
-const parseNumericInput = (raw: string): number[] => {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return [];
-  }
-
-  const stripped =
-    trimmed.startsWith("[") && trimmed.endsWith("]")
-      ? trimmed.slice(1, -1)
-      : trimmed;
-
-  return stripped
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map(Number)
-    .filter((n) => !Number.isNaN(n));
-};
-
-/** Shared chip row for the numeric/string array fields — the one part of
- * those two fields that was ever actually identical. */
-const TagList = ({
-  items,
-  onRemove,
-}: {
-  items: string[];
-  onRemove: (index: number) => void;
-}) =>
-  items.length === 0 ? null : (
-    <div className="mb-1.5 flex flex-wrap gap-1">
-      {items.map((item, i) => (
-        <Badge
-          className="bg-accent-muted text-accent-hover hover:bg-accent-muted gap-1 rounded-full pr-1 text-[11px]"
-          key={`${item}-${i}`}
-          variant="secondary"
-        >
-          {item}
-          <button
-            aria-label={`Remove ${item}`}
-            className="text-accent-hover/60 hover:text-danger flex size-3.5 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 transition-colors"
-            onClick={() => onRemove(i)}
-            type="button"
-          >
-            <X size={10} />
-          </button>
-        </Badge>
-      ))}
-    </div>
-  );
-
-const NumericArrayField = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number[] | undefined;
-  onChange: (value: number[]) => void;
-}) => {
-  const currentValue = value ?? [];
-  const [raw, setRaw] = useState("");
-
-  const commitRaw = useCallback(
-    (input: string) => {
-      const parsed = parseNumericInput(input);
-      if (parsed.length > 0) {
-        onChange(parsed);
-      }
-      setRaw("");
-    },
-    [onChange]
-  );
-
-  return (
-    <div className="mb-3">
-      <Label className="text-content-secondary mb-1 block text-xs font-medium">
-        {label}
-      </Label>
-      <TagList
-        items={currentValue.map(String)}
-        onRemove={(i) => {
-          const next = [...currentValue];
-          next.splice(i, 1);
-          onChange(next);
-        }}
-      />
-      <Input
-        onBlur={() => {
-          if (raw.trim()) {
-            commitRaw(raw);
-          }
-        }}
-        onChange={(e) => setRaw(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            commitRaw(e.currentTarget.value);
-          }
-        }}
-        placeholder="e.g. 30, 45, 25, 60..."
-        type="text"
-        value={raw}
-      />
-    </div>
-  );
-};
-
-const StringArrayField = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string[] | undefined;
-  onChange: (value: string[]) => void;
-}) => {
-  const currentValue = value ?? [];
-
-  return (
-    <div className="mb-3">
-      <Label className="text-content-secondary mb-1 block text-xs font-medium">
-        {label}
-      </Label>
-      <TagList
-        items={currentValue}
-        onRemove={(i) => {
-          const next = [...currentValue];
-          next.splice(i, 1);
-          onChange(next);
-        }}
-      />
-      <Input
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            const input = e.currentTarget;
-            const val = input.value.trim();
-            if (val) {
-              onChange([...currentValue, val]);
-              input.value = "";
-            }
-          }
-        }}
-        placeholder="Add item and press Enter..."
-        type="text"
-      />
-    </div>
-  );
-};
 
 type Item = Record<string, unknown>;
 
 interface ListSchema {
-  items?: { type?: string; properties?: Record<string, Item> };
+  items?: Record<string, unknown> & { properties?: Record<string, Item> };
   minItems?: number;
   maxItems?: number;
 }
 
-const defaultItem = (properties: [string, Item][]): Item =>
-  Object.fromEntries(properties.map(([key, prop]) => [key, prop.default]));
-
-/** A list of objects (`field.list(z.object(...))`): one group of fields per item. */
-const ObjectListField = ({
-  name,
-  label,
-  value,
-  schema,
-  onChange,
-}: {
-  name: string;
-  label: string;
-  value: unknown;
-  schema: ListSchema;
-  onChange: (value: unknown) => void;
-}) => {
-  const items = Array.isArray(value) ? (value as Item[]) : [];
-  const properties = Object.entries(schema.items?.properties ?? {});
-  const { minItems = 0, maxItems = Number.POSITIVE_INFINITY } = schema;
-  const canAdd = items.length < maxItems;
-  const canRemove = items.length > minItems;
-
-  const setField = (index: number, key: string, next: unknown) =>
-    onChange(
-      items.map((item, i) => (i === index ? { ...item, [key]: next } : item))
-    );
-
-  return (
-    <fieldset className="mb-3 border-none p-0">
-      <legend className="text-content-secondary mb-1.5 text-xs font-medium">
-        {label}
-      </legend>
-      {items.map((item, index) => (
-        <div
-          className="border-border mb-2 rounded-md border p-2 pb-0"
-          // Items carry no id; the position is the identity the schema gives them.
-          // oxlint-disable-next-line react/no-array-index-key
-          key={index}
-        >
-          {properties.map(([key, propSchema]) => (
-            // oxlint-disable-next-line no-use-before-define -- an item's fields are prop fields
-            <PropField
-              key={key}
-              name={`${name}.${index}.${key}`}
-              onChange={(next) => setField(index, key, next)}
-              schema={propSchema}
-              value={item[key]}
-            />
-          ))}
-          {canRemove && (
-            <Button
-              className="mb-2"
-              onClick={() => onChange(items.filter((_, i) => i !== index))}
-              size="xs"
-              variant="ghost"
-            >
-              Remove
-            </Button>
-          )}
-        </div>
-      ))}
-      {canAdd && (
-        <Button
-          onClick={() => onChange([...items, defaultItem(properties)])}
-          size="xs"
-          variant="outline"
-        >
-          Add item
-        </Button>
-      )}
-    </fieldset>
-  );
-};
-
 const ArrayField = ({
-  name,
+  path,
   label,
+  hint,
+  error,
+  modified,
+  onReset,
+  errors,
   value,
   schema,
-  onChange,
-}: {
-  name: string;
-  label: string;
+  editor,
+}: Omit<FieldChrome, "id" | "locale"> & {
+  path: string;
+  errors?: Record<string, string>;
   value: unknown;
   schema: Record<string, unknown>;
-  onChange: (value: unknown) => void;
+  editor: FieldEditor;
 }) => {
+  const chrome = { error, hint, label, modified, onReset, path };
+  const onListOp = (op: ListOp) => editor.listOp(path, op);
   const itemsType = (schema.items as { type?: string } | undefined)?.type;
+  const list = Array.isArray(value) ? value : [];
 
   if (itemsType === "object") {
     return (
       <ObjectListField
-        label={label}
-        name={name}
-        onChange={onChange}
+        {...chrome}
+        errors={errors}
+        items={list as Item[]}
+        onListOp={onListOp}
+        renderItemField={(field) => (
+          // oxlint-disable-next-line no-use-before-define -- an item's fields are prop fields
+          <PropField
+            editor={editor}
+            errors={errors}
+            key={field.key}
+            path={field.path}
+            schema={field.schema}
+            value={field.value}
+          />
+        )}
         schema={schema as ListSchema}
-        value={value}
-      />
-    );
-  }
-
-  if (itemsType === "number") {
-    return (
-      <NumericArrayField
-        label={label}
-        onChange={onChange as (value: number[]) => void}
-        value={value as number[] | undefined}
       />
     );
   }
 
   return (
-    <StringArrayField
-      label={label}
-      onChange={onChange as (value: string[]) => void}
-      value={value as string[] | undefined}
+    <PrimitiveListField
+      {...chrome}
+      items={list as (string | number)[]}
+      kind={
+        itemsType === "number" || itemsType === "integer" ? "number" : "text"
+      }
+      // Items share one schema, so the first item's answer is every item's.
+      locale={editor.localeFor(`${path}.0`)}
+      onItemChange={(index, next) => editor.change(`${path}.${index}`, next)}
+      onListOp={onListOp}
+      schema={schema as ListSchema}
     />
   );
 };
 
 export const PropField = ({
-  name,
+  path,
   schema,
   value,
-  error,
-  onChange,
+  errors,
+  modified,
+  onReset,
+  editor,
 }: PropFieldProps) => {
-  const label = (schema.description as string) ?? name;
+  const onChange = (next: unknown) => editor.change(path, next);
+  const name = path.slice(path.lastIndexOf(".") + 1);
+  const label = readFieldLabel(schema) ?? labelFromKey(name);
+  const chrome = {
+    error: errors?.[path],
+    hint: fieldHint(label, schema.description),
+    id: `prop-${path}`,
+    label,
+    locale: editor.localeFor(path),
+    modified,
+    onReset,
+  };
   const currentValue = resolveValue(value, schema);
   const fieldKind = resolveFieldKind(name, schema);
 
@@ -545,8 +342,7 @@ export const PropField = ({
     case "color": {
       return (
         <ColorField
-          label={label}
-          name={name}
+          {...chrome}
           onChange={onChange as (value: string) => void}
           value={(currentValue ?? "#000000") as string}
         />
@@ -556,8 +352,7 @@ export const PropField = ({
     case "enum": {
       return (
         <EnumField
-          label={label}
-          name={name}
+          {...chrome}
           onChange={onChange as (value: string) => void}
           options={fieldKind.options}
           value={String(currentValue ?? fieldKind.options[0])}
@@ -568,9 +363,7 @@ export const PropField = ({
     case "number": {
       return (
         <NumberField
-          error={error}
-          label={label}
-          name={name}
+          {...chrome}
           onChange={onChange as (value: number) => void}
           schema={schema}
           value={currentValue}
@@ -581,8 +374,7 @@ export const PropField = ({
     case "boolean": {
       return (
         <BooleanField
-          label={label}
-          name={name}
+          {...chrome}
           onChange={onChange as (value: boolean) => void}
           value={Boolean(currentValue)}
         />
@@ -592,9 +384,14 @@ export const PropField = ({
     case "array": {
       return (
         <ArrayField
+          editor={editor}
+          error={chrome.error}
+          errors={errors}
+          hint={chrome.hint}
           label={label}
-          name={name}
-          onChange={onChange}
+          modified={modified}
+          onReset={onReset}
+          path={path}
           schema={schema}
           value={currentValue}
         />
@@ -603,25 +400,35 @@ export const PropField = ({
 
     case "text": {
       return (
-        <FieldWrapper error={error} label={label} name={name}>
+        <FieldRow
+          controlId={chrome.id}
+          error={chrome.error}
+          hint={chrome.hint}
+          label={label}
+          layout="stacked"
+          locale={chrome.locale}
+          modified={modified}
+          onReset={onReset}
+        >
           {fieldKind.multiline ? (
-            <textarea
-              className={cn("field-input resize-y", error && "border-danger")}
-              id={`prop-${name}`}
+            <Textarea
+              aria-invalid={chrome.error ? true : undefined}
+              id={chrome.id}
               onChange={(e) => onChange(e.target.value)}
               rows={3}
               value={(currentValue as string) ?? ""}
             />
           ) : (
             <Input
-              className={cn(error && "border-danger")}
-              id={`prop-${name}`}
+              aria-invalid={chrome.error ? true : undefined}
+              id={chrome.id}
               onChange={(e) => onChange(e.target.value)}
+              size="sm"
               type="text"
               value={(currentValue as string) ?? ""}
             />
           )}
-        </FieldWrapper>
+        </FieldRow>
       );
     }
 
