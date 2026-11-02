@@ -1,5 +1,12 @@
 # @stdout-design/dev-server
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @stdout-design/core@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
