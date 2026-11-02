@@ -44,7 +44,7 @@ export { detectPackageManager };
 
 export const init = async (
   projectDir: string | undefined,
-  options?: { yes?: boolean; installSkill?: boolean }
+  options?: { yes?: boolean; installSkill?: boolean; install?: boolean }
 ): Promise<void> => {
   const { intro, log, outro, spinner } = await import("@clack/prompts");
 
@@ -60,12 +60,14 @@ export const init = async (
 
   const clack = (await import("@clack/prompts")) as unknown as ClackModule;
   const collected = await collectPrompts(clack, projectDir, options);
+  // `install: false` lets tests scaffold without a registry round-trip.
+  const shouldInstall = options?.install ?? collected.shouldInstall;
 
   const s = spinner();
   s.start("Creating project...");
   await scaffold(collected.resolvedDir, {
     git: collected.wantsGit,
-    install: collected.shouldInstall,
+    install: shouldInstall,
     locales: collected.locales,
     projectName: collected.projectName,
     templates: collected.templates,
@@ -86,7 +88,7 @@ export const init = async (
   const pm = await detectPackageManager(cwd);
 
   let installFailed = false;
-  if (collected.shouldInstall) {
+  if (shouldInstall) {
     // No spinner here: the install streams its own output, and a spinner
     // redrawing over it garbles the terminal.
     log.step(`Installing dependencies with ${pm}...`);
