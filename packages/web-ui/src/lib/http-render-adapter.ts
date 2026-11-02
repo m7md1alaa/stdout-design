@@ -1,7 +1,16 @@
 import { logError } from "./logger";
 import type { RenderAdapter, ValidationIssue } from "./renderer";
 
-const parseIssues = (
+/** The dotted prop path an issue points at, e.g. `stats.1.label`. */
+const issuePath = (issue: Record<string, unknown>): string => {
+  // Core's validation sends `field` already dotted; a raw zod issue has a `path` array.
+  if (typeof issue.field === "string") {
+    return issue.field;
+  }
+  return Array.isArray(issue.path) ? issue.path.join(".") : "";
+};
+
+export const parseIssues = (
   json: Record<string, unknown>
 ): ValidationIssue[] | undefined => {
   const raw = json.issues;
@@ -11,7 +20,7 @@ const parseIssues = (
   return raw.map((issue: Record<string, unknown>) => ({
     code: String(issue.code ?? ""),
     message: String(issue.message ?? ""),
-    path: Array.isArray(issue.path) ? issue.path.join(".") : "",
+    path: issuePath(issue),
   }));
 };
 
@@ -32,6 +41,13 @@ export const createHttpRenderAdapter = (baseUrl: string): RenderAdapter => {
 
     if (options?.locale) {
       body.locale = options.locale;
+    }
+
+    if (
+      options?.localeOverrides &&
+      Object.keys(options.localeOverrides).length > 0
+    ) {
+      body.localeOverrides = options.localeOverrides;
     }
 
     if (options && "autoDetected" in options) {

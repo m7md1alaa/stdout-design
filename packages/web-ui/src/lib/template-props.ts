@@ -38,25 +38,31 @@ export const getNestedValue = (
   return current;
 };
 
-/** Returns a new props object with `value` set at a dotted path, without mutating `obj`. */
+const setIn = (target: unknown, parts: string[], value: unknown): unknown => {
+  const [head = "", ...rest] = parts;
+  const current =
+    target !== null && typeof target === "object"
+      ? (target as Record<string, unknown>)[head]
+      : undefined;
+  const next = rest.length === 0 ? value : setIn(current, rest, value);
+  if (Array.isArray(target)) {
+    // `stats.1.label` steps into a list: copy the list, not turn it into an object.
+    const copy = [...target];
+    copy[Number(head)] = next;
+    return copy;
+  }
+  return { ...(isPlainObject(target) ? target : {}), [head]: next };
+};
+
+/**
+ * Returns a new props object with `value` set at a dotted path, without
+ * mutating `obj`. Numeric segments index into lists (`stats.1.label`).
+ */
 export const setNestedValue = <T extends Record<string, unknown>>(
   obj: T,
   path: string,
   value: unknown
-): T => {
-  const parts = path.split(".");
-  if (parts.length === 1) {
-    return { ...obj, [path]: value };
-  }
-
-  const [head, ...rest] = parts as [string, ...string[]];
-  const nestedValue = setNestedValue(
-    (obj[head] as Record<string, unknown>) ?? ({} as Record<string, unknown>),
-    rest.join("."),
-    value
-  );
-  return { ...obj, [head]: nestedValue };
-};
+): T => setIn(obj, path.split("."), value) as T;
 
 /**
  * Walks a JSON-schema-shaped propsSchema and lists every leaf path it

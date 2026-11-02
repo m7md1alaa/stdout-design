@@ -139,12 +139,12 @@ export const SelectPopup = ({
         {...props}
       >
         <SelectPrimitive.ScrollUpArrow
-          className="before:from-popover top-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:top-px before:h-[200%] before:rounded-t-[calc(var(--radius-lg)-1px)] before:bg-linear-to-b before:from-50%"
+          className="before:from-popover top-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:top-px before:h-[200%] before:rounded-t-[calc(var(--radius-xl)-1px)] before:bg-linear-to-b before:from-50%"
           data-slot="select-scroll-up-arrow"
         >
           <ChevronUpIcon className="relative size-4.5 sm:size-4" />
         </SelectPrimitive.ScrollUpArrow>
-        <div className="border-border bg-popover relative h-full min-w-(--anchor-width) rounded-lg border shadow-lg/5 not-dark:bg-clip-padding before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
+        <div className="border-border bg-popover relative h-full min-w-(--anchor-width) rounded-xl border shadow-lg/5 not-dark:bg-clip-padding before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
           <SelectPrimitive.List
             className={cn(
               "max-h-(--available-height) overflow-y-auto p-1",
@@ -156,7 +156,7 @@ export const SelectPopup = ({
           </SelectPrimitive.List>
         </div>
         <SelectPrimitive.ScrollDownArrow
-          className="before:from-popover bottom-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:bottom-px before:h-[200%] before:rounded-b-[calc(var(--radius-lg)-1px)] before:bg-linear-to-t before:from-50%"
+          className="before:from-popover bottom-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:bottom-px before:h-[200%] before:rounded-b-[calc(var(--radius-xl)-1px)] before:bg-linear-to-t before:from-50%"
           data-slot="select-scroll-down-arrow"
         >
           <ChevronDownIcon className="relative size-4.5 sm:size-4" />

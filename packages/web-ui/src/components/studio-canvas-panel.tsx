@@ -1,80 +1,93 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { StudioState } from "@/hooks/use-studio-state";
+import type { CanvasView } from "@/hooks/use-canvas-view";
+import type {
+  RenderPreviewInput,
+  RenderPreviewState,
+} from "@/hooks/use-render-preview";
 import type { PresetData } from "@/hooks/use-templates";
+import type { TranslationPaths } from "@/lib/locale-layer";
 import type { RenderAdapter } from "@/lib/renderer";
+import type { ViewMode } from "@/lib/view-mode";
 
 import { Canvas } from "./canvas";
-import { LocaleBar } from "./locale-bar";
-
-/** What this panel actually reads off StudioState — narrower than the full shape. */
-type CanvasPanelStudio = Pick<
-  StudioState,
-  | "autoDetected"
-  | "currentPreset"
-  | "effectiveLocale"
-  | "effectivePresetId"
-  | "effectiveTemplateId"
-  | "handleLocaleChange"
-  | "handleRenderIssues"
-  | "propValues"
-  | "reloadToken"
-  | "setSelectedPreset"
->;
+import { CanvasStatusBar } from "./canvas-status-bar";
+import { LocaleCompare } from "./locale-compare";
+import { PresetGrid } from "./preset-grid";
 
 interface StudioCanvasPanelProps {
-  locales: string[];
+  mode: ViewMode;
+  hasTemplate: boolean;
+  preset: { id: string; width: number; height: number } | null;
   presets: PresetData[];
+  render: RenderPreviewState | null;
+  view: CanvasView;
+  /** The current render inputs; the grid and compare views vary one part of it. */
+  input: RenderPreviewInput;
+  compareLocale: string | null;
+  /** A locale's own text, so the compare view renders each side with its edits. */
+  overridesFor: (locale: string | null) => TranslationPaths;
   renderAdapter: RenderAdapter;
-  studio: CanvasPanelStudio;
+  onSelectPreset: (id: string) => void;
 }
 
-/** The main panel: locale switcher, preset tabs, and the live render preview. */
+/** The middle region: the live render, or the all-presets and locale-compare views. */
 export const StudioCanvasPanel = ({
-  locales,
+  mode,
+  hasTemplate,
+  preset,
   presets,
+  render,
+  view,
+  input,
+  compareLocale,
+  overridesFor,
   renderAdapter,
-  studio,
-}: StudioCanvasPanelProps) => (
-  <main className="flex flex-1 flex-col overflow-hidden">
-    <LocaleBar
-      locales={locales}
-      selected={studio.effectiveLocale}
-      onChange={studio.handleLocaleChange}
-    />
-    <div className="border-border bg-surface-secondary overflow-x-auto border-b">
-      <Tabs
-        onValueChange={(next) => studio.setSelectedPreset(next as string)}
-        value={studio.effectivePresetId ?? undefined}
-      >
-        <TabsList
-          className="*:data-[slot=tabs-tab]:hover:bg-surface-hover w-full justify-start gap-0 rounded-none bg-transparent p-0"
-          variant="underline"
-        >
-          {presets.map((preset) => (
-            <TabsTrigger
-              className="flex-col gap-0.5 rounded-none px-4 py-2.5"
-              key={preset.id}
-              value={preset.id}
-            >
-              <span className="text-xs font-semibold">{preset.id}</span>
-              <span className="text-content-tertiary font-mono text-[10px]">
-                {preset.width}&times;{preset.height}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-    </div>
+  onSelectPreset,
+}: StudioCanvasPanelProps) => {
+  const { preset: _preset, ...withoutPreset } = input;
+  const { locale, autoDetected, localeOverrides, ...withoutLocale } = input;
 
-    <Canvas
-      templateId={studio.effectiveTemplateId}
-      props={studio.propValues}
-      preset={studio.currentPreset}
-      locale={studio.effectiveLocale}
-      autoDetected={studio.autoDetected}
-      reloadToken={studio.reloadToken}
-      renderAdapter={renderAdapter}
-      onRenderIssues={studio.handleRenderIssues}
-    />
-  </main>
-);
+  if (hasTemplate && mode === "presets") {
+    return (
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <PresetGrid
+          base={withoutPreset}
+          currentPresetId={preset?.id ?? null}
+          onSelectPreset={onSelectPreset}
+          presets={presets}
+          renderAdapter={renderAdapter}
+        />
+      </main>
+    );
+  }
+
+  if (hasTemplate && mode === "compare" && preset) {
+    return (
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <LocaleCompare
+          base={withoutLocale}
+          primary={{ autoDetected, locale, localeOverrides }}
+          renderAdapter={renderAdapter}
+          secondary={{
+            autoDetected: false,
+            locale: compareLocale,
+            localeOverrides: overridesFor(compareLocale),
+          }}
+        />
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <Canvas
+        hasTemplate={hasTemplate}
+        preset={preset}
+        render={render}
+        view={view}
+      />
+      {hasTemplate && preset ? (
+        <CanvasStatusBar preset={preset} view={view} />
+      ) : null}
+    </main>
+  );
+};

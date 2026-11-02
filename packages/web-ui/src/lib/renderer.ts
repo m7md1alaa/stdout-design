@@ -1,3 +1,5 @@
+import type { TranslationPaths } from "./locale-layer";
+
 export interface ValidationIssue {
   path: string;
   message: string;
@@ -11,6 +13,8 @@ type RenderResult =
 export interface RenderOptions {
   autoDetected?: boolean;
   locale?: string;
+  /** This locale's own text by prop path, laid over its locale file (ADR-0021). */
+  localeOverrides?: TranslationPaths;
   preset?: string;
   signal?: AbortSignal;
 }
@@ -26,6 +30,7 @@ export interface RenderAdapter {
 export interface RenderContext {
   autoDetected: boolean;
   locale: string | null;
+  localeOverrides?: TranslationPaths;
   preset: string;
   signal?: AbortSignal;
 }
@@ -38,6 +43,7 @@ export interface RenderContext {
 export const buildRenderOptions = (ctx: RenderContext): RenderOptions => ({
   autoDetected: ctx.autoDetected,
   locale: ctx.locale ?? undefined,
+  localeOverrides: ctx.localeOverrides,
   preset: ctx.preset,
   signal: ctx.signal,
 });

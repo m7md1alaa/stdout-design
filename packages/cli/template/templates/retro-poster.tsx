@@ -213,6 +213,11 @@ export default defineTemplate({
       description: "Oversized title across the top",
     }),
   },
+  inspector: [
+    ["Content", ["title", "headline", "tagline", "body"]],
+    ["Stamp", ["label", "stamp", "stampNote"]],
+    ["Colors", ["paper"]],
+  ],
   render: (props, ctx) => (
     <div
       tw="flex flex-col w-full h-full px-12 pt-10 relative overflow-hidden"

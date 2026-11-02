@@ -22,6 +22,8 @@ export interface FieldMeta {
   kind: FieldKind;
   /** Locale files may replace this value. True for text, false for everything else. */
   translatable: boolean;
+  /** Name the studio shows, for keys that do not read well in sentence case. */
+  label?: string;
   /** Text fields only: render a multi-line editor. */
   multiline?: boolean;
 }

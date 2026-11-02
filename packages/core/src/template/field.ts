@@ -12,6 +12,8 @@ import { setFieldMeta } from "../shared/field-meta.js";
 interface Described {
   /** Help text shown next to the field in the studio. */
   description?: string;
+  /** Name shown in the studio. Defaults to the key in sentence case ("accentColor" becomes "Accent color"). */
+  label?: string;
 }
 
 const HEX_COLOR = /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/iu;
@@ -40,6 +42,7 @@ const text = (
     describe(schema, options.description).default(defaultValue),
     {
       kind: "text",
+      label: options.label,
       multiline: options.multiline,
       translatable: options.translatable ?? true,
     }
@@ -52,7 +55,7 @@ const color = (defaultValue: string, options: Described = {}) =>
       z.string().regex(HEX_COLOR, "expected a hex color like #ff6a3d"),
       options.description
     ).default(defaultValue),
-    { kind: "color", translatable: false }
+    { kind: "color", label: options.label, translatable: false }
   );
 
 const number = (
@@ -68,14 +71,14 @@ const number = (
   }
   return setFieldMeta(
     describe(schema, options.description).default(defaultValue),
-    { kind: "number", translatable: false }
+    { kind: "number", label: options.label, translatable: false }
   );
 };
 
 const boolean = (defaultValue: boolean, options: Described = {}) =>
   setFieldMeta(
     describe(z.boolean(), options.description).default(defaultValue),
-    { kind: "boolean", translatable: false }
+    { kind: "boolean", label: options.label, translatable: false }
   );
 
 const select = <const T extends readonly [string, ...string[]]>(
@@ -85,7 +88,7 @@ const select = <const T extends readonly [string, ...string[]]>(
 ) =>
   setFieldMeta(
     describe(z.enum(values), options.description).default(defaultValue),
-    { kind: "select", translatable: false }
+    { kind: "select", label: options.label, translatable: false }
   );
 
 const list = <T extends z.ZodType>(
@@ -112,7 +115,7 @@ const list = <T extends z.ZodType>(
     describe(schema, options.description).default(
       options.default as z.output<T>[]
     ),
-    { kind: "list", translatable: false }
+    { kind: "list", label: options.label, translatable: false }
   );
 };
 
@@ -120,7 +123,7 @@ const list = <T extends z.ZodType>(
 const object = <T extends z.ZodRawShape>(shape: T, options: Described = {}) =>
   setFieldMeta(
     describe(z.object(shape), options.description).prefault({} as never),
-    { kind: "object", translatable: false }
+    { kind: "object", label: options.label, translatable: false }
   );
 
 export const field = {

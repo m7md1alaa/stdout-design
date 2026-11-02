@@ -159,6 +159,14 @@ export default defineTemplate({
       description: "Pill under the receipt",
     }),
   },
+  inspector: [
+    ["Headline", ["headline", "description", "brand"]],
+    ["Metric", ["metricLabel", "metricValue", "metricDelta"]],
+    ["Chart and gauge", ["chartLabel", "gaugeLabel", "gaugePercent"]],
+    ["Rating", ["rating", "ratingLabel"]],
+    ["Receipt", ["receipt", "receiptNote"]],
+    ["Colors", ["accentColor", "background"]],
+  ],
   render: (props, ctx) => (
     <div
       tw="flex w-full h-full p-10"

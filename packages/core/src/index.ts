@@ -77,6 +77,13 @@ export { classifyLocale, SCRIPTS } from "./shared/locale.js";
 export type { Direction, LocaleInfo, Script } from "./shared/locale.js";
 
 export {
+  flattenTranslations,
+  resolveLocaleLayers,
+  translationsFromPaths,
+} from "./shared/locale-layers.js";
+export type { LocaleLayers, TranslationPaths } from "./shared/locale-layers.js";
+
+export {
   defineTemplate,
   isTemplateDefinition,
   toTemplateDefinition,

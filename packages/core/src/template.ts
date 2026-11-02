@@ -4,6 +4,8 @@
  */
 export { defineTemplate } from "./template/define-template.js";
 export type {
+  InspectorGroup,
+  InspectorLayout,
   TemplateDefinition,
   TemplateSpec,
 } from "./template/define-template.js";

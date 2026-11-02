@@ -6,6 +6,7 @@ import {
   classifyLocale,
   clearFontCache,
   createFetchFontsFromConfig,
+  flattenTranslations,
   logWarn,
   openCache,
   orchestrateRender,
@@ -23,9 +24,15 @@ import { FileWatcher } from "./file-watcher.js";
 import { TemplateLoader } from "./template-loader.js";
 import { renderRequestSchema, measureRequestSchema } from "./types";
 
+// A locale id names a file under locales/; anything else could walk out of it.
+const LOCALE_ID = /^[A-Za-z0-9_-]+$/u;
+
 const loadLocaleDataForLoader =
   (templateLoader: TemplateLoader, rootDir: string, templateId: string) =>
   async (locale: string): Promise<Record<string, unknown>> => {
+    if (!LOCALE_ID.test(locale)) {
+      return {};
+    }
     const localePath = path.resolve(
       resolveProjectPaths(rootDir).localesDir,
       `${locale}.json`
@@ -192,6 +199,29 @@ export const createDevServer = async (options: DevServerOptions) => {
     });
   });
 
+  // A locale file's strings for one template, by prop path (ADR-0021). The
+  // studio shows them in translatable fields and layers its edits on top.
+  app.get("/translations/:templateId/:locale", async (c) => {
+    const { templateId, locale } = c.req.param();
+    const config = await templateLoader.getConfig();
+    if (!(config.locales ?? []).includes(locale)) {
+      return c.json({ error: `Locale "${locale}" is not configured` }, 404);
+    }
+    const template = templateLoader.getTemplate(templateId);
+    if (!template) {
+      return c.json({ error: `Template "${templateId}" not available` }, 404);
+    }
+    const translations = await loadLocaleDataForLoader(
+      templateLoader,
+      rootDir,
+      templateId
+    )(locale);
+    return c.json({
+      locale,
+      strings: flattenTranslations(template.propsSchema, translations),
+    });
+  });
+
   // Render endpoint — returns raw PNG bytes
   app.post("/render", async (c) => {
     const parsedBody = renderRequestSchema.safeParse(await c.req.json());
@@ -209,8 +239,11 @@ export const createDevServer = async (options: DevServerOptions) => {
       props,
       preset: presetId,
       locale,
+      localeOverrides,
       autoDetected,
     } = parsedBody.data;
+    // Locale layers apply only to a locale the user picked, not one guessed from the text.
+    const explicitLocale = Boolean(locale && !autoDetected);
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
@@ -260,11 +293,11 @@ export const createDevServer = async (options: DevServerOptions) => {
         fetchFonts,
         height: preset.height,
         images: config.images,
-        loadLocaleData:
-          locale && !autoDetected
-            ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
-            : undefined,
+        loadLocaleData: explicitLocale
+          ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
+          : undefined,
         locale,
+        localeOverrides: explicitLocale ? localeOverrides : undefined,
         props: props as Record<string, unknown>,
         template,
         templateContentHash: templateInfo.contentHash,
@@ -301,7 +334,9 @@ export const createDevServer = async (options: DevServerOptions) => {
         400
       );
     }
-    const { templateId, props, locale, autoDetected } = parsedBody.data;
+    const { templateId, props, locale, localeOverrides, autoDetected } =
+      parsedBody.data;
+    const explicitLocale = Boolean(locale && !autoDetected);
 
     const templateInfo = templateLoader.getTemplateInfo(templateId);
     if (!templateInfo) {
@@ -337,11 +372,11 @@ export const createDevServer = async (options: DevServerOptions) => {
         cache: renderCache,
         fetchFonts,
         images: config.images,
-        loadLocaleData:
-          locale && !autoDetected
-            ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
-            : undefined,
+        loadLocaleData: explicitLocale
+          ? loadLocaleDataForLoader(templateLoader, rootDir, templateId)
+          : undefined,
         locale,
+        localeOverrides: explicitLocale ? localeOverrides : undefined,
         props: props as Record<string, unknown>,
         template,
         templateContentHash: templateInfo.contentHash,

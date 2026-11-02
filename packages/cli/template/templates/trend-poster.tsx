@@ -173,6 +173,7 @@ export default defineTemplate({
     }),
     cta: field.text("Save for later", {
       description: "Button label in the footer",
+      label: "Call to action",
     }),
     edition: field.text("2027", {
       description: "Big outlined word under the headline",
@@ -204,6 +205,12 @@ export default defineTemplate({
       description: "Small line top-end",
     }),
   },
+  inspector: [
+    ["Content", ["headline", "aside", "strap", "issue", "edition"]],
+    ["Items", ["items"]],
+    ["Footer", ["footer", "cta"]],
+    ["Colors", ["highlight"]],
+  ],
   render: (props, ctx) => {
     const { fonts } = ctx;
     const cells = keyed(props.items);

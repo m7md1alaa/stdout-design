@@ -40,9 +40,17 @@ Schemas written without `field.*` fall back to guessing: a string prop whose nam
 
 Each configured preset appears as a tab showing its `id` and dimensions (e.g. `instagram-square 1080×1080`). Switch tabs to see the same props rendered at each platform size the way to check "does this fit as an OG card too?"
 
-## Locale bar
+## Locales
 
-If your config defines `locales`, they appear as tabs. Switching locales re-renders with that locale's translation data (see [Internationalization](/docs/internationalization)).
+If your config defines `locales`, pick one from the locale select in the toolbar. The inspector then shows that locale's text, and the canvas renders it (see [Internationalization](/docs/internationalization)).
+
+A field's value for a locale comes from three layers, later ones winning:
+
+1. the shared values, the ones you edit with no locale picked
+2. the locale file, `locales/<locale>.json`
+3. your edits for that locale
+
+Fields whose text differs per locale carry a small locale tag (`ar`). Typing into one changes that locale only; the reset dot brings back the locale file's string. Colors, numbers and list items (adding, removing, reordering) are shared by every locale. Reordering a list keeps your per-locale text with its item, but a locale file's strings stay in their positions.
 
 If no locale is selected and your props contain Arabic text, the studio **auto-detects** it and selects an Arabic locale automatically, marking the render as `autoDetected`.
 

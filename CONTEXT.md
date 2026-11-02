@@ -47,3 +47,7 @@ A CLI toolkit for rendering TSX components into social/marketing images.
 **Boundary rules**: The tables in `packages/config/boundaries/rules.ts` that say which core layers, workspaces, and templates may import which. `boundaries.test.ts` fails on any import they don't allow. Changing a boundary means editing these tables. _Avoid_: lint rules, architecture config
 
 **Render context** (`ctx`): What the pipeline tells a template about the render it is part of: text direction, canvas size, script typography, fonts. Built once by `orchestrateRender` and passed to `defineTemplate`'s `render(props, ctx)`, never mixed into props (ADR-0019). _Avoid_: locale prop, render options, environment
+
+**Locale layers**: How a template's props resolve for a picked locale: the base values, then the locale file (`locales/<locale>.json`), then that locale's overrides. Only text marked translatable takes part; colors, numbers and list structure always come from the base values. Resolved by `resolveLocaleLayers` in core (ADR-0021). _Avoid_: translation merge (that is only the locale-file layer), i18n
+
+**Locale override**: Text edited for one locale only, kept by the studio per template and locale as `TranslationPaths` (dotted prop path → text). Wins over the locale file. _Avoid_: translation (that is the locale file's), local edit

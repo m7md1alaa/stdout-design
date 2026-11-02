@@ -21,9 +21,9 @@ const DefaultFallback = ({
   error: Error;
   onReset: () => void;
 }) => (
-  <div className="text-content-secondary flex h-screen flex-col items-center justify-center gap-4">
+  <div className="text-foreground/80 flex h-screen flex-col items-center justify-center gap-4">
     <p>Something went wrong</p>
-    <pre className="bg-surface-tertiary text-content-tertiary max-w-md overflow-auto rounded-sm p-4 text-xs">
+    <pre className="bg-muted text-muted-foreground max-w-md overflow-auto rounded-sm p-4 text-xs">
       {error.message}
     </pre>
     <Button onClick={onReset}>Retry</Button>

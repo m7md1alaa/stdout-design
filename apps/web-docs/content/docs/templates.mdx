@@ -78,7 +78,28 @@ Each builder takes the default first and its limits as options, and records what
 | `field.list(item, { default, length, min, max })` | Tag editor; one group of fields per item for a list of objects | per item field |
 | `field.object({ ... })` | Nested fields, flattened into `dotted.path` | per field |
 
-Item counts belong in the schema: `field.list(field.text("Item"), { default: [...], length: 6 })` refuses a seventh item at validation time instead of the layout breaking. Every builder takes a `description`, shown as the field's label in the studio and in CLI validation errors.
+Item counts belong in the schema: `field.list(field.text("Item"), { default: [...], length: 6 })` refuses a seventh item at validation time instead of the layout breaking. Every builder takes a `description`, shown as a hint under the field in the studio and in CLI validation errors. The studio labels a field with its key in sentence case (`accentColor` becomes "Accent color"); pass `label` for a key that does not read well that way:
+
+```ts
+cta: field.text("Shop now", { label: "Call to action" }),
+```
+
+### The studio inspector
+
+By default the studio groups a template's fields by kind (text, colors, settings, lists). Add an `inspector` list to name the groups and set the order of the fields in each:
+
+```ts
+export default defineTemplate({
+  schema,
+  inspector: [
+    ["Content", ["headline", "description", "brand"]],
+    ["Colors", ["accentColor", "background"]],
+  ],
+  render,
+});
+```
+
+A field the list leaves out goes to a trailing "Other" group. Naming a key that is not in the schema, or naming a key twice, is a type error.
 
 ### The render context
 

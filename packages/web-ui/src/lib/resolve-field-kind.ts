@@ -16,6 +16,7 @@ export type FieldKind =
 /** Mirrors core's `FieldMeta`; the studio reads it from the JSON schema. */
 interface FieldMeta {
   kind: string;
+  label?: string;
   multiline?: boolean;
 }
 
@@ -28,6 +29,14 @@ const readFieldMeta = (
   return typeof meta === "object" && meta !== null && "kind" in meta
     ? (meta as FieldMeta)
     : undefined;
+};
+
+/** The name a template gave the field with `field.*({ label })`, if any. */
+export const readFieldLabel = (
+  schema: Record<string, unknown>
+): string | undefined => {
+  const { label } = readFieldMeta(schema) ?? {};
+  return typeof label === "string" && label.length > 0 ? label : undefined;
 };
 
 const enumOptions = (schema: Record<string, unknown>): string[] =>

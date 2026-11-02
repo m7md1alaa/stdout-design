@@ -4,6 +4,7 @@ import type { FontResolutionResult } from "../assets/assets-resolver.js";
 import type { RenderCache } from "../cache/render-cache.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import type { Font, RenderOptions } from "../engine/takumi-types-shim.js";
+import type { TranslationPaths } from "../shared/locale-layers.js";
 import type { ImagePolicy } from "../shared/types.js";
 import type { PropSchema } from "../shared/validation.js";
 import type { TemplateDefinition } from "../template/define-template.js";
@@ -45,6 +46,8 @@ export interface OrchestrateRenderInput {
   propsSchema?: PropSchema;
   locale?: string;
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
+  /** Edits for `locale` only, laid over its locale file (ADR-0021). */
+  localeOverrides?: TranslationPaths;
   fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
   fonts?: Font[];
   fontFamilies?: string[];
@@ -83,6 +86,8 @@ export interface OrchestrateMeasureInput {
   propsSchema?: PropSchema;
   locale?: string;
   loadLocaleData?: (locale: string) => Promise<Record<string, unknown>>;
+  /** See `OrchestrateRenderInput.localeOverrides`. */
+  localeOverrides?: TranslationPaths;
   fetchFonts?: (localeId: string) => Promise<FontResolutionResult | null>;
   /** See `OrchestrateRenderInput.images`. */
   images?: ImagePolicy;

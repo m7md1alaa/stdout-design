@@ -8,6 +8,8 @@ export interface TemplateSchema {
   id: string;
   description: string;
   propsSchema: Record<string, unknown>;
+  /** Named groups of top-level prop keys, in order; absent when the template declares none. */
+  inspector?: [string, string[]][];
   contentHash: string;
   status?: "ok" | "error";
   errorMessage?: string;

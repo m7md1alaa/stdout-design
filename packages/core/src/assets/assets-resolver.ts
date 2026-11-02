@@ -1,10 +1,11 @@
 import type { z } from "zod";
 
 import type { Font } from "../engine/takumi-types-shim.js";
+import { resolveLocaleLayers } from "../shared/locale-layers.js";
+import type { TranslationPaths } from "../shared/locale-layers.js";
 import { classifyLocale } from "../shared/locale.js";
 import type { Script } from "../shared/locale.js";
 import { logWarn } from "../shared/logger.js";
-import { applyTranslations } from "../shared/translations.js";
 import type { FontConfig } from "../shared/types.js";
 import { loadFontConfigs } from "./font-config.js";
 import { BUILT_IN_FONTS } from "./locale-fonts.js";
@@ -31,6 +32,8 @@ export interface AssetsResolverOptions {
   declaredFonts?: readonly FontConfig[];
   /** The template's prop schema; with `field.*` meta, it decides which props a locale file may replace. */
   propsSchema?: z.ZodType;
+  /** Edits for this locale only, laid over the locale file (ADR-0021). */
+  localeOverrides?: TranslationPaths;
 }
 
 const combine = (
@@ -97,11 +100,10 @@ export const resolveAssetsForLocale = async (
     }
   }
 
-  const mergedProps = applyTranslations(
-    options?.propsSchema,
-    props,
-    localeData
-  );
+  const mergedProps = resolveLocaleLayers(options?.propsSchema, props, {
+    overrides: options?.localeOverrides,
+    translations: localeData,
+  });
   const { lang, script } = classifyLocale(localeId);
 
   if (options?.preResolvedFonts) {

@@ -21,6 +21,10 @@ export default function TestCard({ title }: { title: string }) {
 }
 `;
 
+// These do real renders, and the Arabic ones download a font the first
+// time. Bun's 5s default is too tight when every package tests at once.
+const RENDER_TIMEOUT_MS = 30_000;
+
 let server: DevServer;
 
 beforeAll(() => {
@@ -60,24 +64,28 @@ const cleanCache = async (): Promise<void> => {
   await server.app.request("/cache/clean", { method: "POST" });
 };
 
-it("POST /render returns a PNG for a valid request", async () => {
-  server = await createDevServer({ port: 0, rootDir: testProjectDir });
-  await cleanCache();
+it(
+  "POST /render returns a PNG for a valid request",
+  async () => {
+    server = await createDevServer({ port: 0, rootDir: testProjectDir });
+    await cleanCache();
 
-  const res = await server.app.request("/render", {
-    body: JSON.stringify({
-      preset: "test",
-      props: { title: "Hello" },
-      templateId: "test-card",
-    }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
+    const res = await server.app.request("/render", {
+      body: JSON.stringify({
+        preset: "test",
+        props: { title: "Hello" },
+        templateId: "test-card",
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
 
-  expect(res.status).toBe(200);
-  expect(res.headers.get("Content-Type")).toBe("image/png");
-  expect(res.headers.get("X-Cache")).toBe("miss");
-});
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("image/png");
+    expect(res.headers.get("X-Cache")).toBe("miss");
+  },
+  RENDER_TIMEOUT_MS
+);
 
 it("POST /render returns 400 for empty body", async () => {
   const res = await server.app.request("/render", {
@@ -131,29 +139,33 @@ it("POST /render returns 404 for unknown preset", async () => {
   expect(res.status).toBe(404);
 });
 
-it("POST /render caches and returns X-Cache: hit on second call", async () => {
-  const body = JSON.stringify({
-    preset: "test",
-    props: { title: "Cache Test" },
-    templateId: "test-card",
-  });
-  const headers = { "Content-Type": "application/json" };
+it(
+  "POST /render caches and returns X-Cache: hit on second call",
+  async () => {
+    const body = JSON.stringify({
+      preset: "test",
+      props: { title: "Cache Test" },
+      templateId: "test-card",
+    });
+    const headers = { "Content-Type": "application/json" };
 
-  const first = await server.app.request("/render", {
-    body,
-    headers,
-    method: "POST",
-  });
-  expect(first.headers.get("X-Cache")).toBe("miss");
+    const first = await server.app.request("/render", {
+      body,
+      headers,
+      method: "POST",
+    });
+    expect(first.headers.get("X-Cache")).toBe("miss");
 
-  const second = await server.app.request("/render", {
-    body,
-    headers,
-    method: "POST",
-  });
-  expect(second.status).toBe(200);
-  expect(second.headers.get("X-Cache")).toBe("hit");
-});
+    const second = await server.app.request("/render", {
+      body,
+      headers,
+      method: "POST",
+    });
+    expect(second.status).toBe(200);
+    expect(second.headers.get("X-Cache")).toBe("hit");
+  },
+  RENDER_TIMEOUT_MS
+);
 
 const renderBody = (title: string, locale?: string) => ({
   body: JSON.stringify({
@@ -166,46 +178,134 @@ const renderBody = (title: string, locale?: string) => ({
   method: "POST" as const,
 });
 
-it("POST /render produces different output with locale applied", async () => {
-  const noLocale = await server.app.request("/render", renderBody("World"));
-  const withLocale = await server.app.request(
-    "/render",
-    renderBody("World", "ar")
-  );
+it(
+  "POST /render produces different output with locale applied",
+  async () => {
+    const noLocale = await server.app.request("/render", renderBody("World"));
+    const withLocale = await server.app.request(
+      "/render",
+      renderBody("World", "ar")
+    );
 
-  expect(noLocale.status).toBe(200);
-  expect(withLocale.status).toBe(200);
+    expect(noLocale.status).toBe(200);
+    expect(withLocale.status).toBe(200);
 
-  const noLocaleBytes = await noLocale.arrayBuffer();
-  const withLocaleBytes = await withLocale.arrayBuffer();
+    const noLocaleBytes = await noLocale.arrayBuffer();
+    const withLocaleBytes = await withLocale.arrayBuffer();
 
-  expect(noLocaleBytes.byteLength).toBeGreaterThan(0);
-  expect(withLocaleBytes.byteLength).toBeGreaterThan(0);
-  expect(Buffer.from(noLocaleBytes).equals(Buffer.from(withLocaleBytes))).toBe(
-    false
-  );
-});
+    expect(noLocaleBytes.byteLength).toBeGreaterThan(0);
+    expect(withLocaleBytes.byteLength).toBeGreaterThan(0);
+    expect(
+      Buffer.from(noLocaleBytes).equals(Buffer.from(withLocaleBytes))
+    ).toBe(false);
+  },
+  RENDER_TIMEOUT_MS
+);
 
-it("POST /measure returns width and height for a valid request", async () => {
-  const res = await server.app.request("/measure", {
-    body: JSON.stringify({
-      props: { title: "Measure Test" },
-      templateId: "test-card",
-    }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
+const layeredBody = (overrides: Record<string, string>, autoDetected = false) =>
+  JSON.stringify({
+    autoDetected,
+    locale: "ar",
+    localeOverrides: overrides,
+    preset: "test",
+    props: { title: "World" },
+    templateId: "test-card",
   });
 
-  expect(res.status).toBe(200);
+it(
+  "POST /render lays locale overrides over the locale file",
+  async () => {
+    await cleanCache();
+    const headers = { "Content-Type": "application/json" };
+    const fileOnly = await server.app.request(
+      "/render",
+      renderBody("World", "ar")
+    );
+    // An override equal to the file's string resolves to the same props.
+    const sameAsFile = await server.app.request("/render", {
+      body: layeredBody({ title: "مرحبا" }),
+      headers,
+      method: "POST",
+    });
+    const overridden = await server.app.request("/render", {
+      body: layeredBody({ title: "أهلا وسهلا" }),
+      headers,
+      method: "POST",
+    });
 
-  const body = (await res.json()) as { width: number; height: number };
-  expect(body).toHaveProperty("width");
-  expect(body).toHaveProperty("height");
-  expect(typeof body.width).toBe("number");
-  expect(typeof body.height).toBe("number");
-  expect(body.width).toBeGreaterThan(0);
-  expect(body.height).toBeGreaterThan(0);
+    expect(fileOnly.status).toBe(200);
+    expect(sameAsFile.headers.get("X-Cache")).toBe("hit");
+    expect(overridden.status).toBe(200);
+    expect(
+      Buffer.from(await overridden.arrayBuffer()).equals(
+        Buffer.from(await fileOnly.arrayBuffer())
+      )
+    ).toBe(false);
+  },
+  RENDER_TIMEOUT_MS
+);
+
+it(
+  "POST /render ignores locale overrides for an auto-detected locale",
+  async () => {
+    await cleanCache();
+    const headers = { "Content-Type": "application/json" };
+    const first = await server.app.request("/render", {
+      body: layeredBody({}, true),
+      headers,
+      method: "POST",
+    });
+    const withOverride = await server.app.request("/render", {
+      body: layeredBody({ title: "أهلا وسهلا" }, true),
+      headers,
+      method: "POST",
+    });
+    expect(first.status).toBe(200);
+    expect(withOverride.headers.get("X-Cache")).toBe("hit");
+  },
+  RENDER_TIMEOUT_MS
+);
+
+it("GET /translations returns the locale file's strings by path", async () => {
+  const res = await server.app.request("/translations/test-card/ar");
+  expect(res.status).toBe(200);
+  expect(await res.json()).toEqual({
+    locale: "ar",
+    strings: { title: "مرحبا" },
+  });
 });
+
+it("GET /translations rejects an unconfigured locale and an unknown template", async () => {
+  const badLocale = await server.app.request("/translations/test-card/..%2Fx");
+  const unknown = await server.app.request("/translations/nope/ar");
+  expect(badLocale.status).toBe(404);
+  expect(unknown.status).toBe(404);
+});
+
+it(
+  "POST /measure returns width and height for a valid request",
+  async () => {
+    const res = await server.app.request("/measure", {
+      body: JSON.stringify({
+        props: { title: "Measure Test" },
+        templateId: "test-card",
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as { width: number; height: number };
+    expect(body).toHaveProperty("width");
+    expect(body).toHaveProperty("height");
+    expect(typeof body.width).toBe("number");
+    expect(typeof body.height).toBe("number");
+    expect(body.width).toBeGreaterThan(0);
+    expect(body.height).toBeGreaterThan(0);
+  },
+  RENDER_TIMEOUT_MS
+);
 
 it("POST /measure returns 400 for empty body", async () => {
   const res = await server.app.request("/measure", {

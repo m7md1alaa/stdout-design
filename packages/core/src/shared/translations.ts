@@ -13,7 +13,7 @@ const WRAPPER_TYPES = new Set([
   "catch",
 ]);
 
-const isRecord = (value: unknown): value is Values =>
+export const isRecord = (value: unknown): value is Values =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** Peels `.default()`, `.optional()` and the like off to the schema that says what the value is. */
@@ -25,14 +25,16 @@ const unwrap = (schema: z.ZodType): z.ZodType => {
   return current;
 };
 
-const shapeOf = (schema: z.ZodType): Record<string, z.ZodType> | undefined => {
+export const shapeOf = (
+  schema: z.ZodType
+): Record<string, z.ZodType> | undefined => {
   const inner = unwrap(schema);
   return inner.type === "object"
     ? (inner as z.ZodObject<Record<string, z.ZodType>>).shape
     : undefined;
 };
 
-const elementOf = (schema: z.ZodType): z.ZodType | undefined => {
+export const elementOf = (schema: z.ZodType): z.ZodType | undefined => {
   const inner = unwrap(schema);
   return inner.type === "array"
     ? (inner as z.ZodArray<z.ZodType>).element
@@ -40,7 +42,7 @@ const elementOf = (schema: z.ZodType): z.ZodType | undefined => {
 };
 
 /** True when anything in the schema was built with `field.*`. */
-const hasFieldMeta = (schema: z.ZodType): boolean => {
+export const hasFieldMeta = (schema: z.ZodType): boolean => {
   if (getFieldMeta(schema)) {
     return true;
   }

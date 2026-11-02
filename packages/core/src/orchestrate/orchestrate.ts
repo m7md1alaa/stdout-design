@@ -11,6 +11,7 @@ import { compileTemplate } from "../engine/render.js";
 import type { CompiledTemplate } from "../engine/render.js";
 import { measureTemplate, renderToPixels } from "../engine/renderer.js";
 import type { Font } from "../engine/takumi-types-shim.js";
+import type { TranslationPaths } from "../shared/locale-layers.js";
 import { classifyLocale } from "../shared/locale.js";
 import type { LocaleInfo } from "../shared/locale.js";
 import { logWarn } from "../shared/logger.js";
@@ -113,6 +114,7 @@ const prepPipeline = async (input: {
   loadLocaleData:
     | ((locale: string) => Promise<Record<string, unknown>>)
     | undefined;
+  localeOverrides: TranslationPaths | undefined;
   preResolvedFonts: Font[] | undefined;
   preResolvedFontFamilies: string[] | undefined;
   fetchFonts:
@@ -129,6 +131,7 @@ const prepPipeline = async (input: {
     locale,
     canvas,
     loadLocaleData,
+    localeOverrides,
     preResolvedFonts,
     preResolvedFontFamilies,
     fetchFonts,
@@ -153,6 +156,7 @@ const prepPipeline = async (input: {
       declaredFonts: definition ? declaredFontConfigs(definition.fonts) : [],
       fetchFonts,
       loadLocaleData,
+      localeOverrides,
       preResolvedFontFamilies,
       preResolvedFonts,
       propsSchema: definition?.propsSchema,
@@ -249,6 +253,7 @@ export const orchestrateRender = async (
     propsSchema,
     locale: localeId,
     loadLocaleData,
+    localeOverrides,
     fetchFonts,
     fonts: preResolvedFonts,
     fontFamilies: preResolvedFontFamilies,
@@ -271,6 +276,7 @@ export const orchestrateRender = async (
     images,
     loadLocaleData,
     locale: resolvedLocale,
+    localeOverrides,
     preResolvedFontFamilies,
     preResolvedFonts,
     props,
@@ -349,6 +355,7 @@ export const orchestrateMeasure = async (
     propsSchema,
     locale: localeId,
     loadLocaleData,
+    localeOverrides,
     fetchFonts,
     images,
     cache,
@@ -369,6 +376,7 @@ export const orchestrateMeasure = async (
     images,
     loadLocaleData,
     locale: resolvedLocale,
+    localeOverrides,
     preResolvedFontFamilies: undefined,
     preResolvedFonts: undefined,
     props,
