@@ -4,10 +4,10 @@ import path from "node:path";
 import { googleFonts } from "@takumi-rs/helpers";
 
 import type { Font, FontDescriptor } from "../engine/takumi-types-shim.js";
-import { classifyLocale } from "../shared/locale.js";
 import { logDebug } from "../shared/logger.js";
 import type { FontConfig } from "../shared/types.js";
 import type { FontResolutionResult } from "./assets-resolver.js";
+import { configuredFontEntries, fontSetKey } from "./locale-fonts.js";
 
 const isFontObject = (f: Font): f is FontDescriptor =>
   typeof f === "object" && !(f instanceof Uint8Array);
@@ -28,34 +28,10 @@ const loadLocalFontDescriptor = async (
 const isLocalConfig = (c: FontConfig): c is FontConfig & { path: string } =>
   c.source === "local" && typeof c.path === "string" && c.path.length > 0;
 
-/**
- * The `default` entry covers every locale without its own entry — and the
- * no-locale render, whose id is `default`. Non-Latin locales are excluded
- * from the fallback: a Latin display face has no Arabic or Hebrew glyphs, so
- * they keep the resolver's Noto face unless they declare fonts explicitly.
- */
-const resolveLocaleFontConfigs = (
-  fontsConfig: Record<string, FontConfig[]>,
-  localeId: string
-): FontConfig[] | undefined =>
-  fontsConfig[localeId] ??
-  (classifyLocale(localeId).script === "latin"
-    ? fontsConfig.default
-    : undefined);
-
-/**
- * Loads font configs: local files from disk, the rest from Google Fonts.
- * Returns null when nothing loads, so callers can fall back.
- */
-export const loadFontConfigs = async (
+const loadFontSet = async (
   configs: readonly FontConfig[],
-  label: string,
-  configDir?: string
+  configDir: string | undefined
 ): Promise<FontResolutionResult | null> => {
-  if (configs.length === 0) {
-    return null;
-  }
-
   try {
     const localConfigs = configs.filter(isLocalConfig);
     const googleConfigs = configs.filter((c) => !isLocalConfig(c));
@@ -82,16 +58,49 @@ export const loadFontConfigs = async (
       .map((f) => String(f.name ?? ""))
       .filter(Boolean);
 
-    logDebug("fonts resolved", {
-      count: fonts.length,
-      label,
-      names: fontFamilies,
-    });
+    logDebug("fonts resolved", { count: fonts.length, names: fontFamilies });
     return fonts.length > 0 ? { fontFamilies, fonts } : null;
   } catch (error) {
-    logDebug("fonts failed to load", { error: String(error), label });
+    logDebug("fonts failed to load", {
+      error: String(error),
+      families: configs.map((c) => c.family),
+    });
     return null;
   }
+};
+
+// Keyed by font set, not locale, so locales and templates sharing fonts
+// download once. Failures are dropped so the next render retries.
+const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
+
+export const clearFontCache = (): void => {
+  fontCache.clear();
+};
+
+/**
+ * Loads a font set: local files from disk, the rest from Google Fonts.
+ * The one loader for config, template-declared, and built-in faces. Returns
+ * null when nothing loads, so callers can fall back.
+ */
+export const loadFontConfigs = async (
+  configs: readonly FontConfig[],
+  configDir?: string
+): Promise<FontResolutionResult | null> => {
+  if (configs.length === 0) {
+    return null;
+  }
+  const key = fontSetKey(configs, configDir);
+  const cached = fontCache.get(key);
+  if (cached) {
+    return await cached;
+  }
+  const promise = loadFontSet(configs, configDir);
+  fontCache.set(key, promise);
+  const resolution = await promise;
+  if (!resolution) {
+    fontCache.delete(key);
+  }
+  return resolution;
 };
 
 export const createFetchFontsFromConfig = (
@@ -103,7 +112,13 @@ export const createFetchFontsFromConfig = (
   }
 
   return async function fetchFontsFromConfig(localeId: string) {
-    const configs = resolveLocaleFontConfigs(fontsConfig, localeId) ?? [];
-    return await loadFontConfigs(configs, `config:${localeId}`, configDir);
+    // Guards untyped callers (a JS config, a bad request) passing no locale.
+    if (typeof localeId !== "string") {
+      return null;
+    }
+    return await loadFontConfigs(
+      configuredFontEntries(fontsConfig, localeId),
+      configDir
+    );
   };
 };

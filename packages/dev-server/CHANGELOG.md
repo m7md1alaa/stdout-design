@@ -1,5 +1,12 @@
 # @stdout-design/dev-server
 
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [06756b2]
+  - @stdout-design/core@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes

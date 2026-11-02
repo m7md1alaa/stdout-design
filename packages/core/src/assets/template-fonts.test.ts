@@ -8,8 +8,8 @@ const googleFontsMock = mock((families: { name: string }[]) =>
 
 mock.module("@takumi-rs/helpers", () => ({ googleFonts: googleFontsMock }));
 
-const { clearFontCache, resolveAssetsForLocale } =
-  await import("./assets-resolver.js");
+const { resolveAssetsForLocale } = await import("./assets-resolver.js");
+const { clearFontCache } = await import("./font-config.js");
 
 const requested = (): string[] =>
   googleFontsMock.mock.calls.flatMap(([families]) =>

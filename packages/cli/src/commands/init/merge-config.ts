@@ -3,16 +3,16 @@ import type { StudioConfig } from "@stdout-design/core";
 type Preset = StudioConfig["presets"][number];
 type TemplateEntry = StudioConfig["templates"][string];
 
-export interface Defaults {
-  presets: Preset[];
-  templates: Record<string, TemplateEntry>;
-  defaultPreset?: string;
-}
+/** The config `update` merges in: the presets and starters the project lacks. Fonts aren't merged: templates declare their own. */
+export type Defaults = Pick<StudioConfig, "presets" | "templates"> &
+  Partial<Pick<StudioConfig, "defaultPreset" | "locales">>;
 
 export interface ChangeSummary {
   addedPresets: string[];
   deprecatedPresets: string[];
   addedTemplates: string[];
+  /** Locales written to a config that had none recorded. */
+  recordedLocales: string[];
   oldVersion: string | null;
   newVersion: string;
 }
@@ -104,10 +104,12 @@ export const mergeConfig = (
   );
 
   const { templates, addedTemplates } = mergeTemplates(existing, defaults);
+  const recordedLocales = existing.locales ? [] : (defaults.locales ?? []);
 
   const config: StudioConfig = {
     ...existing,
     defaultPreset: resolveDefaultPreset(presets, existing, defaults),
+    locales: existing.locales ?? defaults.locales,
     presets,
     scaffoldVersion: currentVersion,
     templates,
@@ -119,7 +121,15 @@ export const mergeConfig = (
     deprecatedPresets,
     newVersion: currentVersion,
     oldVersion,
+    recordedLocales,
   };
 
   return { config, summary };
 };
+
+export const hasChanges = (summary: ChangeSummary): boolean =>
+  summary.addedPresets.length > 0 ||
+  summary.deprecatedPresets.length > 0 ||
+  summary.addedTemplates.length > 0 ||
+  summary.recordedLocales.length > 0 ||
+  summary.oldVersion !== summary.newVersion;

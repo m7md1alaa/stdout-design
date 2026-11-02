@@ -13,7 +13,7 @@ const {
 type TemplateDefinition = ReturnType<typeof toTemplateDefinition>;
 
 const TEMPLATE_DIR = path.resolve(import.meta.dirname, "../../template");
-const { TEMPLATE_IDS } = await import("../commands/init/scaffold.js");
+const { STARTER_IDS } = await import("../commands/init/catalog.js");
 
 const LOCALES = ["en", "ar"] as const;
 const PRESETS = [
@@ -30,7 +30,7 @@ const readLocale = (locale: string): Translations =>
 
 const starters = new Map<string, TemplateDefinition>(
   await Promise.all(
-    TEMPLATE_IDS.map(async (id) => {
+    STARTER_IDS.map(async (id) => {
       const mod: unknown = await import(
         path.join(TEMPLATE_DIR, "templates", `${id}.tsx`)
       );
@@ -104,7 +104,7 @@ describe("starter templates", () => {
     }
   );
 
-  const cells = TEMPLATE_IDS.flatMap((id) =>
+  const cells = STARTER_IDS.flatMap((id) =>
     LOCALES.flatMap((locale) =>
       PRESETS.map(([width, height]) => [id, locale, width, height] as const)
     )

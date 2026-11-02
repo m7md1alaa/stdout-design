@@ -120,12 +120,8 @@ export const init = async (
   console.log(`    ${pm} run dev                         # live studio`);
   const [first] = collected.templates;
   if (first) {
+    // `render` covers every locale recorded in studio.config.ts.
     console.log(`    ${pm} run render ${first}   # render to ./out`);
-    if (collected.locales.includes("ar")) {
-      console.log(
-        `    ${pm} run render ${first} --locale ar   # the Arabic, RTL version`
-      );
-    }
   }
   console.log("");
 

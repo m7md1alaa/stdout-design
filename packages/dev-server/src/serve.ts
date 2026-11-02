@@ -30,7 +30,12 @@ export const resolveStudioRoot = (cwd: string, givenArg?: string): string => {
   return cwd;
 };
 
-if (import.meta.main) {
+// import.meta.main is Bun-only (Node < 24.2 lacks it), so compare paths instead.
+const isEntrypoint =
+  process.argv[1] !== undefined &&
+  path.resolve(process.argv[1]) === import.meta.filename;
+
+if (isEntrypoint) {
   const rootDir = resolveStudioRoot(process.cwd(), process.argv[2]);
   const port = Math.trunc(Number(process.env.PORT ?? "3030"));
 

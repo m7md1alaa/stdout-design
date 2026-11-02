@@ -3,9 +3,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { STARTER_IDS } from "../catalog.js";
 import type { ClackModule } from "../prompts.js";
 import { collectPrompts } from "../prompts.js";
-import { TEMPLATE_IDS } from "../scaffold.js";
 
 const inTempDir = (): string => {
   const dir = mkdtempSync(path.join(tmpdir(), "studio-prompt-test-"));
@@ -21,7 +21,7 @@ describe("collectPrompts", () => {
 
     expect(result.resolvedDir).toBe(dir);
     expect(result.projectName).toBe(path.basename(dir));
-    expect(result.templates).toEqual(TEMPLATE_IDS);
+    expect(result.templates).toEqual(STARTER_IDS);
     expect(result.locales).toEqual(["en", "ar"]);
     expect(result.wantsGit).toBe(true);
     expect(result.shouldInstall).toBe(true);
@@ -37,7 +37,7 @@ describe("collectPrompts", () => {
     const result = await collectPrompts(fakeClack);
 
     expect(result.projectName).toBe("studio-project");
-    expect(result.templates).toEqual(TEMPLATE_IDS);
+    expect(result.templates).toEqual(STARTER_IDS);
     expect(result.locales).toEqual(["en", "ar"]);
     expect(result.shouldInstall).toBe(true);
 

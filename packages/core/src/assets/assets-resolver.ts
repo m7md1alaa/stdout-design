@@ -7,6 +7,7 @@ import { logWarn } from "../shared/logger.js";
 import { applyTranslations } from "../shared/translations.js";
 import type { FontConfig } from "../shared/types.js";
 import { loadFontConfigs } from "./font-config.js";
+import { BUILT_IN_FONTS } from "./locale-fonts.js";
 
 export interface AssetsForLocale {
   fonts: Font[];
@@ -32,43 +33,6 @@ export interface AssetsResolverOptions {
   propsSchema?: z.ZodType;
 }
 
-/**
- * The Google font a script falls back to when the config declares nothing
- * for its locale and the template doesn't name it. Latin needs none: the renderer's built-in face covers it.
- */
-const SCRIPT_FALLBACK_FONT: Record<Script, string | undefined> = {
-  arabic: "Noto Sans Arabic",
-  hebrew: "Noto Sans Hebrew",
-  latin: undefined,
-};
-
-const fontCache = new Map<string, Promise<FontResolutionResult | null>>();
-
-const cachedFetch = async (
-  key: string,
-  fetch: () => Promise<FontResolutionResult | null>
-): Promise<FontResolutionResult | null> => {
-  const cached = fontCache.get(key);
-  if (cached) {
-    return await cached;
-  }
-  const promise = fetch();
-  fontCache.set(key, promise);
-  const resolution = await promise;
-  if (!resolution) {
-    fontCache.delete(key);
-  }
-  return resolution;
-};
-
-const FALLBACK_WEIGHTS = [400, 700];
-
-const fontSetKey = (configs: readonly FontConfig[]): string =>
-  configs
-    .map((c) => `${c.family}@${(c.weights ?? []).join(",")}`)
-    .toSorted()
-    .join("|");
-
 const combine = (
   parts: (FontResolutionResult | null)[]
 ): FontResolutionResult | null => {
@@ -85,8 +49,9 @@ const combine = (
 /**
  * The fonts a render loads: the config's for this locale, then every face
  * the template declares (a family the config already loads is the config's
- * to define: a local file wins over Google), then the script's Noto face
- * when the config has nothing for a non-Latin locale.
+ * to define: a local file wins over Google), then the script's built-in
+ * face when the config has nothing for the locale and the template doesn't
+ * name it. Each set is fetched once per process (see `loadFontConfigs`).
  */
 const resolveFonts = async (
   localeId: string,
@@ -94,53 +59,28 @@ const resolveFonts = async (
   options: AssetsResolverOptions | undefined
 ): Promise<FontResolutionResult | null> => {
   const configured = options?.fetchFonts
-    ? await cachedFetch(
-        `config:${localeId}`,
-        () => options.fetchFonts?.(localeId) ?? Promise.resolve(null)
-      )
+    ? await options.fetchFonts(localeId)
     : null;
 
   const configuredFamilies = new Set(configured?.fontFamilies);
   const declared = (options?.declaredFonts ?? []).filter(
     (c) => !configuredFamilies.has(c.family)
   );
-  const declaredResolution =
-    declared.length > 0
-      ? await cachedFetch(`declared:${fontSetKey(declared)}`, () =>
-          loadFontConfigs(declared, "template")
-        )
-      : null;
+  const declaredResolution = await loadFontConfigs(declared);
   if (declared.length > 0 && !declaredResolution) {
     logWarn(
       `Template fonts failed to load (${declared.map((c) => c.family).join(", ")}); rendering with fallbacks.`
     );
   }
 
-  const fallbackFamily = SCRIPT_FALLBACK_FONT[script];
-  const needsFallback =
-    !configured &&
-    fallbackFamily !== undefined &&
-    !declared.some((c) => c.family === fallbackFamily);
-  const fallback = needsFallback
-    ? await cachedFetch(`fallback:${fallbackFamily}`, () =>
-        loadFontConfigs(
-          [
-            {
-              family: fallbackFamily,
-              source: "google",
-              weights: FALLBACK_WEIGHTS,
-            },
-          ],
-          `fallback:${localeId}`
-        )
-      )
-    : null;
+  const builtIn = configured
+    ? []
+    : BUILT_IN_FONTS[script].filter(
+        (c) => !declared.some((d) => d.family === c.family)
+      );
+  const fallback = await loadFontConfigs(builtIn);
 
   return combine([configured, declaredResolution, fallback]);
-};
-
-export const clearFontCache = (): void => {
-  fontCache.clear();
 };
 
 export const resolveAssetsForLocale = async (
