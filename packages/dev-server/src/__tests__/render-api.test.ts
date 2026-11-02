@@ -186,6 +186,78 @@ it("POST /render produces different output with locale applied", async () => {
   );
 });
 
+const layeredBody = (overrides: Record<string, string>, autoDetected = false) =>
+  JSON.stringify({
+    autoDetected,
+    locale: "ar",
+    localeOverrides: overrides,
+    preset: "test",
+    props: { title: "World" },
+    templateId: "test-card",
+  });
+
+it("POST /render lays locale overrides over the locale file", async () => {
+  await cleanCache();
+  const headers = { "Content-Type": "application/json" };
+  const fileOnly = await server.app.request(
+    "/render",
+    renderBody("World", "ar")
+  );
+  // An override equal to the file's string resolves to the same props.
+  const sameAsFile = await server.app.request("/render", {
+    body: layeredBody({ title: "مرحبا" }),
+    headers,
+    method: "POST",
+  });
+  const overridden = await server.app.request("/render", {
+    body: layeredBody({ title: "أهلا وسهلا" }),
+    headers,
+    method: "POST",
+  });
+
+  expect(fileOnly.status).toBe(200);
+  expect(sameAsFile.headers.get("X-Cache")).toBe("hit");
+  expect(overridden.status).toBe(200);
+  expect(
+    Buffer.from(await overridden.arrayBuffer()).equals(
+      Buffer.from(await fileOnly.arrayBuffer())
+    )
+  ).toBe(false);
+});
+
+it("POST /render ignores locale overrides for an auto-detected locale", async () => {
+  await cleanCache();
+  const headers = { "Content-Type": "application/json" };
+  const first = await server.app.request("/render", {
+    body: layeredBody({}, true),
+    headers,
+    method: "POST",
+  });
+  const withOverride = await server.app.request("/render", {
+    body: layeredBody({ title: "أهلا وسهلا" }, true),
+    headers,
+    method: "POST",
+  });
+  expect(first.status).toBe(200);
+  expect(withOverride.headers.get("X-Cache")).toBe("hit");
+});
+
+it("GET /translations returns the locale file's strings by path", async () => {
+  const res = await server.app.request("/translations/test-card/ar");
+  expect(res.status).toBe(200);
+  expect(await res.json()).toEqual({
+    locale: "ar",
+    strings: { title: "مرحبا" },
+  });
+});
+
+it("GET /translations rejects an unconfigured locale and an unknown template", async () => {
+  const badLocale = await server.app.request("/translations/test-card/..%2Fx");
+  const unknown = await server.app.request("/translations/nope/ar");
+  expect(badLocale.status).toBe(404);
+  expect(unknown.status).toBe(404);
+});
+
 it("POST /measure returns width and height for a valid request", async () => {
   const res = await server.app.request("/measure", {
     body: JSON.stringify({

@@ -70,6 +70,21 @@ describe("resolveAssetsForLocale", () => {
     expect(result.fontFamilies).toBeUndefined();
   });
 
+  it("lays locale overrides over the locale file", async () => {
+    const props = { count: 1, subtitle: "Sub", title: "Hello" };
+
+    const result = await resolveAssetsForLocale("ar", props, {
+      localeData: { subtitle: "فرعي", title: "مرحبا" },
+      localeOverrides: { count: "2", title: "أهلا" },
+    });
+
+    expect(result.props).toEqual({
+      count: 1,
+      subtitle: "فرعي",
+      title: "أهلا",
+    });
+  });
+
   it("returns plain props when no localeData is provided", async () => {
     const props = { title: "Hello" };
 
